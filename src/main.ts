@@ -241,6 +241,7 @@ function renderScenario(): void {
   element('scenario-closed', HTMLButtonElement).setAttribute('aria-pressed', String(closed));
   element('point-diff', HTMLParagraphElement).hidden = !closed;
   element('candidate-navigation', HTMLDivElement).hidden = !closed;
+  if (closed) showIntro(false);
   clearScenarioLayers();
   if (loadState.status === 'ready') for (const feature of visibleFeatures()) marker(feature);
   renderFeatureList(); selectFeature(selectedFeatureId); renderLayerVisibility();
@@ -280,8 +281,19 @@ for (const id of layerIds) {
     layerVisibility[id] = !layerVisibility[id]; renderLayerVisibility();
   });
 }
-element('scenario-normal', HTMLButtonElement).addEventListener('click', () => { scenario = { kind: 'normal' }; renderScenario(); });
-element('scenario-closed', HTMLButtonElement).addEventListener('click', () => { scenario = { kind: 'malacca-closed-assumption' }; renderScenario(); });
+function setScenario(kind: Scenario['kind']): void { scenario = { kind }; renderScenario(); }
+// The first-visit guide is page-local: no storage, no overlay. It leaves once the
+// assumption has been seen (see renderScenario) and can be reopened at any time.
+function showIntro(visible: boolean): void {
+  element('intro', HTMLElement).hidden = !visible; element('intro-reopen', HTMLButtonElement).hidden = visible;
+}
+element('try-closed', HTMLButtonElement).addEventListener('click', () => {
+  setScenario('malacca-closed-assumption'); element('scenario-closed', HTMLButtonElement).focus();
+});
+element('intro-close', HTMLButtonElement).addEventListener('click', () => { showIntro(false); element('intro-reopen', HTMLButtonElement).focus(); });
+element('intro-reopen', HTMLButtonElement).addEventListener('click', () => { showIntro(true); element('try-closed', HTMLButtonElement).focus(); });
+element('scenario-normal', HTMLButtonElement).addEventListener('click', () => setScenario('normal'));
+element('scenario-closed', HTMLButtonElement).addEventListener('click', () => setScenario('malacca-closed-assumption'));
 for (const id of ['sunda', 'lombok'] as const) {
   element(`go-${id}`, HTMLButtonElement).addEventListener('click', () => {
     const feature = features.find(item => item.id === id);

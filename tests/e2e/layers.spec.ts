@@ -197,7 +197,7 @@ test('hidden selections retain evidence and return as current candidates; explor
 
 test('Tab, Shift+Tab, Enter and Space retain focus with reduced motion', async ({ page }, info) => {
   await page.emulateMedia({ reducedMotion: 'reduce' }); await ready(page);
-  for (let count = 0; count < 15; count++) {
+  for (let count = 0; count < 25; count++) {
     await page.keyboard.press('Tab');
     if (await toggle(page, 'borders').evaluate(el => el === document.activeElement)) break;
   }

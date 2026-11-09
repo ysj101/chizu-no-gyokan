@@ -127,10 +127,11 @@ test('initial atlas, sources, missing data and narrow scope', async ({ page }, i
   await expect(page.locator('#source-list a[href="https://www.naturalearthdata.com/about/terms-of-use/"]')).toBeVisible();
   // CG-04 adds exactly its labelled textarea and save button; keep every other scope exclusion.
   await expect(page.locator('input, textarea:not(#note-body), select, button:disabled')).toHaveCount(0);
-  await expect(page.getByRole('textbox', { name: 'メモ本文', exact: true })).toHaveCount(1);
-  await expect(page.locator('#notes textarea')).toHaveCount(1);
-  await expect(page.getByRole('button', { name: /条件切替|代替|差分|メモ|ログイン|レイヤー/ })).toHaveText(['メモを保存']);
-  await expect(page.locator('#notes button')).toHaveCount(1);
+  await expect(page.locator('#note-form textarea#note-body')).toHaveCount(1);
+  // The note drawer is closed at first: only its opener is exposed; save and close wait inside the hidden form.
+  await expect(page.getByRole('button', { name: /条件切替|代替|差分|メモ|ログイン|レイヤー/ })).toHaveText(['この発見をメモする']);
+  await expect(page.locator('#note-form button')).toHaveCount(2);
+  await expect(page.locator('#notes button')).toHaveCount(0);
   expect(external).toEqual([]);
   await screenshot(page, 'initial-and-sources', info.project.name);
 });

@@ -90,6 +90,11 @@ export function deleteNote(storage: NoteStorage, id: string): Result<NoteCollect
   if (!loaded.value.notes.some(note => note.id === id)) return failure('削除するメモを確認できませんでした。');
   return writeNotes(storage, loaded.value.records.filter(item => !(record(item) && item.id === id)));
 }
+const selectionName = (state: NoteMapState): string => state.selectedFeatureId === null ? '選択なし' : featureById(state.selectedFeatureId).name;
+// One line for the drawer's "state to be saved"; the saved list shows the same three parts.
+export function describeMapState(state: NoteMapState): string {
+  return `${scenarios[state.scenarioId].name} / ${layerStatusLine(state.layers)} / 選択：${selectionName(state)}`;
+}
 export function notePresentation(note: DiscoveryNote) {
   const state = note.mapState;
   const date = new Intl.DateTimeFormat('ja-JP', {
@@ -98,6 +103,6 @@ export function notePresentation(note: DiscoveryNote) {
   return {
     date: `${date} JST`, scenario: `保存時の条件：${scenarios[state.scenarioId].name}`,
     layers: layerStatusLine(state.layers),
-    selection: `選択地点：${state.selectedFeatureId === null ? '選択なし' : featureById(state.selectedFeatureId).name}`,
+    selection: `選択地点：${selectionName(state)}`,
   };
 }

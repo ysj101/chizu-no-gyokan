@@ -6,14 +6,22 @@ const browserStorage: NoteStorage = {
   getItem: key => window.localStorage.getItem(key),
   setItem: (key, value) => window.localStorage.setItem(key, value),
 };
-export function mountNotes(target: HTMLElement, snapshot: () => unknown, restore: (note: DiscoveryNote) => Result<{ adjusted: boolean }>, storage: NoteStorage = browserStorage): void {
-  const form = target.querySelector('form');
-  const input = target.querySelector('textarea');
+export interface NotesMount {
+  list: HTMLElement;            // holds the saved list, its status and warnings
+  form: HTMLFormElement;        // the input drawer, which may live elsewhere on the page
+  snapshot: () => unknown;      // map state recorded with a new note
+  restore: (note: DiscoveryNote) => Result<{ adjusted: boolean }>;
+  focusWhenEmpty: () => void;   // where focus goes after the last note is deleted
+  storage?: NoteStorage;
+}
+export function mountNotes({ list: target, form, snapshot, restore, focusWhenEmpty, storage = browserStorage }: NotesMount): void {
+  const input = form.querySelector('textarea');
+  const saveStatus = form.querySelector<HTMLElement>('#note-save-status');
   const list = target.querySelector('ol');
   const status = target.querySelector<HTMLElement>('#notes-status');
   const warning = target.querySelector<HTMLElement>('#notes-warning');
   const empty = target.querySelector<HTMLElement>('#notes-empty');
-  if (!form || !input || !list || !status || !warning || !empty) throw new Error('Missing notes panel');
+  if (!input || !saveStatus || !list || !status || !warning || !empty) throw new Error('Missing notes panel');
   const paragraph = (text: string, className = '') => {
     const p = document.createElement('p'); p.textContent = text; p.className = className; return p;
   };
@@ -38,7 +46,8 @@ export function mountNotes(target: HTMLElement, snapshot: () => unknown, restore
         render(result);
         status!.textContent = 'メモを削除しました。';
         const remaining = list!.querySelectorAll<HTMLButtonElement>('[data-action=delete]');
-        (remaining[Math.min(index, remaining.length - 1)] ?? input!).focus();
+        const next = remaining[Math.min(index, remaining.length - 1)];
+        if (next) next.focus(); else focusWhenEmpty();
       });
       const restoreButton = document.createElement('button');
       restoreButton.type = 'button'; restoreButton.textContent = 'このメモの地図状態に戻す';
@@ -77,13 +86,35 @@ export function mountNotes(target: HTMLElement, snapshot: () => unknown, restore
     event.preventDefault();
     input.removeAttribute('aria-invalid');
     if (!input.value.trim()) {
-      input.setAttribute('aria-invalid', 'true'); status.textContent = '空白だけのメモは保存できません。本文を入力してください。'; input.focus(); return;
+      input.setAttribute('aria-invalid', 'true'); saveStatus.textContent = '空白だけのメモは保存できません。本文を入力してください。'; input.focus(); return;
     }
     try {
       const result = saveNote(storage, { id: crypto.randomUUID(), body: input.value, createdAt: new Date().toISOString(), mapState: snapshot() });
-      if (!result.ok) { status.textContent = `保存できませんでした。入力は欄に残っています。${result.error}`; return; }
-      render(result); input.value = ''; status.textContent = 'メモを保存しました。';
-    } catch { status.textContent = '保存できませんでした。入力は欄に残っています。'; }
+      if (!result.ok) { saveStatus.textContent = `保存できませんでした。入力は欄に残っています。${result.error}`; return; }
+      render(result); input.value = ''; saveStatus.textContent = 'メモを保存しました。';
+    } catch { saveStatus.textContent = '保存できませんでした。入力は欄に残っています。'; }
   });
   render(loadNotes(storage));
+}
+
+// The input drawer sits by the selected place. Closing keeps the draft in the field and says so on
+// the opener, so nothing typed is lost; `describe` renders the map state that a save would record.
+export interface NoteDrawer { refresh(): void; focus(): void }
+export function mountNoteDrawer(opener: HTMLButtonElement, form: HTMLFormElement, closer: HTMLButtonElement, context: HTMLElement, describe: () => string): NoteDrawer {
+  const input = form.querySelector('textarea');
+  if (!input) throw new Error('Missing note drawer');
+  const refresh = () => {
+    const open = !form.hidden;
+    opener.setAttribute('aria-expanded', String(open));
+    const label = `この発見をメモする${!open && input.value.trim() ? '（下書きあり）' : ''}`;
+    if (opener.textContent !== label) opener.textContent = label;
+    if (open) context.textContent = `保存する状態：${describe()}`;
+  };
+  // Focus goes to the field when open, otherwise to the opener (also used after the last note is deleted).
+  const focus = () => (form.hidden ? opener : input).focus();
+  const setOpen = (open: boolean) => { form.hidden = !open; refresh(); focus(); };
+  opener.addEventListener('click', () => setOpen(true));
+  closer.addEventListener('click', () => setOpen(false));
+  refresh();
+  return { refresh, focus };
 }

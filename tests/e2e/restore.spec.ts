@@ -5,14 +5,15 @@ import { mkdir } from 'node:fs/promises';
 
 const key = 'chizu-no-gyokan.notes.v1';
 const input = (page: Page) => page.getByRole('textbox', { name: 'メモ本文', exact: true });
+async function openDrawer(page: Page) { if (await input(page).isHidden()) await page.getByRole('button', { name: /^この発見をメモする/ }).click(); }
 const restore = (page: Page, body: string) => page.getByRole('button', { name: new RegExp(`^${body}（.*このメモの地図状態に戻す$`) });
 const map = (page: Page) => page.getByRole('region', { name: 'マラッカ海峡周辺の地図', exact: true });
 async function stored(page: Page): Promise<DiscoveryNote[]> {
   return page.evaluate(k => JSON.parse(localStorage.getItem(k)!).notes, key);
 }
 async function save(page: Page, body: string) {
-  await input(page).fill(body); await page.getByRole('button', { name: 'メモを保存', exact: true }).click();
-  await expect(page.locator('#notes-status')).toHaveText('メモを保存しました。');
+  await openDrawer(page); await input(page).fill(body); await page.getByRole('button', { name: 'メモを保存', exact: true }).click();
+  await expect(page.locator('#note-save-status')).toHaveText('メモを保存しました。');
 }
 async function shot(page: Page, project: string, state: string) {
   await mkdir('artifacts/map-exploration', { recursive: true });
@@ -70,7 +71,7 @@ test('restores real saved combinations after reload, then continues exploration 
   await page.locator('#feature-list [data-feature-id="lombok"]').click();
   await map(page).focus(); await page.keyboard.press('+'); await page.keyboard.press('ArrowRight');
   await shot(page, info.project.name, 'before');
-  await input(page).fill('復元で消さない下書き');
+  await openDrawer(page); await input(page).fill('復元で消さない下書き');
   const documents = requests.filter(r => r.document).length;
   const requestCount = requests.length;
   // Alternate scenarios and layer patterns, so a prior restoration cannot leak into the next.
@@ -165,7 +166,7 @@ test('null selection clears all prior details; keyboard restore and stale invali
   await expect(restore(page, 'CG06選択なし継続')).toBeFocused();
   expect(await restore(page, 'CG06選択なし継続').evaluate(el => getComputedStyle(el).outlineStyle)).not.toBe('none');
   await shot(page, info.project.name, 'keyboard');
-  await input(page).fill('失敗でも残す本文');
+  await openDrawer(page); await input(page).fill('失敗でも残す本文');
   const before = await presentation(page);
   const mapView = () => page.locator('#map').evaluate(el => ({
     pane: (el.querySelector('.leaflet-map-pane') as HTMLElement).style.transform,

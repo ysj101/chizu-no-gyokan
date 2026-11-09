@@ -102,6 +102,7 @@ function selectFeature(id: SelectedFeatureId | null, reveal = false): void {
     preview: previewOnMap,
   });
   if (reveal && matchMedia('(max-width: 760px)').matches) {
+    // On phones the map is pinned; #selection's scroll-margin-top keeps the explanation below it.
     element('selection', HTMLElement).scrollIntoView({ block: 'start', behavior: 'instant' });
   }
   updateSelectedVisibility();
@@ -352,11 +353,20 @@ element('reset', HTMLButtonElement).addEventListener('click', () => map.fitBound
 const touchButton = element('touch-mode', HTMLButtonElement);
 const coarse = matchMedia('(any-pointer: coarse), (max-width: 760px)');
 const touchAvailable = () => navigator.maxTouchPoints > 0 || coarse.matches;
+const touchHint = element('map-hint', HTMLParagraphElement);
+isolateMapButton(touchButton);
+const touchHints = {
+  on: '指でなぞると地図が動きます。ページをスクロールするには地図の外をなぞります。',
+  off: `指でなぞるとページがスクロールします。地図を動かすには「${touchButton.textContent}」をオンにします。`,
+};
+// The label stays the same; aria-pressed carries the state and the hint says what a finger does now.
 function setTouchMode(enabled: boolean): void {
+  const available = touchAvailable();
   touchButton.setAttribute('aria-pressed', String(enabled));
-  touchButton.textContent = enabled ? 'タッチ移動を終了' : 'タッチ移動を開始';
-  touchButton.hidden = !touchAvailable();
-  if (touchAvailable() && !enabled) { map.dragging.disable(); mapElement.style.touchAction = 'pan-y'; }
+  touchButton.hidden = !available;
+  const hint = available ? touchHints[enabled ? 'on' : 'off'] : '';
+  touchHint.textContent = hint; touchHint.hidden = !hint;
+  if (available && !enabled) { map.dragging.disable(); mapElement.style.touchAction = 'pan-y'; }
   else { map.dragging.enable(); mapElement.style.touchAction = 'none'; }
 }
 touchButton.addEventListener('click', () => setTouchMode(touchButton.getAttribute('aria-pressed') !== 'true'));

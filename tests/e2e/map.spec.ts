@@ -100,7 +100,7 @@ test('initial atlas, sources, missing data and narrow scope', async ({ page }, i
   await page.screenshot({ path: `artifacts/map-exploration/${info.project.name}-initial-viewport.png`, fullPage: false });
   await expect(mapRegion(page)).toBeInViewport();
   if (info.project.name === 'mobile') {
-    await expect(page.getByRole('button', { name: 'タッチ移動を開始', exact: true })).toBeInViewport();
+    await expect(page.getByRole('button', { name: 'タッチで地図を動かす', exact: true })).toBeInViewport();
   }
   await expect(page.getByText('通常時', { exact: true })).toBeVisible();
   await expect(page.getByRole('list', { name: '凡例' })).toBeVisible();
@@ -139,7 +139,7 @@ test('initial atlas, sources, missing data and narrow scope', async ({ page }, i
 test('drag, zoom, reset and geographic overlays follow the map', async ({ page }, info) => {
   await ready(page);
   const mobile = info.project.name === 'mobile';
-  if (mobile) await page.getByRole('button', { name: 'タッチ移動を開始', exact: true }).tap();
+  if (mobile) await page.getByRole('button', { name: 'タッチで地図を動かす', exact: true }).tap();
   const before = await center(page);
   const land = page.locator('path.country-SGP');
   const landBefore = await renderedBox(page, land);
@@ -168,8 +168,8 @@ test('drag, zoom, reset and geographic overlays follow the map', async ({ page }
   await expectRestored(page, land, landBefore);
   await expectRestored(page, route, routeBefore);
   if (mobile) {
-    await page.getByRole('button', { name: 'タッチ移動を終了', exact: true }).tap();
-    await expect(page.getByRole('button', { name: 'タッチ移動を開始', exact: true })).toHaveAttribute('aria-pressed', 'false');
+    await page.getByRole('button', { name: 'タッチで地図を動かす', exact: true }).tap();
+    await expect(page.getByRole('button', { name: 'タッチで地図を動かす', exact: true })).toHaveAttribute('aria-pressed', 'false');
   }
   await screenshot(page, 'restored', info.project.name);
   if (mobile) {
@@ -214,7 +214,7 @@ test('select features on map and list without reload or refetch', async ({ page 
     await expectRestored(page, page.locator('.coordinate-dot').first(), anchorBefore);
     await expectRestored(page, page.locator('path.country-SGP'), coastBefore);
     await expectMapNotScrolled(page);
-    const targets = page.locator('#map button');
+    const targets = page.locator('#map button[data-feature-id]');
     const boxes = await targets.all();
     for (let i = 0; i < boxes.length; i++) {
       const a = await boxes[i]!.boundingBox();
@@ -408,7 +408,7 @@ test('scenario round trip synchronizes differences, selected explanations and so
   await expect(page.locator('#selected-name')).toHaveText('通常主要航路');
   await expect(page.locator('#selected-scenario')).toContainText('通常時');
   await activate(page.getByRole('button', { name: '対象地域に戻す', exact: true }), mobile);
-  if (mobile) await page.getByRole('button', { name: 'タッチ移動を開始', exact: true }).tap();
+  if (mobile) await page.getByRole('button', { name: 'タッチで地図を動かす', exact: true }).tap();
   const before = await center(page);
   await drag(page, mobile);
   await expect.poll(async () => Math.abs((await center(page)).x - before.x)).toBeGreaterThan(20);

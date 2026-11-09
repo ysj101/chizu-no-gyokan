@@ -19,7 +19,8 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) 340px; }
 .map-toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
 /* Clip geographic overflow without creating a scroll container that focus or
    scrollIntoView can move independently of Leaflet panes. */
-#map { overflow: clip; width: 100%; height: max(520px, calc(100dvh - 250px)); max-height: 900px; background: #dcecf0; border: 1px solid #92aaaf; border-radius: 6px; isolation: isolate; }
+/* Declared here so Leaflet does not write an inline position and the phone rule below can make it sticky. */
+#map { position: relative; overflow: clip; width: 100%; height: max(520px, calc(100dvh - 250px)); max-height: 900px; background: #dcecf0; border: 1px solid #92aaaf; border-radius: 6px; isolation: isolate; }
 #load-status, .attribution { font-size: 12px; margin: 7px 0; }
 #load-status { min-height: 21px; }
 .legend { display: flex; flex-wrap: wrap; list-style: none; gap: 5px 18px; padding: 0; margin: 12px 0 6px; font-size: 12px; }
@@ -81,10 +82,16 @@ footer { padding: 12px 28px; border-top: 1px solid #cad7d5; font-size: 12px; }
   header { flex-wrap: wrap; gap: 6px 15px; padding: 13px 16px; }
   header p { order: 3; width: 100%; font-size: 12px; }
   .brand { font-size: 23px; }
-  main { display: block; }
-  .atlas { padding: 12px; }
-  #map { height: 52dvh; min-height: 340px; max-height: 560px; }
-  aside { border-left: none; padding: 0 16px 22px; }
+  /* Sticky ends at its containing block, and `.atlas` ends before `aside`; dropping the section's box
+     makes `main` the container so the map stays while the explanation scrolls. Current engines keep the
+     section's region role under display: contents. `svh` keeps the height stable while the URL bar moves. */
+  main { display: block; padding: 0 12px; --phone-map-height: clamp(300px, 46svh, 480px); }
+  .atlas { display: contents; }
+  #selection { scroll-margin-top: calc(var(--phone-map-height) + 8px); }
+  /* The map stays at the top while the explanation scrolls beneath it: no round trips. */
+  #map { position: sticky; top: 0; z-index: 700; height: var(--phone-map-height); border-radius: 0 0 6px 6px; box-shadow: 0 4px 10px -6px rgba(32, 60, 69, .45); }
+  aside { border-left: none; padding: 0 0 22px; }
+  #notes { padding: 22px 0; }
   #selection { padding: 12px 0 8px; background: #fafcfaf7; border-bottom: 1px solid #cad7d5; }
   #selection h1 { font-size: 22px; margin: 3px 0; }
   #selection p { margin: 4px 0; }
@@ -126,7 +133,11 @@ path[data-just-changed] { stroke-width: 7; animation: just-changed-stroke 1.2s e
 .callout-sunda .feature-leader, .callout-lombok .feature-leader { transform: rotate(48deg); }
 #selected-scenario { font-size: 12px; }
 
-.map-condition { position: absolute; bottom: 8px; left: 8px; z-index: 600; max-width: calc(100% - 16px); padding: 3px 8px; background: #fafcfa; border: 1px solid #829e9b; border-radius: 3px; color: #203c45; font: 12px/1.6 -apple-system, BlinkMacSystemFont, sans-serif; pointer-events: none; }
+.map-overlay-button { position: absolute; top: 8px; right: 8px; z-index: 600; padding: 4px 10px; font-size: 13px; background: #fafcfaf0; }
+/* Small badges over the map share one chrome; each keeps only its placement. */
+.map-condition, .map-hint { position: absolute; z-index: 600; margin: 0; padding: 3px 8px; background: #fafcfaf0; border: 1px solid #829e9b; border-radius: 3px; color: #203c45; font: 12px/1.6 -apple-system, BlinkMacSystemFont, sans-serif; pointer-events: none; }
+.map-condition { bottom: 8px; left: 8px; max-width: calc(100% - 16px); }
+.map-hint { top: 60px; right: 8px; max-width: min(70%, 320px); font-size: 11px; color: #35535a; }
 
 /* Keep the eastern candidate name inside the narrow overview. */
 .callout-lombok .feature-name { left: auto; right: 40px; }

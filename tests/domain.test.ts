@@ -140,8 +140,11 @@ describe('independent layer presentation in both scenarios', () => {
         strait: { text: `海峡の代表点（${points}）`, hidden: false, off: !visibility.points },
         place: { text: `関連地点の代表点（${points}）`, hidden: false, off: !visibility.points },
       });
-      expect(view.explanation).toContain('陸地の塗りと海域名は残します');
-      expect(view.explanation).toContain('選択と詳細は保持します');
+      if (Object.values(visibility).every(Boolean)) expect(view.explanation).toBe('');
+      else {
+        expect(view.explanation).toContain('陸地の塗りと海域名は残します');
+        expect(view.explanation).toContain('選択と詳細は保持します');
+      }
       expect(view.scenarioSummary).toContain(scenarioDefinition(scenario).summary);
       expect(view.scenarioSummary.includes('主要航路レイヤーOFF')).toBe(!visibility.routes);
       expect(view.scenarioSummary.includes('注目地点レイヤーOFF')).toBe(!visibility.points);

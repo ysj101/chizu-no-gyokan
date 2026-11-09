@@ -18,8 +18,8 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) 340px; }
 .map-toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
 /* Clip geographic overflow without creating a scroll container that focus or
    scrollIntoView can move independently of Leaflet panes. */
-#map { overflow: clip; width: 100%; height: max(490px, calc(100dvh - 290px)); max-height: 850px; background: #dcecf0; border: 1px solid #92aaaf; border-radius: 6px; isolation: isolate; }
-#map-help, #load-status, .attribution { font-size: 12px; margin: 7px 0; }
+#map { overflow: clip; width: 100%; height: max(520px, calc(100dvh - 250px)); max-height: 900px; background: #dcecf0; border: 1px solid #92aaaf; border-radius: 6px; isolation: isolate; }
+#load-status, .attribution { font-size: 12px; margin: 7px 0; }
 #load-status { min-height: 21px; }
 .legend { display: flex; flex-wrap: wrap; list-style: none; gap: 5px 18px; padding: 0; margin: 12px 0 6px; font-size: 12px; }
 .legend li { display: flex; align-items: center; gap: 7px; }
@@ -33,7 +33,8 @@ h1 { font: 600 27px/1.5 'Yu Mincho', 'Hiragino Mincho ProN', serif; margin: 8px 
 #selected-description { font-size: 15px; }
 #selected-limit, #selected-source { font-size: 12px; }
 .note { border-left: 3px solid #819b9f; padding-left: 10px; }
-.guide { font-size: 12px; border-top: 1px solid #cad7d5; margin-top: 22px; padding-top: 8px; }
+.guide { margin-top: 22px; }
+details > p { margin: 6px 0; }
 #feature-list { display: grid; gap: 7px; margin: 20px 0; }
 #feature-list button { text-align: left; }
 details { font-size: 12px; border-top: 1px solid #cad7d5; padding-top: 12px; }
@@ -70,7 +71,7 @@ footer { padding: 12px 28px; border-top: 1px solid #cad7d5; font-size: 12px; }
   .brand { font-size: 23px; }
   main { display: block; }
   .atlas { padding: 12px; }
-  #map { height: 48dvh; min-height: 320px; max-height: 500px; }
+  #map { height: 52dvh; min-height: 340px; max-height: 560px; }
   aside { border-left: none; padding: 0 16px 22px; }
   #selection { padding: 12px 0 8px; background: #fafcfaf7; border-bottom: 1px solid #cad7d5; }
   #selection h1 { font-size: 22px; margin: 3px 0; }
@@ -83,10 +84,12 @@ footer { padding: 12px 28px; border-top: 1px solid #cad7d5; font-size: 12px; }
 .scenario-controls [role='group'] { display: flex; flex-wrap: wrap; gap: 8px; }
 .scenario-controls p { margin: 6px 0; font-size: 12px; }
 #scenario-summary { border-left: 3px solid #844a72; padding-left: 10px; }
-.assumption { color: #633d35; }
+.assumption { color: #633d35; font-size: 12px; margin: 8px 0; border-color: #b48a7e; }
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0; }
+.help { margin-top: 10px; }
 #candidate-navigation { margin-bottom: 10px; }
 #candidate-navigation[hidden], .legend li[hidden] { display: none; }
-#visible-layers, #point-diff { font-size: 12px; margin: 6px 0; }
+#point-diff { font-size: 12px; margin: 6px 0; }
 .key.normal { border-top: 3px dashed #885229; }
 .key.unavailable { border-top: 3px dotted #697277; }
 .key.candidate { height: 3px; background: repeating-linear-gradient(to right, #844a72 0 14px, transparent 14px 19px, #844a72 19px 22px, transparent 22px 27px); }
@@ -107,8 +110,10 @@ footer { padding: 12px 28px; border-top: 1px solid #cad7d5; font-size: 12px; }
 #detail-evidence h3 { font-size: 13px; }
 #detail-evidence section { margin-bottom: 18px; }
 
-.layer-controls { margin-bottom: 12px; }
-.layer-controls [role='group'] { display: flex; flex-wrap: wrap; gap: 8px; }
+.layer-controls { margin: 10px 0 6px; }
+.layer-controls [role='group'] { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.layer-caption { font-size: 12px; color: #48666b; margin-right: 4px; }
+.layer-controls button { font-size: 13px; padding: 4px 10px; color: #35535a; }
 #layer-help, #selected-visibility, .feature-visibility { font-size: 12px; }
 #selected-visibility { border-left: 3px solid #697277; padding-left: 10px; }
 .legend .layer-off .key { opacity: .35; }

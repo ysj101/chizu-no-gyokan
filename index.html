@@ -17,15 +17,6 @@
             <button id="scenario-closed" aria-pressed="false">通行不可（仮定）</button>
           </div>
           <p id="scenario-summary" role="status" aria-live="polite"></p>
-          <p class="assumption"><strong>通行不可は演習上の仮定です。</strong>現実の航行規制・出来事を示しません。</p>
-        </section>
-        <section class="layer-controls" aria-label="レイヤー表示" aria-describedby="layer-help">
-          <div role="group" aria-label="レイヤーを切り替える">
-            <button id="layer-borders" aria-pressed="true">国境：表示中</button>
-            <button id="layer-routes" aria-pressed="true">主要航路：表示中</button>
-            <button id="layer-points" aria-pressed="true">注目地点：表示中</button>
-          </div>
-          <p id="layer-help"></p>
         </section>
         <div class="map-toolbar" role="group" aria-label="地図操作">
           <button id="zoom-in" aria-label="地図を拡大">＋</button>
@@ -38,10 +29,9 @@
           <button id="go-lombok">ロンボク海峡へ移動</button>
         </div>
         <div id="map" role="region" aria-label="マラッカ海峡周辺の地図" aria-describedby="map-help current-condition scenario-summary visible-layers" tabindex="0"><span id="map-condition" class="map-condition" aria-hidden="true">現在：通常時</span></div>
-        <p id="map-help">地図にフォーカスして矢印で移動、＋/−で拡大・縮小。点と引出線につながる記号、航路、または説明欄の一覧から対象を選べます。スマートフォンでは選択すると下の説明へ移動します。通常は地図上でも縦スクロールでき、「タッチ移動を開始」で地図を動かせます。「終了」でスクロールに戻ります。</p>
         <p id="load-status" role="status" aria-live="polite">地理データを読み込んでいます。</p>
         <button id="retry" hidden>地理データを再読み込み</button>
-        <p id="visible-layers" role="status" aria-live="polite"></p>
+        <p class="assumption note"><strong>通行不可は演習上の仮定</strong>で、現実の航行規制・出来事を示しません。<strong>破線の航路は著者作成の概略モデル</strong>で、実際の船舶航跡ではありません。</p>
         <ul class="legend" aria-label="凡例">
           <li id="border-legend"><span class="key border"></span><span></span></li>
           <li id="normal-legend"></li>
@@ -50,6 +40,20 @@
           <li id="place-legend"><span class="key point">●</span><span></span></li>
         </ul>
         <p id="point-diff" hidden>＋◇ 仮定時に追加：スンダ海峡・ロンボク海峡の代表点。×◇ マラッカ海峡：通行不可の仮定。</p>
+        <section class="layer-controls" aria-label="表示設定" aria-describedby="layer-help">
+          <div role="group" aria-label="レイヤーを切り替える">
+            <span class="layer-caption" aria-hidden="true">表示</span>
+            <button id="layer-borders" aria-pressed="true">国境：表示中</button>
+            <button id="layer-routes" aria-pressed="true">主要航路：表示中</button>
+            <button id="layer-points" aria-pressed="true">注目地点：表示中</button>
+          </div>
+          <p id="layer-help" role="status" aria-live="polite" hidden></p>
+        </section>
+        <p id="visible-layers" class="sr-only" role="status" aria-live="polite"></p>
+        <details class="help">
+          <summary>地図の操作方法</summary>
+          <p id="map-help">地図にフォーカスして矢印で移動、＋/−で拡大・縮小。点と引出線につながる記号、航路、または説明欄の一覧から対象を選べます。スマートフォンでは選択すると下の説明へ移動します。通常は地図上でも縦スクロールでき、「タッチ移動を開始」で地図を動かせます。「終了」でスクロールに戻ります。</p>
+        </details>
         <p class="attribution">Made with <a href="https://www.naturalearthdata.com/">Natural Earth</a> · v5.1.2 / 1:50m</p>
       </section>
       <aside aria-label="対象の説明と資料">
@@ -61,21 +65,22 @@
           <p id="selected-limit" class="note"></p>
           <p id="selected-source"></p>
         </section>
+        <nav id="feature-list" aria-label="探索する対象"></nav>
         <section id="detail-panel" aria-labelledby="detail-title">
           <h2 id="detail-title">選択対象の詳細</h2>
           <p id="selected-visibility" role="status" hidden></p>
           <div id="detail-fields"></div>
           <details open id="detail-sources"><summary>選択対象の根拠・日付・権利</summary><div id="detail-evidence"></div></details>
         </section>
-        <section class="guide" aria-label="初めに読める要約と注意">
+        <details class="guide" id="guide">
+          <summary>この地図の読み方と注意</summary>
+          <p>マラッカ海峡はインド洋と太平洋を結ぶ海上交通の接点です。国境・主要航路・注目地点を個別に表示・非表示にできます。</p>
           <p id="scenario-limits">候補は事前定義した著者モデル。実際の自動迂回・輸送量・経済影響の予測ではありません。代替先も狭窄部であり、船舶条件や輸送能力を検証していません。</p>
           <p class="scenario-source">根拠：<a href="https://www.eia.gov/international/content/analysis/special_topics/World_Oil_Transit_Chokepoints/">U.S. EIA, World Oil Transit Chokepoints（2026-03-03）原文</a>。スンダ・ロンボク両海峡を代替経路として挙げています。日本語要約：地図の行間。参照日2026-11-09。政府本文はpublic domain（<a href="https://www.eia.gov/about/copyrights_reuse.php">利用条件</a>）。点列は著者作成、再利用ライセンス未設定。<a href="#sources">全出典・対象時点・帰属</a></p>
-          <p>マラッカ海峡はインド洋と太平洋を結ぶ海上交通の接点です。国境・主要航路・注目地点を個別に表示・非表示にできます。</p>
           <p><strong>破線は著者作成の概略モデルです。</strong>実際の船舶航跡・検証済み航行線ではありません。出典は地理的な位置関係を支え、各waypointの運航を検証するものではありません。</p>
           <p>海岸・国境は一般化された小縮尺のNatural Earth de facto境界です。高ズーム精度や境界の政治的承認を意味しません。地点・海峡は代表点です。</p>
           <p>運航量・所要時間・船舶条件：<strong>未収録</strong>。0や無影響を意味しません。</p>
-        </section>
-        <nav id="feature-list" aria-label="探索する対象"></nav>
+        </details>
         <details id="sources"><summary>出典・対象時点・利用条件</summary><div id="source-list"></div></details>
       </aside>
       <section id="notes" aria-labelledby="notes-title" aria-describedby="notes-privacy">

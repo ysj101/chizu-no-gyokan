@@ -263,7 +263,8 @@ function renderLayerVisibility(): void {
     if (layerVisibility[id]) layerGroups[id].addTo(map);
     else map.removeLayer(layerGroups[id]);
   }
-  element('layer-help', HTMLParagraphElement).textContent = presentation.explanation;
+  const help = element('layer-help', HTMLParagraphElement);
+  help.textContent = presentation.explanation; help.hidden = !presentation.explanation;
   const closed = scenario.kind !== 'normal';
   for (const [key, id, symbol] of [
     ['borders', 'border-legend', 'border'], ['normal', 'normal-legend', closed ? 'unavailable' : 'normal'],

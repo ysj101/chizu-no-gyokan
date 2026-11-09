@@ -107,8 +107,18 @@ test('initial atlas, sources, missing data and narrow scope', async ({ page }, i
   await expect(page.getByRole('heading', { name: 'マラッカ海峡', exact: true })).toBeVisible();
   await expect(page.getByText('南シナ海', { exact: true })).toBeAttached();
   await expect(page.getByText('マレーシア', { exact: true })).toBeAttached();
+  // The first view keeps only the short assumption/model notice; the long guide is collapsed.
+  await expect(page.locator('.assumption')).toBeVisible();
+  await expect(page.locator('.assumption')).toContainText('演習上の仮定');
+  await expect(page.locator('.assumption')).toContainText('著者作成の概略モデル');
+  await expect(page.locator('#map-help')).toBeHidden();
+  await expect(page.locator('#guide p').first()).toBeHidden();
+  await expect(page.locator('#layer-help')).toBeHidden();
+  await page.getByText('この地図の読み方と注意', { exact: true }).click();
   await expect(page.getByText('未収録', { exact: true })).toBeVisible();
   await expect(page.getByText('破線は著者作成の概略モデルです。', { exact: true })).toBeVisible();
+  await page.getByText('地図の操作方法', { exact: true }).click();
+  await expect(page.locator('#map-help')).toBeVisible();
   await page.getByText('出典・対象時点・利用条件', { exact: true }).click();
   await expect(page.locator('#source-list')).toContainText('2026-03-03');
   await expect(page.locator('#source-list')).toContainText('public domain');

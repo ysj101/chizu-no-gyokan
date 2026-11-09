@@ -98,3 +98,11 @@ footer { padding: 12px 28px; border-top: 1px solid #cad7d5; font-size: 12px; }
 
 /* Keep the eastern candidate name inside the narrow overview. */
 .callout-lombok .feature-name { left: auto; right: 40px; }
+
+#detail-panel { font-size: 13px; border-top: 1px solid #cad7d5; margin-top: 16px; overflow-wrap: anywhere; }
+#detail-title { font-size: 17px; }
+#detail-panel dt { font-weight: 600; margin-top: 12px; }
+#detail-panel dd { margin-left: 0; }
+#detail-panel dd p { font-size: 12px; margin: 3px 0 0; }
+#detail-evidence h3 { font-size: 13px; }
+#detail-evidence section { margin-bottom: 18px; }

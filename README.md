@@ -1,6 +1,6 @@
-# 地図の行間 — CG-01 地図探索 / CG-05 条件実験
+# 地図の行間 — CG-01 地図探索 / CG-05 条件実験 / CG-02 詳細情報
 
-マラッカ海峡周辺の地図で対象を選び、通常時⇄通行不可（仮定）を往復する教材。スンダ・ロンボク経由候補、通常航路を使用しない比較線、追加地点・凡例・差分要約・選択説明が同期する。条件はページ内のみ。候補の出典・仮定・限界は初回から読める。独立レイヤー操作・詳細全項目・メモ・保存・国別切替・予測計算は含まない。人間の自由探索は未実施で、MVP全体・spec §17の完成ではない。
+マラッカ海峡周辺の地図で対象を選び、通常時⇄通行不可（仮定）を往復する教材。スンダ・ロンボク経由候補、通常航路を使用しない比較線、追加地点・凡例・差分要約・選択説明が同期する。条件はページ内のみ。候補の出典・仮定・限界は初回から読める。選択対象の詳細は項目ごとの区分・出典・日付・権利・未収録を表示する。関連はテキストのみ。独立レイヤー操作・メモ・保存・国別切替・予測計算は含まない。人間の自由探索は未実施で、MVP全体・spec §17の完成ではない。
 
 plain TypeScript（strict）＋Leaflet＋Vite。[構成比較とdecision trail](docs/architecture.md)。外部タイル・runtime外部通信・契約・API keyなし。背景JSONは同一originからfetchする。出典リンクは利用者の操作で外部へ開く。
 
@@ -32,7 +32,7 @@ verifyはbuild済みpreviewを起動、HTTP/portのDoctor、実UIのPlaywright�
 
 依存導入済み。`package-lock.json`を保全し、CIは`npm ci --ignore-scripts`で固定依存を導入する。
 
-監査は`npm audit --json`で再実行する。外側coordinatorのrunnerでは脆弱性0件を確認済み。
+監査は`npm audit --json`で再実行する。最新実走はCIとPR本文参照。
 
 ## 出典・権利
 
@@ -68,6 +68,8 @@ prepareはCIでは何もしない。ローカルhelperはcoordinatorが有効化
 
 最新実走の結果と画像確認状況はCIとPR本文を参照。検証対象はPython、unit、通常・スンダ・ロンボクのgeometry、typecheck/build、audit、PC/mobile実ChromiumのE2Eとする。`npm run verify`は所有previewのみを停止する。
 
-対象地域の範囲とE2E検査を更新した後は、上記コマンドで再build・verify・auditを行い、画像も開いて両候補海峡・候補線全体・可読性を確認する。[CG-05の導線と検証手順](features/scenario-switch.md)、[verify skill](.cursor/skills/verify-chizu-no-gyokan/SKILL.md)を参照。
+対象地域の範囲とE2E検査を更新した後は、上記コマンドで再build・verify・auditを行い、画像も開いて両候補海峡・候補線全体・可読性を確認する。[CG-02の詳細と資料対応](features/detail-evidence.md)、[CG-05の導線と検証手順](features/scenario-switch.md)、[verify skill](.cursor/skills/verify-chizu-no-gyokan/SKILL.md)を参照。
+
+CG-02の証拠は`artifacts/map-exploration/detail-*.png`。ブラウザ実走・画像確認・auditはcoordinator runnerで実行する。
 
 残ゲートはリモートCI、人間自由探索、実スクリーンリーダー音声（いずれも未実施）。自動検証・画像確認の合格だけで§17やMVP全体の受入完了とはしない。

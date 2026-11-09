@@ -4,6 +4,7 @@ export interface Source {
   title: string;
   url: string;
   consulted: string;
+  updated: string;
   period: string;
   usage: string;
   rights: string;
@@ -13,7 +14,8 @@ export const sourceRegistry = {
   naturalEarth: {
     title: 'Natural Earth Admin 0 Countries v5.1.2',
     url: 'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/v5.1.2/geojson/ne_50m_admin_0_countries.geojson',
-    consulted: '2026-11-09 JST（coordinator確認）', period: 'v5.1.2の小縮尺地理データ。現況の保証なし',
+    updated: '不明（版番号はv5.1.2）',
+    consulted: '2026-11-09 JST（利用条件を再確認。データ抽出はcoordinator確認）', period: 'v5.1.2の小縮尺地理データ。現況の保証なし',
     usage: '14か国の国境・海岸。geometryと国コード・日本語名だけを抽出。国名は地図の行間による表記。',
     rights: '全vector/rasterはpublic domain。変更・配布・商用利用可。Made with Natural Earth。de facto境界。',
     rightsUrl: 'https://www.naturalearthdata.com/about/terms-of-use/',
@@ -21,15 +23,17 @@ export const sourceRegistry = {
   eia: {
     title: 'EIA World Oil Transit Chokepoints',
     url: 'https://www.eia.gov/international/content/analysis/special_topics/World_Oil_Transit_Chokepoints/',
-    consulted: '2026-11-09 JST（coordinator確認）', period: '公開・更新 2026-03-03。原資料の表は2020〜1H25（本アプリでは不使用）',
+    updated: '2026-03-03',
+    consulted: '2026-11-09 JST（本文・利用条件を再確認）', period: '公開・更新 2026-03-03。原資料の表は2020〜1H25（本アプリでは不使用）',
     usage: 'Strait of Malacca節：インド洋と太平洋の接続、スンダ・ロンボク両海峡が代替経路に挙がることと、それらも狭窄部であること。日本語翻訳・要約：地図の行間。画像・図・AIS・統計は転載しない。',
     rights: 'EIA政府出版物はpublic domain。第三者資料・ロゴ・写真は別権利のため不使用。',
     rightsUrl: 'https://www.eia.gov/about/copyrights_reuse.php',
   },
   author: {
     title: '地図の行間：通常航路・候補航路・代表点の教材モデル', url: '#sources',
+    updated: '2026-11-09（教材作成日。地理的事実の更新日ではない）',
     consulted: '2026-11-09', period: '2026-11-09作成。通常時・仮定時の位置関係の説明用',
-    usage: '航路の点列と海峡・関連地点の代表座標、ラベル配置は著者作成。Natural EarthとEIAで地理的位置関係を参照。',
+    usage: '航路の点列と海峡・関連地点の代表座標、ラベル配置は著者作成。Natural EarthとEIAで地理的位置関係を参照。詳細の地域表現・関連づけ・条件ごとの意味・欠損の説明は地図の行間が作成。',
     rights: '著者作成の航路・代表点・ラベル配置の再利用ライセンスは未設定。再利用は別途確認が必要。参照資料のpublic domainはこれら自作物には適用されない。実際の船舶航跡・検証済み航行線ではない。航行案内には使えない。',
     rightsUrl: '#sources',
   },

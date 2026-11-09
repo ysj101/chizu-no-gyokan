@@ -1,3 +1,5 @@
+import { restoredMapState } from './note-restore';
+import type { DiscoveryNote, NoteMapState, Result } from './notes';
 import { mountNotes } from './notes-panel';
 import { detailItems } from './details';
 import { renderDetailPanel } from './detail-panel';
@@ -16,7 +18,7 @@ function element<T extends HTMLElement>(id: string, constructor: { new(...args: 
 const mapElement = element('map', HTMLDivElement);
 const statusElement = element('load-status', HTMLParagraphElement);
 const retry = element('retry', HTMLButtonElement);
-let selectedFeatureId: SelectedFeatureId = 'malacca';
+let selectedFeatureId: SelectedFeatureId | null = 'malacca';
 let scenario: Scenario = { kind: 'normal' };
 const layerVisibility: LayerVisibility = { borders: true, routes: true, points: true };
 let loadState: LoadState = { status: 'loading' };
@@ -81,7 +83,15 @@ function sourceText(ids: readonly SourceId[]): void {
     target.append(link(source.title, source.url));
   });
 }
-function selectFeature(id: SelectedFeatureId, reveal = false): void {
+function selectFeature(id: SelectedFeatureId | null, reveal = false): void {
+  if (id === null) {
+    selectedFeatureId = null;
+    element('selected-name', HTMLHeadingElement).textContent = '選択なし';
+    for (const key of ['selected-kind', 'selected-description', 'selected-scenario', 'selected-limit', 'selected-source', 'detail-fields', 'detail-evidence']) {
+      element(key, HTMLElement).replaceChildren();
+    }
+    updateSelectedVisibility(); updateSelectionAppearance(); return;
+  }
   const feature = features.find(item => item.id === id);
   if (!feature) return;
   selectedFeatureId = feature.id;
@@ -234,7 +244,7 @@ async function loadGeography(): Promise<void> {
 function renderScenario(): void {
   const definition = scenarioDefinition(scenario);
   const closed = scenario.kind === 'malacca-closed-assumption';
-  selectedFeatureId = selectionForScenario(selectedFeatureId, scenario);
+  if (selectedFeatureId !== null) selectedFeatureId = selectionForScenario(selectedFeatureId, scenario);
   for (const id of ['current-condition', 'map-condition']) element(id, HTMLElement).textContent = `現在：${definition.name}`;
   element('scenario-normal', HTMLButtonElement).setAttribute('aria-pressed', String(!closed));
   element('scenario-closed', HTMLButtonElement).setAttribute('aria-pressed', String(closed));
@@ -310,10 +320,32 @@ new ResizeObserver(() => {
 renderScenario();
 void loadGeography();
 
-mountNotes(element('notes', HTMLElement), () => {
+function snapshot(): NoteMapState {
   const center = map.getCenter();
   return {
     scenarioId: scenario.kind, layers: { ...layerVisibility }, selectedFeatureId,
     viewport: { longitude: center.lng, latitude: center.lat, zoom: map.getZoom() },
   };
-});
+}
+
+// One synchronous application, using the existing rendering paths and map instance.
+function applyNote(note: DiscoveryNote): Result<{ adjusted: boolean }> {
+  const zoom = Math.max(map.getMinZoom(), Math.min(map.getMaxZoom(), note.mapState.viewport.zoom));
+  const configured = map.options.maxBounds!;
+  const bounds = configured instanceof L.LatLngBounds ? configured : L.latLngBounds(configured);
+  const half = map.getSize().divideBy(2);
+  const sw = map.unproject(map.project(bounds.getSouthWest(), zoom).add([half.x, -half.y]), zoom);
+  const ne = map.unproject(map.project(bounds.getNorthEast(), zoom).add([-half.x, half.y]), zoom);
+  const result = restoredMapState(note.mapState, snapshot(), {
+    west: sw.lng, east: ne.lng, south: sw.lat, north: ne.lat, minZoom: map.getMinZoom(), maxZoom: map.getMaxZoom(),
+  });
+  if (!result.ok) return result;
+  const state = result.value.state;
+  scenario = { kind: state.scenarioId };
+  Object.assign(layerVisibility, state.layers);
+  selectedFeatureId = state.selectedFeatureId;
+  renderScenario();
+  map.setView([state.viewport.latitude, state.viewport.longitude], state.viewport.zoom, { animate: false });
+  return { ok: true, value: { adjusted: result.value.adjusted } };
+}
+mountNotes(element('notes', HTMLElement), snapshot, applyNote);

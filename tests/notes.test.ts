@@ -1,3 +1,4 @@
+import { restoredMapState } from '../src/note-restore';
 import { describe, expect, it } from 'vitest';
 import { deleteNote, loadNotes, newestFirst, notePresentation, notesKey, parseNotes, saveNote, serializeNotes, validateMapState, validateNote } from '../src/notes';
 import type { DiscoveryNote, NoteMapState, NoteStorage } from '../src/notes';
@@ -104,5 +105,37 @@ describe('storage failures and deletion', () => {
     expect(deleteNote(storage, 'missing').ok).toBe(false);
     expect(deleteNote(storage, 'one').ok).toBe(true); expect(values(storage).notes).toEqual([note('two')]);
     expect(deleteNote(storage, 'two').ok).toBe(true); expect(values(storage).notes).toEqual([]);
+  });
+});
+
+describe('CG-06 complete replacement of map state', () => {
+  const limits = { west: 78, east: 130, south: -25, north: 30, minZoom: 4, maxZoom: 7 };
+  for (const scenarioId of ['normal', 'malacca-closed-assumption'] as const) {
+    for (let bits = 0; bits < 8; bits++) {
+      for (const selected of [null, scenarioId === 'normal' ? 'singapore' : 'lombok-route'] as const) {
+        it(`restores ${scenarioId}/${bits}/${selected} without retaining current fields`, () => {
+          const saved = { ...state(scenarioId), layers: { borders: Boolean(bits & 4), routes: Boolean(bits & 2), points: Boolean(bits & 1) }, selectedFeatureId: selected };
+          const current = { ...state(), selectedFeatureId: 'penang' as const, viewport: { longitude: 90, latitude: 10, zoom: 6 } };
+          const before = JSON.stringify([saved, current]);
+          const result = restoredMapState(saved, current, limits);
+          expect(result).toEqual({ ok: true, value: { state: saved, adjusted: false } });
+          expect(JSON.stringify([saved, current])).toBe(before);
+          if (result.ok) {
+            result.value.state.layers.points = !saved.layers.points;
+            expect(saved.layers.points).toBe(Boolean(bits & 1));
+          }
+        });
+      }
+    }
+  }
+  it('clamps geographic viewport to the supplied current map bounds', () => {
+    const saved = { ...state(), viewport: { longitude: 170, latitude: -80, zoom: 7 } };
+    expect(restoredMapState(saved, state(), limits)).toEqual({ ok: true, value: {
+      state: { ...saved, viewport: { longitude: 130, latitude: -25, zoom: 7 } }, adjusted: true,
+    } });
+    expect(restoredMapState(state(), state(), { ...limits, minZoom: 5, maxZoom: 6 })).toMatchObject({ ok: true, value: { state: { viewport: { zoom: 5 } }, adjusted: true } });
+  });
+  it.each([null, {}, { ...state(), selectedFeatureId: undefined }, { ...state(), selectedFeatureId: 'lombok' }, { ...state(), layers: { routes: true } }, { ...state(), viewport: { longitude: Infinity, latitude: 2, zoom: 4 } }, { ...state(), viewport: { longitude: 100, latitude: 2, zoom: 8 } }])('rejects incomplete or invalid state without filling from current: %j', saved => {
+    expect(restoredMapState(saved, state(), limits).ok).toBe(false);
   });
 });

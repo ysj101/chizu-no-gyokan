@@ -43,7 +43,7 @@ port 4173のHTTPを読み取り、`/`のタイトル文字列と`/data/countries
 - `getByRole('button', { name: '＋ 拡大', exact: true })`、`− 縮小`、`対象地域に戻す`。
 - `getByRole('button', { name: '地図上のマラッカ海峡を選択', exact: true })`。海峡/航路/関連地点それぞれを選択しheadingと一覧のaria-pressedを確認。
 - `getByRole('button', { name: '通常主要航路を選択', exact: true })`をEnter操作。選択は単一、再fetch/ページ遷移なし。
-- モバイルでは`タッチ移動を開始`→実タッチドラッグ→`タッチ移動を終了`。終了後のページスクロール、通常フローの説明と選択時の説明へのスクロールを確かめる。
+- モバイルでは`タッチで地図を動かす`（aria-pressed）をオン→実タッチドラッグ→オフ。オフ後のページスクロール、固定地図の直下へ選択説明がスクロールすること、`#map-hint`の文言を確かめる。
 - `getByText('出典・対象時点・利用条件', { exact: true })`で資料を展開。Natural Earth/EIAのpublic domain、更新日、翻訳主体、原文、モデル・代表点・未収録を確認。著者作成の航路・代表点・ラベル配置は再利用ライセンス未設定／別途確認であること、footerのNOTICEにLeafletのBSD-2-Clause全文があることも確認。
 - `**/data/countries.json`をHTTP 503 / 不正JSON / 不正geometryへ差し替えて、statusの案内と`地理データを再読み込み`による回復を検証。
 

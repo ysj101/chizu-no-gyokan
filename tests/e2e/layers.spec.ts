@@ -177,7 +177,7 @@ test('hidden selections retain evidence and return as current candidates; explor
   await scenarioButton(page, false).click();
   await expect(page.locator('#selected-name')).toHaveText('マラッカ海峡');
   await expect(page.locator('#selected-visibility')).toBeHidden();
-  if (info.project.name === 'mobile') await page.getByRole('button', { name: 'タッチ移動を開始', exact: true }).tap();
+  if (info.project.name === 'mobile') await page.getByRole('button', { name: 'タッチで地図を動かす', exact: true }).tap();
   const position = await mapPosition(page);
   await drag(page, info.project.name === 'mobile');
   await expect.poll(async () => Math.abs((await mapPosition(page)).x - position.x)).toBeGreaterThan(20);

@@ -1,6 +1,6 @@
 ---
 name: verify-chizu-no-gyokan
-description: CG-01地図探索・CG-05条件実験・CG-02詳細・CG-03レイヤー切替・CG-04発見メモをbuild済みpreviewで起動確認し、PC・モバイルの操作とHTTP失敗をPlaywrightで検証して証拠を保存する。
+description: CG-01地図探索・CG-05条件実験・CG-02詳細・CG-03レイヤー切替・CG-04発見メモ・CG-06復元をbuild済みpreviewで起動確認し、PC・モバイルの操作とHTTP失敗をPlaywrightで検証して証拠を保存する。
 ---
 
 # Verify CG-01 map exploration / CG-05 scenario switch
@@ -99,7 +99,7 @@ PC/mobileで通常対象と仮定時の追加対象を選択し、`getByRole('re
 [CG-04 feature map](../../../features/map-notes.md)と`tests/e2e/notes.spec.ts`を参照。既存の一括`npm run verify`に含む。実行前に`npm run typecheck`、`npm test`、`npm run test:privacy`、`npm run test:geometry`、`npm run build`を実行する。最新の実走結果はCIとPR本文を参照。
 
 1. PC/mobileで`getByRole('region', { name: '発見メモ', exact: true })`へ移動。空状態と、このブラウザ内のみ・自動同期なし・アカウント不要・外部送信なしの説明を読む。`getByRole('textbox', { name: 'メモ本文', exact: true })`へ入力し、「メモを保存」を操作する。
-2. 異なるシナリオ・レイヤー・選択で複数件保存し、新しい順で本文・JST日時・条件・全レイヤー・選択が対応することを読む。保存後に地図を変更しても一覧は不変。保存されたviewportも記録する。選択なしと必須状態の欠落はfixtureとunitで区別し、不完全な記録は正常扱いにしない。地図状態を変更するメモのボタンは表示しない。
+2. 異なるシナリオ・レイヤー・選択で複数件保存し、新しい順で本文・JST日時・条件・全レイヤー・選択が対応することを読む。保存後に地図を変更しても一覧は不変。保存されたviewportも記録する。選択なしと必須状態の欠落はfixtureとunitで区別し、不完全な記録は正常扱いにしない。CG-06の「このメモの地図状態に戻す」だけを意図的に追加し、ほかの対象外UIの除外条件を維持する。
 3. 再読込して全内容が保持されることを確認。本文と日時で識別できる削除ボタンで対象を削除し、次／前の削除ボタン、空なら入力欄へフォーカスが移ることを確認する。再読込して削除したものだけが消えていることを確かめる。
 4. 空白だけの本文で理由と入力欄へのフォーカスを確認。`page.addInitScript`で`Storage.prototype.setItem`を例外にし、保存失敗・入力保持・一覧不追加を検査する。削除失敗時は既存メモを保持する。localStorageアクセス拒否と不正記録の件数も検査する。
 5. HTML文字列を入力・保存・再読込。本文がtextのままで、dialog・onerror実行・img/script生成がないことを確認する。全操作中のネットワーク要求を記録し、同一originの静的アセットと既存データだけで、メモ本文・関連状態をURLや要求本文に含めないことを確認する。
@@ -107,3 +107,18 @@ PC/mobileで通常対象と仮定時の追加対象を選択し、`getByRole('re
 7. `artifacts/map-exploration/notes-{desktop|mobile}-{empty|multiple|save-failure|html|keyboard}.png`を保存して実際に開き、本文と条件の対応、文字の折返し、狭い画面のスクロール、キーボードフォーカスを確認する。
 
 待受がEPERM、registryがENOTFOUNDの環境では回避せず、coordinator runnerでverifyとauditを実行する。最新の実走結果はCIとPR本文を参照。人間の自由探索と実際のスクリーンリーダー確認は未実施。自動操作で代用せず、保存内容と当時の条件を一覧から理解できるかを別に観察して記録する。
+
+
+## CG-06 メモからの地図状態復元のDrive
+
+[CG-06 feature map](../../../features/note-restore.md)と`tests/e2e/restore.spec.ts`を参照。既存の一括verifyに含む。typecheck、unit、privacy、geometry、buildの後、PC/mobileで以下を実行する。最新の実走結果はCIとPR本文を参照。
+
+1. 実UIで両シナリオ・全レイヤー組合せ・異なる選択のメモを保存し、再読込する。地図を別条件・別レイヤー・別選択・別viewportへ動かす。各件の本文と日時を名前に含む「このメモの地図状態に戻す」を順次押し、前の復元が混在しないことを確認する。
+2. 現在条件、レイヤートグルのaria-pressed、visible-layers、凡例、地図の線種・強調、選択aria、最小説明、全詳細・根拠・欠損を保存時と照合する。仮定時だけの候補、非表示対象の選択と非表示理由、null選択時の説明・詳細・強調解除を確認する。
+3. 保存時の中心・zoomへ戻ることと、範囲外の有効な中心が既存制約内へ調整され文字で案内されることを確認する。欠けた記録・不正zoomは推測補完せず一覧と復元ボタンから除外する。
+4. 復元後にパン・zoom・選択・条件往復・レイヤー切替を行い新しいメモを保存。元メモの全内容が不変、新メモの状態が探索内容に対応し、再読込後も新メモを復元できることを確認する。入力中本文は復元でも保持する。
+5. 表示後にstorageの記録を削除・破損・重複化、不正JSONまたはアクセス拒否にし、押した際の失敗表示と地図不変を確認する。ネットワーク記録は同一originの静的アセットと既存データのGETだけで、本文・関連状態を含めない。復元による再読込・再fetchがないことを確認する。
+6. Tab／Shift+TabとEnter／Space、reduced motionで復元する。ボタンの名前・フォーカス表示と保持、live regionの日時・シナリオ・全レイヤー・選択の通知を照合する。削除後の次／前の削除ボタン、空なら本文欄へのフォーカスも回帰確認する。
+7. `restore-{desktop|mobile}-{before|assumption-hidden-selection|no-selection|new-note|failure-*|keyboard}.png`を`artifacts/map-exploration/`へ保存して開く。PC/mobileの可読性、凡例と選択・詳細の一致、スクロールとキーボードフォーカスを確認する。
+
+最新の実走結果はCIとPR本文を参照。人間の自由探索と実際のスクリーンリーダー確認は未実施。自動操作で代用せず、保存から再訪・探索継続・新規保存までの理解と操作を別に観察して記録する。

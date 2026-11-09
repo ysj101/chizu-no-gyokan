@@ -62,7 +62,9 @@ test('snapshots keep scenario, all layers, selection and viewport through change
   await expect(page.locator('#scenario-normal')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('#layer-routes')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('#selected-name')).toHaveText('マラッカ海峡');
-  await expect(notes(page).getByRole('button', { name: /復元|戻す/ })).toHaveCount(0);
+  // CG-06 adds only these restoration actions; keep excluding any other restoration UI.
+  await expect(notes(page).getByRole('button', { name: /このメモの地図状態に戻す$/ })).toHaveCount(2);
+  await expect(notes(page).getByRole('button', { name: /復元|戻す/ })).toHaveCount(2);
   const deleteSecond = notes(page).getByRole('button', { name: /CG04二.*のメモを削除/ });
   await deleteSecond.click();
   await expect(page.locator('#notes-status')).toHaveText('メモを削除しました。');
@@ -124,7 +126,7 @@ test('HTML remains literal text after save and reload; keyboard flow and reduced
   await page.reload(); await expect(items(page).first().locator('.note-body')).toHaveText(html);
   await expect(notes(page).locator('img, script')).toHaveCount(0);
   expect(await page.evaluate(() => 'notesExecuted' in window)).toBe(false); expect(dialogs).toBe(0);
-  await input(page).focus(); await page.keyboard.press('Tab'); await page.keyboard.press('Tab');
+  await input(page).focus(); await page.keyboard.press('Tab'); await page.keyboard.press('Tab'); await page.keyboard.press('Tab');
   const remove = notes(page).getByRole('button', { name: /のメモを削除/ }); await expect(remove).toBeFocused();
   expect(await remove.evaluate(el => getComputedStyle(el).outlineStyle)).not.toBe('none');
   expect(await page.evaluate(() => matchMedia('(prefers-reduced-motion: reduce)').matches)).toBe(true);

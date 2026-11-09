@@ -31,13 +31,14 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) 340px; }
 .key.point { color: #146d78; }
 aside { border-left: 1px solid #cad7d5; padding: 24px; }
 h1 { font: 600 27px/1.5 var(--serif); margin: 8px 0 16px; }
-.kind, #selected-related, #related-status { font-size: 12px; color: #48666b; }
-#selected-related .related-title { margin: 10px 0 2px; font-weight: 600; }
-#selected-related ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
-#selected-related li { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; }
-#selected-related button { min-height: 36px; padding: 2px 10px; font-size: 13px; }
-#selected-related button.unavailable { color: #6b7f82; border-style: dashed; background: #f3f6f5; }
-#related-status:empty { display: none; }
+.kind, .related-links, #related-status, #perspective-focus-status { font-size: 12px; color: #48666b; }
+/* Lists of selectable places (related places, a view's focus) share one look. */
+.related-links .related-title { margin: 10px 0 2px; font-weight: 600; }
+.related-links ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.related-links li { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; }
+.related-links button { min-height: 36px; padding: 2px 10px; font-size: 13px; }
+.related-links button.unavailable { color: #6b7f82; border-style: dashed; background: #f3f6f5; }
+#related-status:empty, #perspective-focus-status:empty { display: none; }
 .feature-icon[data-related-preview] .feature-symbol { outline: 3px dashed #146d78; outline-offset: 3px; border-radius: 50%; }
 path[data-related-preview] { stroke-width: 6; }
 .kind { margin: 0; }
@@ -107,6 +108,17 @@ button.primary { background: #146d78; border-color: #146d78; color: #fafcfa; fon
 button.primary:hover { background: #0f5660; }
 .text-button { min-height: 32px; margin-bottom: 8px; padding: 2px 8px; border: none; background: none; font-size: 13px; }
 .scenario-controls { margin-bottom: 12px; }
+.perspective-controls { margin: 0 0 12px; }
+#perspective-view { margin-bottom: 16px; padding: 12px 14px; border: 1px solid #cad7d5; border-left: 4px solid #c29a3a; border-radius: 6px; background: #fdf8ee; }
+#perspective-title { font: 600 18px/1.4 var(--serif); margin: 0 0 6px; }
+#perspective-meaning { margin: 0 0 8px; font-size: 14px; }
+#perspective-statements { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; font-size: 13px; }
+#perspective-statements .statement-source { margin: 2px 0 0; font-size: 11px; color: #48666b; }
+#perspective-focus ul { display: flex; gap: 6px; }
+#perspective-view > .note { margin: 10px 0 0; font-size: 12px; border-color: #c29a3a; }
+.focus-note { margin-left: 6px; font-size: 11px; color: #8a6a1e; }
+.feature-icon[data-perspective-focus] .feature-name { background: #fff3d6; border: 1px solid #c29a3a; }
+path[data-perspective-focus] { stroke-width: 5; }
 .scenario-controls [role='group'] { display: flex; flex-wrap: wrap; gap: 8px; }
 .scenario-controls p { margin: 6px 0; font-size: 12px; }
 #scenario-summary { border-left: 3px solid #844a72; padding-left: 10px; font-size: 12px; }

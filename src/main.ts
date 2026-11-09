@@ -2,8 +2,10 @@ import { restoredMapState } from './note-restore';
 import type { DiscoveryNote, NoteMapState, Result } from './notes';
 import { mountNoteDrawer, mountNotes } from './notes-panel';
 import { describeMapState } from './notes';
-import { detailView } from './details';
-import { renderDetail, tagElement, textElement } from './detail-panel';
+import { detailView, relatedLink } from './details';
+import { renderDetail, renderPerspectiveContent, renderRelated, tagElement, textElement } from './detail-panel';
+import { perspectiveIds, perspectives } from './perspectives';
+import type { PerspectiveId } from './perspectives';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './style.css';
@@ -23,6 +25,8 @@ let selectedFeatureId: SelectedFeatureId | null = 'malacca';
 let scenario: Scenario = { kind: 'normal' };
 const layerVisibility: LayerVisibility = { borders: true, routes: true, points: true };
 let loadState: LoadState = { status: 'loading' };
+// Page-local like the scenario: a country's view is not saved with notes.
+let perspective: PerspectiveId | null = null;
 // Re-renders the note drawer's "state to be saved" line; bound once the drawer is mounted below.
 let refreshNoteContext: () => void = () => {};
 // Include both candidate straits and complete authored routes even in normal mode.
@@ -96,11 +100,8 @@ function selectFeature(id: SelectedFeatureId | null, reveal = false): void {
     scenario: element('selected-scenario', HTMLParagraphElement), related: element('selected-related', HTMLDivElement),
     relatedStatus: element('related-status', HTMLParagraphElement),
     more: element('detail-fields', HTMLDivElement), evidence: element('detail-evidence', HTMLDivElement),
-  }, detailView(feature.id, scenario), {
-    // Related links also bring the target into view; list and map clicks leave the view alone.
-    select: target => { selectFeature(target, true); revealOnMap(target); },
-    preview: previewOnMap,
-  });
+  // Related links also bring the target into view; list and map clicks leave the view alone.
+  }, detailView(feature.id, scenario), detailActions);
   if (reveal && matchMedia('(max-width: 760px)').matches) {
     // On phones the map is pinned; #selection's scroll-margin-top keeps the explanation below it.
     element('selection', HTMLElement).scrollIntoView({ block: 'start', behavior: 'instant' });
@@ -287,7 +288,7 @@ function renderScenario(): void {
   if (closed) showIntro(false);
   clearScenarioLayers();
   if (loadState.status === 'ready') for (const feature of visibleFeatures()) marker(feature);
-  renderFeatureList(); selectFeature(selectedFeatureId); renderLayerVisibility();
+  renderFeatureList(); selectFeature(selectedFeatureId); renderLayerVisibility(); renderPerspectiveFocus();
 }
 function renderLayerVisibility(): void {
   const presentation = layerPresentation(layerVisibility, scenario);
@@ -324,6 +325,37 @@ for (const id of layerIds) {
   element(`layer-${id}`, HTMLButtonElement).addEventListener('click', () => {
     layerVisibility[id] = !layerVisibility[id]; renderLayerVisibility();
   });
+}
+// The country view. Its text depends only on the chosen country; the focus list and the map marks also
+// depend on the current condition, so they are re-rendered with the scenario.
+const detailActions = { select: (id: SelectedFeatureId) => { selectFeature(id, true); revealOnMap(id); }, preview: previewOnMap };
+const perspectiveButtons = [null, ...perspectiveIds].map(id => [id, element(`perspective-${id ?? 'none'}`, HTMLButtonElement)] as const);
+const perspectivePanel = element('perspective-view', HTMLElement);
+function renderPerspectiveText(): void {
+  for (const [id, button] of perspectiveButtons) button.setAttribute('aria-pressed', String(id === perspective));
+  perspectivePanel.hidden = perspective === null;
+  if (perspective === null) return;
+  renderPerspectiveContent({
+    title: element('perspective-title', HTMLHeadingElement), meaning: element('perspective-meaning', HTMLParagraphElement),
+    statements: element('perspective-statements', HTMLUListElement),
+  }, perspectives[perspective]);
+}
+function renderPerspectiveFocus(): void {
+  const focus = new Set(perspective === null ? [] : perspectives[perspective].focus);
+  if (perspective !== null) {
+    renderRelated(element('perspective-focus', HTMLElement), element('perspective-focus-status', HTMLParagraphElement), '注目する対象',
+      [...focus].map(id => relatedLink(id, '', scenario)), detailActions);
+  }
+  markLayers('data-perspective-focus', focus);
+  for (const button of featureList.querySelectorAll<HTMLButtonElement>('[data-feature-id]')) {
+    const note = button.querySelector('.focus-note');
+    const wanted = focus.has(button.dataset.featureId as SelectedFeatureId);
+    if (wanted && !note) button.append(textElement('span', '（視点の焦点）', 'focus-note'));
+    if (!wanted && note) note.remove();
+  }
+}
+for (const [id, button] of perspectiveButtons) {
+  button.addEventListener('click', () => { perspective = id; renderPerspectiveText(); renderPerspectiveFocus(); });
 }
 function setScenario(kind: Scenario['kind']): void {
   const from = scenario; scenario = { kind }; renderScenario(); highlightChanges(from);

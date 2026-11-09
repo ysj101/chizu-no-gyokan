@@ -27,6 +27,16 @@
           </div>
           <div id="scenario-summary" role="status" aria-live="polite"></div>
         </section>
+        <section class="layer-controls perspective-controls" aria-label="国ごとの視点">
+          <div role="group" aria-label="国ごとの視点（教材の例）">
+            <span class="layer-caption" aria-hidden="true">視点</span>
+            <button id="perspective-none" aria-pressed="true">なし</button>
+            <button id="perspective-japan" aria-pressed="false">日本</button>
+            <button id="perspective-singapore" aria-pressed="false">シンガポール</button>
+            <button id="perspective-china" aria-pressed="false">中国</button>
+            <button id="perspective-indonesia" aria-pressed="false">インドネシア</button>
+          </div>
+        </section>
         <div class="map-toolbar" role="group" aria-label="地図操作">
           <button id="zoom-in">＋ 拡大</button>
           <button id="zoom-out">− 縮小</button>
@@ -64,13 +74,21 @@
         <p class="attribution">Made with <a href="https://www.naturalearthdata.com/">Natural Earth</a> · v5.1.2 / 1:50m</p>
       </section>
       <aside aria-label="対象の説明と資料">
+        <section id="perspective-view" aria-labelledby="perspective-title" hidden>
+          <h2 id="perspective-title"></h2>
+          <p id="perspective-meaning"></p>
+          <ul id="perspective-statements"></ul>
+          <div id="perspective-focus" class="related-links"></div>
+          <p id="perspective-focus-status" role="status" aria-live="polite"></p>
+          <p class="note">国の視点は教材の例です。地理と資料の記述から読み取れる関係だけを示し、国家の意図や行動を地理だけで断定しません。</p>
+        </section>
         <section id="selection" aria-live="polite" aria-atomic="true" tabindex="-1" aria-labelledby="selected-name">
           <p id="selected-kind" class="kind"></p>
           <h1 id="selected-name"></h1>
           <p id="selected-description"></p>
           <p id="selected-why"></p>
           <p id="selected-scenario" class="note"></p>
-          <div id="selected-related"></div>
+          <div id="selected-related" class="related-links"></div>
           <p id="related-status" role="status" aria-live="polite"></p>
         </section>
         <section id="note-drawer" aria-label="発見メモの入力">

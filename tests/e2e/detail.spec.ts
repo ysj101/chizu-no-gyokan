@@ -28,7 +28,7 @@ for (const scenario of [{ kind: 'normal' }, { kind: 'malacca-closed-assumption' 
       // Tier one: name, overview, why it matters, current condition and related places, with a short tag each.
       await expect(selection.locator('#selected-why')).toContainText('なぜ重要か：');
       await expect(selection.locator('#selected-why .tag')).toHaveText(['malacca', 'sunda', 'lombok'].includes(id) ? '事実' : 'モデル');
-      await expect(selection.locator('#selected-related')).toContainText('関連する場所：');
+      await expect(selection.locator('#selected-related .related-title')).toHaveText('関連する場所');
       await expect(selection.locator('#selected-scenario')).toContainText(scenarioExplanation(id, scenario));
       await expect(selection.locator('#selected-scenario .tag')).toHaveText(scenario.kind === 'normal' ? 'モデル' : '仮定');
       await expect(selection.locator('#selected-scenario .tag')).toHaveAttribute('title', scenario.kind === 'normal' ? '説明・推論（モデル上の説明）' : '仮定（シナリオ上の仮定）');
@@ -52,8 +52,9 @@ for (const scenario of [{ kind: 'normal' }, { kind: 'malacca-closed-assumption' 
         await expect(panel.getByText('更新日：2026-03-03', { exact: true })).toBeVisible();
         await expect(panel.getByText(/使用範囲：Strait of Malacca節/)).toContainText('日本語翻訳・要約：地図の行間');
       }
-      // Related targets are plain text; only evidence links appear in the panel.
+      // Tiers two and three hold no controls; related places are buttons in tier one.
       await expect(panel.getByRole('button')).toHaveCount(0);
+      await expect(selection.locator('#selected-related button').first()).toBeVisible();
       await expect(page.locator('#detail-more')).toHaveAttribute('open', '');
       await expect(page.locator('#detail-sources')).toHaveAttribute('open', '');
     }

@@ -116,6 +116,18 @@ describe('selected detail evidence', () => {
       expect(view.overview).toMatchObject({ label: '概要', text: feature.description, sources: feature.sources });
       expect(view.overview.classification).toBe(feature.classification === 'geographic-fact' ? 'fact' : 'explanation');
       expect(view.why.label).toBe('なぜ重要か'); expect(view.related.label).toBe('関連する場所'); expect(view.scenario.label).toBe('現在の条件での意味');
+      // Related places are ids with a reason; availability follows the condition, never the other way round.
+      expect(view.relatedLinks.length).toBeGreaterThan(0);
+      for (const link of view.relatedLinks) {
+        expect(link.id).not.toBe(id);
+        expect(features.some(feature => feature.id === link.id)).toBe(true);
+        expect(link.reason.length).toBeGreaterThan(0);
+        expect(link.available).toBe(scenarioDefinition(scenario).featureIds.includes(link.id));
+        expect(link.shownIn.length).toBeGreaterThan(0);
+        expect(link.note === '').toBe(link.available);
+        expect(view.related.status === 'recorded' && view.related.text).toContain(link.name);
+      }
+      expect(new Set(view.relatedLinks.map(link => link.id)).size).toBe(view.relatedLinks.length);
       const labels = view.more.map(item => item.label);
       expect(labels.slice(0, 2)).toEqual(['位置（地域）', '注意事項']);
       expect(labels.at(-1)).toBe('この教材では扱わないデータ');

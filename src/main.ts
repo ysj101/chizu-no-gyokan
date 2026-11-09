@@ -6,7 +6,7 @@ import { renderDetail, tagElement, textElement } from './detail-panel';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './style.css';
-import { features, labels } from './content';
+import { featureById, features, labels } from './content';
 import { parseCountries, sourceRegistry, scenarioDefinition, selectionForScenario, routeStyles, layerIds, layerPresentation, featureLayer, hiddenFeatureMessage, hiddenLayerReason, featureSymbol, featureRole, changedFeatureIds, changeLabels } from './domain';
 import type { ExplorationFeature, LoadState, SelectedFeatureId, Scenario, LayerVisibility } from './domain';
 
@@ -78,28 +78,41 @@ function selectFeature(id: SelectedFeatureId | null, reveal = false): void {
   if (id === null) {
     selectedFeatureId = null;
     element('selected-name', HTMLHeadingElement).textContent = '選択なし';
-    for (const key of ['selected-kind', 'selected-description', 'selected-why', 'selected-scenario', 'selected-related', 'detail-fields', 'detail-evidence']) {
+    for (const key of ['selected-kind', 'selected-description', 'selected-why', 'selected-scenario', 'selected-related', 'related-status', 'detail-fields', 'detail-evidence']) {
       element(key, HTMLElement).replaceChildren();
     }
     updateSelectedVisibility(); updateSelectionAppearance(); return;
   }
-  const feature = features.find(item => item.id === id);
-  if (!feature) return;
+  const feature = featureById(id);
   selectedFeatureId = feature.id;
   element('selected-name', HTMLHeadingElement).textContent = feature.name;
   element('selected-kind', HTMLParagraphElement).textContent = feature.classification === 'teaching-model'
     ? '航路 / モデル上の説明' : `${feature.kind === 'strait' ? '海峡' : '関連地点'} / 地理的事実（位置は代表点）`;
   renderDetail({
     description: element('selected-description', HTMLParagraphElement), why: element('selected-why', HTMLParagraphElement),
-    scenario: element('selected-scenario', HTMLParagraphElement), related: element('selected-related', HTMLParagraphElement),
+    scenario: element('selected-scenario', HTMLParagraphElement), related: element('selected-related', HTMLDivElement),
+    relatedStatus: element('related-status', HTMLParagraphElement),
     more: element('detail-fields', HTMLDivElement), evidence: element('detail-evidence', HTMLDivElement),
-  }, detailView(feature.id, scenario));
+  }, detailView(feature.id, scenario), {
+    // Related links also bring the target into view; list and map clicks leave the view alone.
+    select: target => { selectFeature(target, true); revealOnMap(target); },
+    preview: previewOnMap,
+  });
   if (reveal && matchMedia('(max-width: 760px)').matches) {
     element('selection', HTMLElement).scrollIntoView({ block: 'start', behavior: 'instant' });
   }
   updateSelectedVisibility();
   updateSelectionAppearance();
 }
+// Bring a selected target into view with the smallest pan; the condition and zoom stay as they are.
+// Points need room for their callout (right and below the anchor); a line counts as visible when it crosses the view.
+function revealOnMap(id: SelectedFeatureId): void {
+  const layer = selectionLayers.get(id);
+  if (layer instanceof L.Marker) map.panInside(layer.getLatLng(), { paddingTopLeft: [70, 70], paddingBottomRight: [200, 90], animate: false });
+  else if (layer instanceof L.Polyline && !map.getBounds().intersects(layer.getBounds())) map.panTo(layer.getBounds().getCenter(), { animate: false });
+}
+// A quiet "look here" mark on the map while a related place is focused or hovered.
+function previewOnMap(id: SelectedFeatureId | null): void { markLayers('data-related-preview', new Set(id === null ? [] : [id])); }
 function updateSelectedVisibility(): void {
   const feature = features.find(item => item.id === selectedFeatureId);
   const message = feature ? hiddenFeatureMessage(feature, layerVisibility) : '';
@@ -224,8 +237,16 @@ let highlightTimer: ReturnType<typeof setTimeout> | undefined;
 function highlightChanges(from: Scenario): void {
   if (from.kind === scenario.kind) return;
   clearTimeout(highlightTimer);
-  for (const id of changedFeatureIds(from, scenario, features)) selectionLayers.get(id)?.getElement()?.setAttribute('data-just-changed', '');
-  highlightTimer = setTimeout(() => { for (const layer of selectionLayers.values()) layer.getElement()?.removeAttribute('data-just-changed'); }, 2500);
+  markLayers('data-just-changed', new Set(changedFeatureIds(from, scenario, features)));
+  highlightTimer = setTimeout(() => markLayers('data-just-changed', new Set()), 2500);
+}
+// Set a transient attribute on exactly these features' map elements and clear it elsewhere.
+function markLayers(attribute: string, ids: ReadonlySet<SelectedFeatureId>): void {
+  for (const [featureId, layer] of selectionLayers) {
+    const target = layer.getElement();
+    if (!target) continue;
+    if (ids.has(featureId)) target.setAttribute(attribute, ''); else target.removeAttribute(attribute);
+  }
 }
 async function loadGeography(): Promise<void> {
   loadState = { status: 'loading' }; showState();

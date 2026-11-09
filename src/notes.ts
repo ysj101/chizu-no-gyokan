@@ -1,4 +1,4 @@
-import { features } from './content';
+import { featureById } from './content';
 import { layerIds, layerStatusLine, scenarios } from './domain';
 import type { LayerVisibility, ScenarioId, SelectedFeatureId } from './domain';
 
@@ -98,6 +98,6 @@ export function notePresentation(note: DiscoveryNote) {
   return {
     date: `${date} JST`, scenario: `保存時の条件：${scenarios[state.scenarioId].name}`,
     layers: layerStatusLine(state.layers),
-    selection: `選択地点：${state.selectedFeatureId === null ? '選択なし' : features.find(feature => feature.id === state.selectedFeatureId)?.name}`,
+    selection: `選択地点：${state.selectedFeatureId === null ? '選択なし' : featureById(state.selectedFeatureId).name}`,
   };
 }

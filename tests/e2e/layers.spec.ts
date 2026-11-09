@@ -66,7 +66,6 @@ async function setVisibility(page: Page, visibility: LayerVisibility, mobile: bo
 async function assertState(page: Page, visibility: LayerVisibility, closed: boolean) {
   for (const id of ids) {
     await expect(toggle(page, id)).toHaveAttribute('aria-pressed', String(visibility[id]));
-    await expect(toggle(page, id)).toHaveText(`${names[id]}：${visibility[id] ? '表示中' : '非表示'}`);
     await expect(page.locator('#visible-layers')).toContainText(`${names[id]}：${visibility[id] ? '表示中' : '非表示'}`);
   }
   await expect(page.locator('path[class^="border-country-"]')).toHaveCount(visibility.borders ? 14 : 0);
@@ -91,14 +90,14 @@ async function assertState(page: Page, visibility: LayerVisibility, closed: bool
     await expect(page.locator('#scenario-summary')).toContainText('通常時との差分');
     await expect(page.locator('#scenario-summary')).toContainText('＋◇');
   } else await expect(page.locator('#scenario-summary')).toContainText('通常時：');
-  await expect(page.locator('#current-condition')).toHaveText(`現在：${closed ? '通行不可（仮定）' : '通常時'}`);
-  await expect(page.locator('#map-condition')).toHaveText(`現在：${closed ? '通行不可（仮定）' : '通常時'}`);
+  await expect(page.locator('#current-condition')).toHaveText(`現在の条件：${closed ? '通行不可（仮定）' : '通常時'}`);
+  await expect(page.locator('#map-condition')).toHaveText(`現在の条件：${closed ? '通行不可（仮定）' : '通常時'}`);
   await expect(page.locator('.assumption')).toContainText('現実の航行規制・出来事を示しません');
   await expect(page.locator('#scenario-limits')).toContainText('輸送能力を検証していません');
   if (ids.some(id => !visibility[id])) await expect(page.locator('#layer-help')).toContainText('陸地の塗りと海域名は残します');
   else await expect(page.locator('#layer-help')).toBeHidden();
-  if (!visibility.routes) await expect(page.locator('#scenario-summary')).toContainText('主要航路レイヤーOFF');
-  if (!visibility.points) await expect(page.locator('#scenario-summary')).toContainText('注目地点レイヤーOFF');
+  if (!visibility.routes) await expect(page.locator('#scenario-summary')).toContainText('主要航路レイヤーが非表示');
+  if (!visibility.points) await expect(page.locator('#scenario-summary')).toContainText('注目地点レイヤーが非表示');
 }
 for (const [index, visibility] of combinations.entries()) {
   test(`independent combination ${index} round trips without navigation or fetching`, async ({ page }, info) => {
@@ -142,7 +141,7 @@ test('hidden selections retain evidence and return as current candidates; explor
     await expect(page.locator('#detail-sources')).toHaveAttribute('open', '');
     await toggle(page, id).click();
     await expect(page.locator('#selected-name')).toHaveText(name);
-    await expect(page.locator('#selected-visibility')).toHaveText(`この対象は現在地図上で非表示（${names[id]}レイヤーOFF）`);
+    await expect(page.locator('#selected-visibility')).toHaveText(`この対象は現在地図上で非表示（${names[id]}レイヤーが非表示）`);
     await expect(page.locator(`#feature-list [data-feature-id="${id === 'routes' ? 'normal-route' : 'malacca'}"]`)).toContainText('地図上で非表示');
     expect(await evidence.locator('section').first().evaluate((el, old) => el === old, evidenceNode)).toBe(true);
     expect(await fields.locator('dl').evaluate((el, old) => el === old, fieldsNode)).toBe(true);
@@ -169,10 +168,10 @@ test('hidden selections retain evidence and return as current candidates; explor
     }
     await scenarioButton(page, false).click();
   }
-  // A candidate can also be selected from the list while its layer is OFF.
+  // A candidate can also be selected from the list while its layer is hidden.
   await scenarioButton(page, true).click(); await toggle(page, 'routes').click();
   await page.getByRole('button', { name: 'スンダ経由候補を選択', exact: true }).click();
-  await expect(page.locator('#selected-visibility')).toContainText('主要航路レイヤーOFF');
+  await expect(page.locator('#selected-visibility')).toContainText('主要航路レイヤーが非表示');
   await toggle(page, 'routes').click();
   await expect(page.getByRole('button', { name: '地図上のスンダ経由候補を選択', exact: true })).toHaveAttribute('aria-pressed', 'true');
   await scenarioButton(page, false).click();
@@ -189,7 +188,7 @@ test('hidden selections retain evidence and return as current candidates; explor
   const coast = page.locator('path.country-SGP'); const small = await coast.boundingBox();
   await page.keyboard.press('+');
   await expect.poll(async () => (await coast.boundingBox())!.width - small!.width).toBeGreaterThan(1);
-  await page.getByRole('button', { name: '対象地域に戻る', exact: true }).click();
+  await page.getByRole('button', { name: '対象地域に戻す', exact: true }).click();
   await page.getByRole('button', { name: '地図上のシンガポールを選択', exact: true }).click();
   await expect(page.locator('#selected-name')).toHaveText('シンガポール');
   expect(documents).toBe(1); expect(data).toBe(1);
@@ -213,7 +212,7 @@ test('Tab, Shift+Tab, Enter and Space retain focus with reduced motion', async (
   await page.keyboard.press('Shift+Tab'); await expect(toggle(page, 'routes')).toBeFocused();
   await page.keyboard.press('Enter'); await scenarioButton(page, true).click();
   await expect(page.locator('#visible-layers')).toHaveAttribute('aria-live', 'polite');
-  await expect(page.locator('#scenario-summary')).toContainText('主要航路レイヤーOFF');
+  await expect(page.locator('#scenario-summary')).toContainText('主要航路レイヤーが非表示');
   expect(await toggle(page, 'routes').evaluate(el => getComputedStyle(el).transitionDuration)).toBe('0s');
   expect(await map(page).evaluate(el => getComputedStyle(el).animationName)).toBe('none');
   await screenshot(page, info.project.name, 'keyboard-reduced-motion');

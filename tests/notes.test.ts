@@ -29,9 +29,9 @@ describe('complete snapshots at the storage boundary', () => {
         const display = notePresentation(original);
         expect(display.selection).toBe(selected === null ? '選択地点：選択なし' : scenario === 'normal' ? '選択地点：シンガポール' : '選択地点：ロンボク経由候補');
         for (const [id, name] of [['borders', '国境'], ['routes', '主要航路'], ['points', '注目地点']] as const) {
-          expect(display.layers).toContain(`${name}：${snapshot.layers[id] ? '表示' : '非表示'}`);
+          expect(display.layers).toContain(`${name}：${snapshot.layers[id] ? '表示中' : '非表示'}`);
         }
-        expect(display.scenario).toBe(`保存時シナリオ：${scenario === 'normal' ? '通常時' : '通行不可（仮定）'}`);
+        expect(display.scenario).toBe(`保存時の条件：${scenario === 'normal' ? '通常時' : '通行不可（仮定）'}`);
         expect(display.date).toBe('2026/11/09 09:00:00 JST');
         const saved = values(storage).notes[0]!;
         snapshot.layers.routes = !snapshot.layers.routes; snapshot.viewport.zoom = 6;

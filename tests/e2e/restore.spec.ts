@@ -88,7 +88,7 @@ test('restores real saved combinations after reload, then continues exploration 
     });
     await expect(input(page)).toHaveValue('復元で消さない下書き');
     if (index === 13) {
-      await expect(page.locator('#selected-visibility')).toContainText('主要航路レイヤーOFF');
+      await expect(page.locator('#selected-visibility')).toContainText('主要航路レイヤーが非表示');
       await shot(page, info.project.name, 'assumption-hidden-selection');
     }
   }

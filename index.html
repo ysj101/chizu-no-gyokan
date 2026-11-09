@@ -8,7 +8,7 @@
   </head>
   <body>
     <a class="skip" href="#selection">選択した対象の説明へ</a>
-    <header><a href="#" class="brand">地図の行間</a><p>マラッカ海峡と、その先の海</p><span id="current-condition" class="condition">現在：通常時</span></header>
+    <header><a href="#" class="brand">地図の行間</a><p>マラッカ海峡と、その先の海</p><span id="current-condition" class="condition">現在の条件：通常時</span></header>
     <main>
       <section class="atlas" aria-label="地図探索">
         <section class="intro" id="intro" aria-labelledby="intro-question">
@@ -21,23 +21,23 @@
         </section>
         <button id="intro-reopen" class="text-button" hidden>はじめ方を見る</button>
         <section class="scenario-controls" aria-label="条件実験">
-          <div role="group" aria-label="シナリオを選ぶ">
+          <div role="group" aria-label="条件を選ぶ">
             <button id="scenario-normal" aria-pressed="true">通常時</button>
             <button id="scenario-closed" aria-pressed="false">通行不可（仮定）</button>
           </div>
           <div id="scenario-summary" role="status" aria-live="polite"></div>
         </section>
         <div class="map-toolbar" role="group" aria-label="地図操作">
-          <button id="zoom-in" aria-label="地図を拡大">＋</button>
-          <button id="zoom-out" aria-label="地図を縮小">−</button>
-          <button id="reset">対象地域に戻る</button>
+          <button id="zoom-in">＋ 拡大</button>
+          <button id="zoom-out">− 縮小</button>
+          <button id="reset">対象地域に戻す</button>
           <button id="touch-mode" hidden aria-pressed="false">タッチ移動を開始</button>
         </div>
         <div id="candidate-navigation" hidden>
           <button id="go-sunda">スンダ海峡へ移動</button>
           <button id="go-lombok">ロンボク海峡へ移動</button>
         </div>
-        <div id="map" role="region" aria-label="マラッカ海峡周辺の地図" aria-describedby="map-help current-condition scenario-summary visible-layers" tabindex="0"><span id="map-condition" class="map-condition" aria-hidden="true">現在：通常時</span></div>
+        <div id="map" role="region" aria-label="マラッカ海峡周辺の地図" aria-describedby="map-help current-condition scenario-summary visible-layers" tabindex="0"><span id="map-condition" class="map-condition" aria-hidden="true">現在の条件：通常時</span></div>
         <p id="load-status" role="status" aria-live="polite">地理データを読み込んでいます。</p>
         <button id="retry" hidden>地理データを再読み込み</button>
         <p class="assumption note"><strong>通行不可は演習上の仮定</strong>で、現実の航行規制・出来事を示しません。<strong>破線の航路は著者作成の概略モデル</strong>で、実際の船舶航跡ではありません。</p>
@@ -48,12 +48,12 @@
           <li id="strait-legend"><span class="key strait">◇</span><span></span></li>
           <li id="place-legend"><span class="key point">●</span><span></span></li>
         </ul>
-        <section class="layer-controls" aria-label="表示設定" aria-describedby="layer-help">
-          <div role="group" aria-label="レイヤーを切り替える">
-            <span class="layer-caption" aria-hidden="true">表示</span>
-            <button id="layer-borders" aria-pressed="true">国境：表示中</button>
-            <button id="layer-routes" aria-pressed="true">主要航路：表示中</button>
-            <button id="layer-points" aria-pressed="true">注目地点：表示中</button>
+        <section class="layer-controls" aria-label="表示レイヤー" aria-describedby="layer-help">
+          <div role="group" aria-label="表示レイヤー">
+            <span class="layer-caption" aria-hidden="true">表示レイヤー</span>
+            <button id="layer-borders" aria-pressed="true"><span class="mark" aria-hidden="true">☑</span>国境</button>
+            <button id="layer-routes" aria-pressed="true"><span class="mark" aria-hidden="true">☑</span>主要航路</button>
+            <button id="layer-points" aria-pressed="true"><span class="mark" aria-hidden="true">☑</span>注目地点</button>
           </div>
           <p id="layer-help" role="status" aria-live="polite" hidden></p>
         </section>

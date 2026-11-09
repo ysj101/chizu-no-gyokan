@@ -187,13 +187,13 @@ describe('independent layer presentation in both scenarios', () => {
       }
       expect(view.scenarioSummary.title).toBe(scenarioDefinition(scenario).summaryTitle);
       expect(view.scenarioSummary.changes).toEqual(scenarioDefinition(scenario).changes);
-      expect(view.scenarioSummary.notes.some(note => note.includes('主要航路レイヤーOFF'))).toBe(!visibility.routes);
-      expect(view.scenarioSummary.notes.some(note => note.includes('注目地点レイヤーOFF'))).toBe(!visibility.points);
+      expect(view.scenarioSummary.notes.some(note => note.includes('主要航路レイヤーが非表示'))).toBe(!visibility.routes);
+      expect(view.scenarioSummary.notes.some(note => note.includes('注目地点レイヤーが非表示'))).toBe(!visibility.points);
       for (const feature of features) {
         const layer = feature.kind === 'route' ? 'routes' : 'points';
         expect(featureLayer(feature)).toBe(layer);
         expect(hiddenFeatureMessage(feature, visibility)).toBe(visibility[layer] ? ''
-          : `この対象は現在地図上で非表示（${layer === 'routes' ? '主要航路' : '注目地点'}レイヤーOFF）`);
+          : `この対象は現在地図上で非表示（${layer === 'routes' ? '主要航路' : '注目地点'}レイヤーが非表示）`);
       }
       expect(visibility).toEqual(original);
     });

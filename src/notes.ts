@@ -1,5 +1,5 @@
 import { features } from './content';
-import { layerIds, layerNames, scenarios } from './domain';
+import { layerIds, layerStatusLine, scenarios } from './domain';
 import type { LayerVisibility, ScenarioId, SelectedFeatureId } from './domain';
 
 export interface NoteMapState {
@@ -96,8 +96,8 @@ export function notePresentation(note: DiscoveryNote) {
     timeZone: 'Asia/Tokyo', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',
   }).format(new Date(note.createdAt));
   return {
-    date: `${date} JST`, scenario: `保存時シナリオ：${scenarios[state.scenarioId].name}`,
-    layers: layerIds.map(id => `${layerNames[id]}：${state.layers[id] ? '表示' : '非表示'}`).join(' / '),
+    date: `${date} JST`, scenario: `保存時の条件：${scenarios[state.scenarioId].name}`,
+    layers: layerStatusLine(state.layers),
     selection: `選択地点：${state.selectedFeatureId === null ? '選択なし' : features.find(feature => feature.id === state.selectedFeatureId)?.name}`,
   };
 }

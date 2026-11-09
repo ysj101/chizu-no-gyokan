@@ -190,27 +190,30 @@ export const layerIds: readonly LayerId[] = ['borders', 'routes', 'points'];
 export function featureLayer(feature: ExplorationFeature): 'routes' | 'points' {
   return feature.kind === 'route' ? 'routes' : 'points';
 }
+// One vocabulary for layer state, shared by the status line, legend, notes and hidden-object notes.
+export const layerStateLabel = (visible: boolean): string => visible ? '表示中' : '非表示';
+export const layerStatusLine = (visibility: LayerVisibility): string => layerIds.map(id => `${layerNames[id]}：${layerStateLabel(visibility[id])}`).join(' / ');
+export const hiddenLayerReason = (layer: LayerId): string => `${layerNames[layer]}レイヤーが非表示`;
 export function hiddenFeatureMessage(feature: ExplorationFeature, visibility: LayerVisibility): string {
   const layer = featureLayer(feature);
-  return visibility[layer] ? '' : `この対象は現在地図上で非表示（${layerNames[layer]}レイヤーOFF）`;
+  return visibility[layer] ? '' : `この対象は現在地図上で非表示（${hiddenLayerReason(layer)}）`;
 }
 export function layerPresentation(visibility: LayerVisibility, scenario: Scenario) {
   const closed = scenario.kind !== 'normal';
-  const state = (id: LayerId) => visibility[id] ? '表示中' : '非表示';
-  const legendText = (id: LayerId, text: string) => `${text}（${state(id)}）`;
+  const legendText = (id: LayerId, text: string) => `${text}（${layerStateLabel(visibility[id])}）`;
   return {
-    status: layerIds.map(id => `${layerNames[id]}：${state(id)}`).join(' / '),
+    status: layerStatusLine(visibility),
     // Empty while everything is visible: the initial view needs no layer explanation.
     explanation: layerIds.every(id => visibility[id]) ? ''
-      : '国境OFFでも位置を把握するため陸地の塗りと海域名は残します。非表示の対象も一覧から選択でき、選択と詳細は保持します。'
-      + (!visibility.routes ? ' 主要航路レイヤーOFF：航路線・候補線・航路ラベルは地図上で非表示です。' : '')
-      + (!visibility.points ? ' 注目地点レイヤーOFF：代表点・引出線・コールアウトは地図上で非表示です。' : ''),
+      : '国境が非表示でも位置を把握するため陸地の塗りと海域名は残します。非表示の対象も一覧から選択でき、選択と詳細は保持します。'
+      + (!visibility.routes ? ` ${hiddenLayerReason('routes')}：航路線・候補線・航路ラベルは地図上で非表示です。` : '')
+      + (!visibility.points ? ` ${hiddenLayerReason('points')}：代表点・引出線・コールアウトは地図上で非表示です。` : ''),
     scenarioSummary: {
       title: scenarioDefinition(scenario).summaryTitle,
       changes: scenarioDefinition(scenario).changes,
       notes: [
-        ...(!visibility.routes ? ['主要航路レイヤーOFFのため、条件に対応する航路線は地図上で非表示です。再表示すると現在条件の航路が現れます。'] : []),
-        ...(!visibility.points ? ['注目地点レイヤーOFFのため、条件に対応する代表点は地図上で非表示です。'] : []),
+        ...(!visibility.routes ? [`${hiddenLayerReason('routes')}のため、条件に対応する航路線は地図上で非表示です。再表示すると現在条件の航路が現れます。`] : []),
+        ...(!visibility.points ? [`${hiddenLayerReason('points')}のため、条件に対応する代表点は地図上で非表示です。`] : []),
       ],
     },
     legends: {

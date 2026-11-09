@@ -135,6 +135,9 @@ path[data-just-changed] { stroke-width: 7; animation: just-changed-stroke 1.2s e
 .layer-controls [role='group'] { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .layer-caption { font-size: 12px; color: #48666b; margin-right: 4px; }
 .layer-controls button { font-size: 13px; padding: 4px 10px; color: #35535a; }
+/* Toggle buttons keep a stable label; the decorative mark and the pressed style show the state. */
+.layer-controls .mark { margin-right: 5px; }
+.layer-controls button[aria-pressed='true'] .mark { color: #146d78; }
 #layer-help, #selected-visibility, .feature-visibility { font-size: 12px; }
 #selected-visibility { border-left: 3px solid #697277; padding-left: 10px; }
 .legend .layer-off .key { opacity: .35; }

@@ -92,7 +92,7 @@ test('detail round trips retain selection and synchronize text, legend and keybo
       await expect(page.getByRole('region', { name: feature.name, exact: true }).locator('#selected-scenario')).toContainText(scenarioExplanation(id, { kind: 'malacca-closed-assumption' }));
       await expect(page.locator('#selected-scenario .tag')).toHaveText('仮定');
       await expect(panel.getByText(/通行不可は現実の航行規制・出来事を示しません/)).toBeAttached();
-      await expect(page.getByText('現在：通行不可（仮定）', { exact: true })).toHaveCount(2);
+      await expect(page.getByText('現在の条件：通行不可（仮定）', { exact: true })).toHaveCount(2);
       await expect(page.getByText(/通常主要航路：使用しない比較線（点線/, { exact: false })).toBeVisible();
       await page.keyboard.press('Shift+Tab'); await expect(normal).toBeFocused(); await page.keyboard.press('Enter');
       await expect(normal).toBeFocused(); await expect(normal).toHaveAttribute('aria-pressed', 'true');

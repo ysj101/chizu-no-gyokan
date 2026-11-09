@@ -40,7 +40,7 @@ port 4173のHTTPを読み取り、`/`のタイトル文字列と`/data/countries
 一括verifyは`node node_modules/@playwright/test/cli.js test`を起動する。既に--serve中なら`npm run test:e2e`。ARIA selectorsは実装と同じものを使う。
 
 - `getByRole('region', { name: 'マラッカ海峡周辺の地図', exact: true })`をTabでフォーカス。矢印/＋/−でパン・ズーム。
-- `getByRole('button', { name: '地図を拡大', exact: true })`、`地図を縮小`、`対象地域に戻る`。
+- `getByRole('button', { name: '＋ 拡大', exact: true })`、`− 縮小`、`対象地域に戻す`。
 - `getByRole('button', { name: '地図上のマラッカ海峡を選択', exact: true })`。海峡/航路/関連地点それぞれを選択しheadingと一覧のaria-pressedを確認。
 - `getByRole('button', { name: '通常主要航路を選択', exact: true })`をEnter操作。選択は単一、再fetch/ページ遷移なし。
 - モバイルでは`タッチ移動を開始`→実タッチドラッグ→`タッチ移動を終了`。終了後のページスクロール、通常フローの説明と選択時の説明へのスクロールを確かめる。
@@ -63,7 +63,7 @@ port 4173のHTTPを読み取り、`/`のタイトル文字列と`/data/countries
 
 詳細は[feature map](../../../features/scenario-switch.md)。次をPCとmobile双方で検証する。証拠名は既存と区別し`scenario-desktop-*` / `scenario-mobile-*`。
 
-1. 初期の位置・倍率のまま仮定へ切り替え、両候補海峡のボタン・名称と候補線全体のbounding boxが地図内に収まることをPC/mobileで確認する。パン・zoom後の「対象地域に戻る」でも同じ範囲を確認する。`マラッカ海峡`を選択し、`getByRole('button', { name: '通行不可（仮定）', exact: true })`で切替。`通常時`ボタンも同画面に残り、aria-pressedが逆転、`#current-condition`と`#scenario-summary`が更新される。
+1. 初期の位置・倍率のまま仮定へ切り替え、両候補海峡のボタン・名称と候補線全体のbounding boxが地図内に収まることをPC/mobileで確認する。パン・zoom後の「対象地域に戻す」でも同じ範囲を確認する。`マラッカ海峡`を選択し、`getByRole('button', { name: '通行不可（仮定）', exact: true })`で切替。`通常時`ボタンも同画面に残り、aria-pressedが逆転、`#current-condition`と`#scenario-summary`が更新される。
 2. 通常線が点線、候補2本が長短破線、マラッカは×◇、追加海峡は＋◇。凡例・差分要約・選択説明が同じ条件を示す。通常線は「使用しない比較線」である。
 3. 通常航路・既存地点を選択したまま往復し、説明と選択状態の同期を確認。候補を選んで戻した場合はマラッカへ復帰し、候補線・代表点・一覧項目が消える。
 4. 両候補海域への移動ボタンと実地図の海峡ボタンを操作。出典（EIA 2026-03-03/参照2026-11-09）、日本語要約主体、原文、public domain、著者ライセンス未設定、仮定、狭窄部・未検証・未収録を初回から確認する。
@@ -85,12 +85,12 @@ PC/mobileで通常対象と仮定時の追加対象を選択し、`getByRole('re
 
 [CG-03 feature map](../../../features/layer-toggles.md)と`tests/e2e/layers.spec.ts`を参照。既存の一括`npm run verify`に含む。実行前に`npm run typecheck`、`npm test`、`npm run test:privacy`、`npm run test:geometry`、`npm run build`を実行する。最新の実走結果はCIとPR本文を参照。
 
-1. PC/mobileで「国境：表示中」「主要航路：表示中」「注目地点：表示中」を個別操作し、全組合せで他レイヤーが不変、実描画と文字・aria-pressed・`#visible-layers`・凡例が一致することを確認する。国境OFFでも陸地の塗りと海域名は残す。
-2. 各組合せで通常→仮定→通常を往復。設定保持、現在条件、候補と点の線種・記号、差分・注意の同期を確認する。全OFFでも非表示理由を読め、航路OFFでも仮定・注意が残ること、再表示で現在条件の候補と説明が現れることを確認する。
+1. PC/mobileで「国境」「主要航路」「注目地点」のトグルを個別操作し、全組合せで他レイヤーが不変、実描画と文字・aria-pressed・`#visible-layers`・凡例が一致することを確認する。国境が非表示でも陸地の塗りと海域名は残す。
+2. 各組合せで通常→仮定→通常を往復。設定保持、現在条件、候補と点の線種・記号、差分・注意の同期を確認する。全レイヤーが非表示でも非表示理由を読め、航路が非表示でも仮定・注意が残ること、再表示で現在条件の候補と説明が現れることを確認する。
 3. 海峡と航路を選んでから隠す。選択・詳細・根拠・区分・未収録・根拠の開閉を保持し、詳細と一覧が非表示理由を文字で伝えることを確認する。隠したまま一覧から通常対象と候補を選ぶ。候補を選んで通常へ戻した場合は従来のマラッカ復帰規則を確認する。
 4. 切替後に地図regionの矢印・＋/−、地域復帰、地図上の選択を続ける。documentとcountriesの不要なrequestなし、URL/storage保存なし。読込中・取得失敗中にも設定し、再試行成功後に反映することを確認する。
 5. Tab/Shift+Tabでトグルを辿りEnter/Spaceで切り替える。フォーカス表示と保持、live status、reduced motion設定下の操作を確認する。
-6. `artifacts/map-exploration/layers-{desktop|mobile}-*.png`に全ON・全OFF・航路のみOFFの仮定時・非表示対象選択時・キーボード操作を保存し、実際に開いて文字と凡例、注意、狭い画面の操作・スクロールを確認する。
+6. `artifacts/map-exploration/layers-{desktop|mobile}-*.png`に全レイヤー表示中・全レイヤー非表示・航路のみ非表示の仮定時・非表示対象選択時・キーボード操作を保存し、実際に開いて文字と凡例、注意、狭い画面の操作・スクロールを確認する。
 
 待受がEPERM、registryがENOTFOUNDの環境では回避せず、coordinator runnerでverifyとauditを実行する。最新の実走結果はCIとPR本文を参照。人間の自由探索と実際のスクリーンリーダー確認は未実施。自動操作で代用せず、表示状態と非表示理由の理解を観察して別に記録する。
 

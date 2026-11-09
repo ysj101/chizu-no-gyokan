@@ -152,7 +152,7 @@ test('drag, zoom, reset and geographic overlays follow the map', async ({ page }
   expect(after.y - before.y).toBeGreaterThan(5);
   const pannedLand = await renderedBox(page, land);
   const scaleBefore = await anchorSeparation(page);
-  await activate(page.getByRole('button', { name: '地図を拡大', exact: true }), mobile);
+  await activate(page.getByRole('button', { name: '＋ 拡大', exact: true }), mobile);
   await expectScaleDoubled(page, scaleBefore);
   // Singapore stays inside the viewport; its small coastline allows pixel rounding.
   await expect.poll(async () => (await renderedBox(page, land)).width - pannedLand.width).toBeGreaterThan(1);
@@ -160,8 +160,8 @@ test('drag, zoom, reset and geographic overlays follow the map', async ({ page }
   // The long route is clipped at the viewport edge when zoomed.
   await expect.poll(async () => (await renderedBox(page, route)).width - routeBefore.width).toBeGreaterThan(20);
   await screenshot(page, 'drag-zoom', info.project.name);
-  await page.getByRole('button', { name: '地図を縮小', exact: true }).click();
-  await page.getByRole('button', { name: '対象地域に戻る', exact: true }).click();
+  await page.getByRole('button', { name: '− 縮小', exact: true }).click();
+  await page.getByRole('button', { name: '対象地域に戻す', exact: true }).click();
   await expect.poll(async () => Math.abs((await center(page)).x - before.x)).toBeLessThan(2);
   await expect.poll(async () => Math.abs((await center(page)).y - before.y)).toBeLessThan(2);
   await expectRestored(page, land, landBefore);
@@ -201,7 +201,7 @@ test('select features on map and list without reload or refetch', async ({ page 
   for (const minimumZoom of [false, true]) {
     if (minimumZoom) {
       for (let i = 0; i < 2; i++) {
-        await activate(page.getByRole('button', { name: '地図を縮小', exact: true }), mobile);
+        await activate(page.getByRole('button', { name: '− 縮小', exact: true }), mobile);
       }
     }
     // Consecutive selections must not become Leaflet's synthesized double tap.
@@ -278,7 +278,7 @@ test('keyboard focus, pan, zoom, target selection, reset and reduced motion', as
   const target = page.getByRole('button', { name: '通常主要航路を選択', exact: true });
   await target.focus(); await page.keyboard.press('Enter');
   await expect(page.locator('#selected-name')).toHaveText('通常主要航路');
-  const reset = page.getByRole('button', { name: '対象地域に戻る', exact: true });
+  const reset = page.getByRole('button', { name: '対象地域に戻す', exact: true });
   await reset.focus(); await page.keyboard.press('Enter');
   await expect.poll(async () => Math.abs((await center(page)).x - before.x)).toBeLessThan(2);
   await expect.poll(async () => Math.abs((await center(page)).y - before.y)).toBeLessThan(2);
@@ -352,8 +352,8 @@ test('scenario round trip synchronizes differences, selected explanations and so
   await activate(closed, mobile);
   await expect(closed).toHaveAttribute('aria-pressed', 'true');
   await expect(normal).toHaveAttribute('aria-pressed', 'false');
-  await expect(page.locator('#current-condition')).toHaveText('現在：通行不可（仮定）');
-  await expect(page.locator('#map-condition')).toHaveText('現在：通行不可（仮定）');
+  await expect(page.locator('#current-condition')).toHaveText('現在の条件：通行不可（仮定）');
+  await expect(page.locator('#map-condition')).toHaveText('現在の条件：通行不可（仮定）');
   await expect(page.locator('#selected-name')).toHaveText('マラッカ海峡');
   await expect(page.locator('#selected-scenario')).toContainText('この海峡を使えない');
   await expectRestored(page, page.locator('.coordinate-dot').first(), anchorBefore);
@@ -394,7 +394,7 @@ test('scenario round trip synchronizes differences, selected explanations and so
   await activate(normal, mobile);
   await expect(page.locator('#selected-name')).toHaveText('マラッカ海峡');
   await expect(page.locator('#selected-scenario')).toContainText('現在は通常時の表示です。');
-  await expect(page.locator('#map-condition')).toHaveText('現在：通常時');
+  await expect(page.locator('#map-condition')).toHaveText('現在の条件：通常時');
   await expect(page.locator('path.route-candidate')).toHaveCount(0);
   await expect(page.locator('.callout-sunda, .callout-lombok')).toHaveCount(0);
   await expect(page.locator('#candidate-legend')).toBeHidden();
@@ -406,19 +406,19 @@ test('scenario round trip synchronizes differences, selected explanations and so
   await activate(normal, mobile);
   await expect(page.locator('#selected-name')).toHaveText('通常主要航路');
   await expect(page.locator('#selected-scenario')).toContainText('通常時');
-  await activate(page.getByRole('button', { name: '対象地域に戻る', exact: true }), mobile);
+  await activate(page.getByRole('button', { name: '対象地域に戻す', exact: true }), mobile);
   if (mobile) await page.getByRole('button', { name: 'タッチ移動を開始', exact: true }).tap();
   const before = await center(page);
   await drag(page, mobile);
   await expect.poll(async () => Math.abs((await center(page)).x - before.x)).toBeGreaterThan(20);
   const scale = await anchorSeparation(page);
-  await activate(page.getByRole('button', { name: '地図を拡大', exact: true }), mobile);
+  await activate(page.getByRole('button', { name: '＋ 拡大', exact: true }), mobile);
   await expectScaleDoubled(page, scale);
   await activate(page.getByRole('button', { name: 'シンガポールを選択', exact: true }), mobile);
   await expect(page.locator('#selected-name')).toHaveText('シンガポール');
   // Reset after actual exploration, keeping the current condition and its extent.
   await activate(closed, mobile);
-  await activate(page.getByRole('button', { name: '対象地域に戻る', exact: true }), mobile);
+  await activate(page.getByRole('button', { name: '対象地域に戻す', exact: true }), mobile);
   await expectCandidateOverview(page);
   await expectRestored(page, page.locator('.coordinate-dot').first(), anchorBefore);
   await activate(normal, mobile);

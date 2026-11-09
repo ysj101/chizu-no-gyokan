@@ -35,8 +35,8 @@ test('snapshots keep scenario, all layers, selection and viewport through change
   const first = (await stored(page)).notes[0];
   expect(first.mapState).toMatchObject({ scenarioId: 'normal', layers: { borders: true, routes: true, points: true }, selectedFeatureId: 'malacca' });
   expect(first.mapState.viewport).toEqual({ longitude: expect.any(Number), latitude: expect.any(Number), zoom: expect.any(Number) });
-  await expect(items(page).first()).toContainText('保存時シナリオ：通常時');
-  await expect(items(page).first()).toContainText('国境：表示 / 主要航路：表示 / 注目地点：表示');
+  await expect(items(page).first()).toContainText('保存時の条件：通常時');
+  await expect(items(page).first()).toContainText('国境：表示中 / 主要航路：表示中 / 注目地点：表示中');
   await expect(items(page).first()).toContainText('選択地点：マラッカ海峡');
   await expect(items(page).first().locator('time')).toHaveAttribute('datetime', first.createdAt);
   await expect(items(page).first().locator('time')).toContainText('JST');
@@ -52,8 +52,8 @@ test('snapshots keep scenario, all layers, selection and viewport through change
   expect(second.mapState).toMatchObject({ scenarioId: 'malacca-closed-assumption', layers: { borders: true, routes: false, points: false }, selectedFeatureId: 'lombok' });
   expect(second.mapState.viewport).not.toEqual(first.mapState.viewport);
   await expect(items(page).first()).toContainText('CG04二');
-  await expect(items(page).first()).toContainText('保存時シナリオ：通行不可（仮定）');
-  await expect(items(page).first()).toContainText('国境：表示 / 主要航路：非表示 / 注目地点：非表示');
+  await expect(items(page).first()).toContainText('保存時の条件：通行不可（仮定）');
+  await expect(items(page).first()).toContainText('国境：表示中 / 主要航路：非表示 / 注目地点：非表示');
   await expect(items(page).first()).toContainText('選択地点：ロンボク海峡');
   const snapshot = await stored(page);
   await screenshot(page, info.project.name, 'multiple');
@@ -183,9 +183,9 @@ test('both scenarios and every layer combination save complete state through the
   expect(await stored(page)).toEqual(before);
   for (const [index, state] of [...expected].reverse().entries()) {
     const item = items(page).nth(index);
-    await expect(item).toContainText(`保存時シナリオ：${state.scenarioId === 'normal' ? '通常時' : '通行不可（仮定）'}`);
+    await expect(item).toContainText(`保存時の条件：${state.scenarioId === 'normal' ? '通常時' : '通行不可（仮定）'}`);
     for (const [id, name] of [['borders', '国境'], ['routes', '主要航路'], ['points', '注目地点']] as const) {
-      await expect(item).toContainText(`${name}：${state.layers[id] ? '表示' : '非表示'}`);
+      await expect(item).toContainText(`${name}：${state.layers[id] ? '表示中' : '非表示'}`);
     }
     const name = { 'normal-route': '通常主要航路', singapore: 'シンガポール', 'sunda-route': 'スンダ経由候補', lombok: 'ロンボク海峡' }[state.selectedFeatureId];
     await expect(item).toContainText(`選択地点：${name}`);

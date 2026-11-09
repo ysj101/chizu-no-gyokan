@@ -7,7 +7,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './style.css';
 import { features, labels } from './content';
-import { parseCountries, sourceRegistry, scenarioDefinition, selectionForScenario, routeStyles, layerIds, layerNames, layerPresentation, featureLayer, hiddenFeatureMessage, featureSymbol, featureRole, changedFeatureIds, changeLabels } from './domain';
+import { parseCountries, sourceRegistry, scenarioDefinition, selectionForScenario, routeStyles, layerIds, layerPresentation, featureLayer, hiddenFeatureMessage, hiddenLayerReason, featureSymbol, featureRole, changedFeatureIds, changeLabels } from './domain';
 import type { ExplorationFeature, LoadState, SelectedFeatureId, Scenario, LayerVisibility } from './domain';
 
 function element<T extends HTMLElement>(id: string, constructor: { new(...args: never[]): T }): T {
@@ -203,7 +203,7 @@ function showState(): void {
       : '地理データを読み込めませんでした。取得先やデータの状態を確認して、再試行してください。';
   retry.hidden = loadState.status !== 'error';
   const presentation = layerPresentation(layerVisibility, scenario);
-  element('visible-layers', HTMLParagraphElement).textContent = `${loadState.status === 'ready' ? '表示' : '表示予定'}：${presentation.status}`
+  element('visible-layers', HTMLParagraphElement).textContent = `表示レイヤー${loadState.status === 'ready' ? '' : '（予定）'}：${presentation.status}`
     + (loadState.status === 'ready' ? '' : '（地理データ未表示）');
   const summary = presentation.scenarioSummary;
   const notes = [...summary.notes, ...(loadState.status === 'ready' ? [] : ['地理データは未表示です。条件設定のみ反映しています。'])];
@@ -254,7 +254,7 @@ function renderScenario(): void {
   const definition = scenarioDefinition(scenario);
   const closed = scenario.kind === 'malacca-closed-assumption';
   if (selectedFeatureId !== null) selectedFeatureId = selectionForScenario(selectedFeatureId, scenario);
-  for (const id of ['current-condition', 'map-condition']) element(id, HTMLElement).textContent = `現在：${definition.name}`;
+  for (const id of ['current-condition', 'map-condition']) element(id, HTMLElement).textContent = `現在の条件：${definition.name}`;
   element('scenario-normal', HTMLButtonElement).setAttribute('aria-pressed', String(!closed));
   element('scenario-closed', HTMLButtonElement).setAttribute('aria-pressed', String(closed));
   element('candidate-navigation', HTMLDivElement).hidden = !closed;
@@ -268,7 +268,8 @@ function renderLayerVisibility(): void {
   for (const id of layerIds) {
     const button = element(`layer-${id}`, HTMLButtonElement);
     button.setAttribute('aria-pressed', String(layerVisibility[id]));
-    button.textContent = `${layerNames[id]}：${layerVisibility[id] ? '表示中' : '非表示'}`;
+    // The mark is decorative; aria-pressed is the single state channel for assistive tech.
+    const mark = button.querySelector('.mark'); if (mark) mark.textContent = layerVisibility[id] ? '☑' : '☐';
     if (layerVisibility[id]) layerGroups[id].addTo(map);
     else map.removeLayer(layerGroups[id]);
   }
@@ -289,7 +290,7 @@ function renderLayerVisibility(): void {
   }
   for (const feature of visibleFeatures()) {
     const label = featureList.querySelector(`[data-feature-id="${feature.id}"] .feature-visibility`);
-    if (label) label.textContent = layerVisibility[featureLayer(feature)] ? '' : `（地図上で非表示：${layerNames[featureLayer(feature)]}レイヤーOFF）`;
+    if (label) label.textContent = layerVisibility[featureLayer(feature)] ? '' : `（地図上で非表示：${hiddenLayerReason(featureLayer(feature))}）`;
   }
   updateSelectedVisibility(); updateSelectionAppearance(); showState();
 }

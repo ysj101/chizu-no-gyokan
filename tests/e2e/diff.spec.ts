@@ -48,6 +48,6 @@ test('with the routes layer off, only the visible marks are highlighted and the 
   await page.getByRole('button', { name: '通行不可（仮定）', exact: true }).click();
   await expect(page.locator('#map path[data-just-changed]')).toHaveCount(0);
   await expect(page.locator('#map .feature-icon[data-just-changed]')).toHaveCount(3);
-  await expect(summary(page).locator('.summary-note')).toContainText('主要航路レイヤーOFF');
+  await expect(summary(page).locator('.summary-note')).toContainText('主要航路レイヤーが非表示');
   await expect(summary(page).locator('li')).toHaveCount(3);
 });

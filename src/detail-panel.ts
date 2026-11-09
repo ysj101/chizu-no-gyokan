@@ -1,7 +1,7 @@
 import { classificationLabels, classificationTags } from './details';
-import type { DetailItem, DetailView } from './details';
+import type { DetailItem, DetailView, RelatedLink } from './details';
 import { sourceRegistry } from './domain';
-import type { Source } from './domain';
+import type { SelectedFeatureId, Source } from './domain';
 
 export function textElement(tag: 'p' | 'dt' | 'dd' | 'h3' | 'span' | 'strong' | 'li', text: string, className = ''): HTMLElement {
   const element = document.createElement(tag); element.textContent = text; if (className) element.className = className; return element;
@@ -23,13 +23,38 @@ function itemText(item: DetailItem): string {
 function taggedText(item: DetailItem): Node[] {
   return [classificationTag(item), textElement('span', itemText(item))];
 }
-export interface DetailTargets { description: HTMLElement; why: HTMLElement; scenario: HTMLElement; related: HTMLElement; more: HTMLElement; evidence: HTMLElement }
+export interface DetailTargets { description: HTMLElement; why: HTMLElement; scenario: HTMLElement; related: HTMLElement; relatedStatus: HTMLElement; more: HTMLElement; evidence: HTMLElement }
+// Selecting a related place and previewing it on the map are the caller's business.
+export interface DetailActions { select(id: SelectedFeatureId): void; preview(id: SelectedFeatureId | null): void }
+// The only interactive tier: one button per related place, with delegated listeners on the list.
+function renderRelated(target: HTMLElement, status: HTMLElement, label: string, relatedLinks: readonly RelatedLink[], actions: DetailActions): void {
+  const links = document.createElement('ul');
+  const byId = new Map(relatedLinks.map(link => [link.id, link]));
+  for (const link of relatedLinks) {
+    const button = document.createElement('button'); button.type = 'button'; button.textContent = link.name;
+    button.dataset.relatedId = link.id;
+    // The visible name is the accessible name; the list buttons keep their distinct 「〜を選択」 names.
+    if (!link.available) button.classList.add('unavailable');
+    const hint = link.available ? '' : `（${link.shownIn.join('・')}で表示）`;
+    const entry = textElement('li', ''); entry.append(button, textElement('span', `${link.reason}${hint}`, 'reason')); links.append(entry);
+  }
+  const linkAt = (event: Event) => byId.get((event.target as HTMLElement).closest('button')?.dataset.relatedId as SelectedFeatureId);
+  links.addEventListener('click', event => {
+    const link = linkAt(event); if (!link) return;
+    // Never switch the condition on the reader's behalf; the note says where the place is shown.
+    if (link.available) actions.select(link.id); else status.textContent = link.note;
+  });
+  for (const type of ['focusin', 'mouseover'] as const) links.addEventListener(type, event => { const link = linkAt(event); actions.preview(link?.available ? link.id : null); });
+  for (const type of ['focusout', 'mouseout'] as const) links.addEventListener(type, () => actions.preview(null));
+  target.replaceChildren(textElement('p', label, 'related-title'), links);
+  status.textContent = '';
+}
 // No HTML parsing: content and source metadata remain plain text.
-export function renderDetail(targets: DetailTargets, view: DetailView): void {
+export function renderDetail(targets: DetailTargets, view: DetailView, actions: DetailActions): void {
   targets.description.textContent = itemText(view.overview);
   targets.why.replaceChildren(textElement('strong', `${view.why.label}：`), ...taggedText(view.why));
   targets.scenario.replaceChildren(...taggedText(view.scenario));
-  targets.related.replaceChildren(textElement('strong', `${view.related.label}：`), document.createTextNode(itemText(view.related)));
+  renderRelated(targets.related, targets.relatedStatus, view.related.label, view.relatedLinks, actions);
   const list = document.createElement('dl');
   for (const item of view.more) {
     list.append(textElement('dt', item.label));

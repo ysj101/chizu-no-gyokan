@@ -1,7 +1,7 @@
 import routeData from './route.json';
 import candidateRoutes from './candidate-routes.json';
 import { parseRoute } from './domain';
-import type { ExplorationFeature } from './domain';
+import type { ExplorationFeature, SelectedFeatureId } from './domain';
 
 export const features: readonly ExplorationFeature[] = [
   { id: 'malacca', name: 'マラッカ海峡', classification: 'geographic-fact', kind: 'strait',
@@ -35,6 +35,13 @@ export const features: readonly ExplorationFeature[] = [
     ] satisfies ExplorationFeature[];
   }),
 ];
+const byId = new Map(features.map(feature => [feature.id, feature]));
+// Features are a closed, static list; a missing id is a programming error, not a runtime condition.
+export function featureById(id: SelectedFeatureId): ExplorationFeature {
+  const feature = byId.get(id);
+  if (!feature) throw new Error(`Missing feature: ${id}`);
+  return feature;
+}
 export const labels: readonly { name: string; coordinate: [number, number]; code?: string; sea?: boolean }[] = [
   { name: 'インド', code: 'IND', coordinate: [86, 21.5] },
   { name: 'ミャンマー', code: 'MMR', coordinate: [95.6, 17.7] },

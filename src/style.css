@@ -30,7 +30,15 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) 340px; }
 .key.point { color: #146d78; }
 aside { border-left: 1px solid #cad7d5; padding: 24px; }
 h1 { font: 600 27px/1.5 var(--serif); margin: 8px 0 16px; }
-.kind, #selected-related { font-size: 12px; color: #48666b; }
+.kind, #selected-related, #related-status { font-size: 12px; color: #48666b; }
+#selected-related .related-title { margin: 10px 0 2px; font-weight: 600; }
+#selected-related ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+#selected-related li { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; }
+#selected-related button { min-height: 36px; padding: 2px 10px; font-size: 13px; }
+#selected-related button.unavailable { color: #6b7f82; border-style: dashed; background: #f3f6f5; }
+#related-status:empty { display: none; }
+.feature-icon[data-related-preview] .feature-symbol { outline: 3px dashed #146d78; outline-offset: 3px; border-radius: 50%; }
+path[data-related-preview] { stroke-width: 6; }
 .kind { margin: 0; }
 #selected-description { font-size: 15px; }
 #selected-why { font-size: 13px; }

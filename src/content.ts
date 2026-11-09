@@ -1,4 +1,5 @@
 import routeData from './route.json';
+import candidateRoutes from './candidate-routes.json';
 import { parseRoute } from './domain';
 import type { ExplorationFeature } from './domain';
 
@@ -19,6 +20,20 @@ export const features: readonly ExplorationFeature[] = [
     coordinate: [100.25, 5.4], sources: ['naturalEarth', 'author'],
     description: 'マレー半島西岸、マラッカ海峡に面する島です。海峡と沿岸の位置関係を見るための関連地点です。',
     limitation: '●は島の代表点です。港湾施設や個別の航路位置を示しません。' },
+  ...(['sunda', 'lombok'] as const).flatMap(id => {
+    const name = id === 'sunda' ? 'スンダ' : 'ロンボク';
+    return [
+      { id, name: `${name}海峡`, classification: 'geographic-fact', kind: 'strait',
+        coordinate: id === 'sunda' ? [105.7, -5.9] : [115.85, -8.3],
+        sources: ['eia', 'naturalEarth', 'author'],
+        description: `EIAがマラッカ海峡の代替経路として挙げる${name}海峡です。代替先も狭窄部である点に注意が必要です。`,
+        limitation: '＋◇は仮定時に追加する代表点。海峡の境界や航行可能範囲ではありません。' },
+      { id: `${id}-route`, name: `${name}経由候補`, classification: 'teaching-model', kind: 'route',
+        coordinates: parseRoute(candidateRoutes[id]), sources: ['eia', 'author', 'naturalEarth'],
+        description: `EIAが挙げる${name}海峡経由の代替経路を、著者作成の長短破線で示す事前定義モデルです。`,
+        limitation: 'EIAの記述は候補海峡の根拠です。点列・接続海域は著者の概略表現で、実際の自動迂回や航行可能性を示しません。船舶条件・輸送能力・距離・所要時間・費用は未収録。航行案内には使えません。' },
+    ] satisfies ExplorationFeature[];
+  }),
 ];
 export const labels: readonly { name: string; coordinate: [number, number]; code?: string; sea?: boolean }[] = [
   { name: 'インド', code: 'IND', coordinate: [86, 21.5] },

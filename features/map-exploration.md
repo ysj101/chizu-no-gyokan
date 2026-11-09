@@ -2,7 +2,7 @@
 
 ## Sub-features
 
-local Natural Earth背景、国名/海域名、通常時固定の航路モデル、海峡/関連地点、単一選択と最小説明、凡例、出典・限界・未収録、読込と再試行。ズーム/地域復帰とタッチ移動開始/終了は操作ボタンであり、レイヤーや条件を切り替えない。
+local Natural Earth背景、国名/海域名、条件に応じた航路モデル、海峡/関連地点、単一選択と最小説明、凡例、出典・限界・未収録、読込と再試行。ズーム/地域復帰とタッチ移動開始/終了は操作ボタンであり、レイヤーを切り替えない。条件実験は[CG-05](scenario-switch.md)を参照。
 
 ## How to get to it (user POV)
 
@@ -25,9 +25,13 @@ await page.getByRole('button', { name: '対象地域に戻る', exact: true }).c
 ## Gotchas
 
 - 世界全体の精密地図ではない。zoom 4〜7、移動範囲制限あり。小縮尺de facto境界と代表点を使う。
-- 初期3レイヤーは常時表示。独立ON/OFF、条件変更、代替航路、詳細全項目、メモ等は範囲外。
+- 初期3レイヤーは常時表示。独立ON/OFF、詳細全項目、メモ等は範囲外。条件変更・代替航路はCG-05で追加。
 - 運航量/所要時間/船舶条件は未収録。航路はAISでも検証済み航行線でもない。
 - 外部タイルなし。資料リンクの利用者による遷移を除きruntimeは同一origin内だけ。
-- 依存導入済み。coordinatorのNode 24実走でprivacy/CI fixture 11件・unit 13件・typecheck/build・geometryが合格、最終auditは0件。最新E2Eは14/16件合格。最終修正後の一括実走・実画面確認、リモートCI、人間自由探索、実screenreader音声は未実施。CG-01の受入、MVP全体、§17の合格を意味しない。
+- 最新実走の結果と画像確認状況はCIとPR本文を参照。変更後はbuild/verify/auditと画像確認を再実行する。リモートCI、人間自由探索、実screenreader音声は未実施。MVP全体・§17の受入完了を意味しない。
 
 - Natural Earth/EIAの権利と著者作成物を区分する。航路・代表点・ラベル配置の再利用ライセンスは未設定／別途確認。LeafletのBSD-2-Clause全文は公開NOTICEとfooterリンクで配布する。
+
+## CG-05による追加
+
+[条件実験](scenario-switch.md)で通常時⇄通行不可（仮定）を往復できる。読込statusは`#load-status`、条件差分のlive statusは`#scenario-summary`なので、status全体の曖昧なselectorを使わない。初期表示・地域復帰は両候補海峡と候補線全体を含む。条件切替で位置・倍率は変えない。再実行手順と残ゲートはREADMEを参照。

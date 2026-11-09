@@ -37,3 +37,46 @@ describe('route model boundary', () => {
     { value: [['100', 1], [104, 1]] },
   ])('rejects malformed model $value', ({ value }) => expect(() => parseRoute(value)).toThrow());
 });
+
+import { scenarios, scenarioDefinition, selectionForScenario, scenarioExplanation, routeStyles, sourceRegistry } from '../src/domain';
+import { features } from '../src/content';
+import type { Scenario } from '../src/domain';
+const normal: Scenario = { kind: 'normal' };
+const closed: Scenario = { kind: 'malacca-closed-assumption' };
+describe('scenario projection', () => {
+  it('defines only sourced candidates, with model geometry and distinct line types', () => {
+    expect(Object.keys(scenarios)).toEqual(['normal', 'malacca-closed-assumption']);
+    expect(new Set(Object.values(routeStyles).map(style => style.dashArray)).size).toBe(3);
+    for (const scenario of [normal, closed]) {
+      const definition = scenarioDefinition(scenario);
+      for (const id of definition.featureIds) {
+        const feature = features.find(item => item.id === id);
+        expect(feature).toBeDefined();
+        for (const source of feature!.sources) expect(sourceRegistry[source].usage).toBeTruthy();
+        if (feature!.kind === 'route') expect(definition.routeRole[id]).toBeDefined();
+      }
+    }
+    for (const id of ['sunda-route', 'lombok-route'] as const) {
+      const candidate = features.find(feature => feature.id === id)!;
+      expect(candidate.classification).toBe('teaching-model');
+      expect(candidate.sources).toContain('eia');
+      expect(candidate.limitation).toContain('未収録');
+      expect(candidate.kind === 'route' && candidate.coordinates.length > 2).toBe(true);
+    }
+  });
+  it('restores normal projection without mutating definitions or common selection', () => {
+    const before = structuredClone(scenarios.normal);
+    for (const id of scenarios.normal.featureIds) {
+      expect(selectionForScenario(id, closed)).toBe(id);
+      expect(selectionForScenario(id, normal)).toBe(id);
+      expect(scenarioExplanation(id, closed)).not.toBe(scenarioExplanation(id, normal));
+    }
+    for (const id of ['sunda', 'lombok', 'sunda-route', 'lombok-route'] as const) {
+      expect(selectionForScenario(id, closed)).toBe(id);
+      expect(selectionForScenario(id, normal)).toBe('malacca');
+    }
+    expect(scenarios.normal).toEqual(before);
+    expect(scenarioDefinition(normal).routeRole['normal-route']).toBe('normal');
+    expect(scenarioDefinition(closed).routeRole['normal-route']).toBe('unavailable');
+  });
+});

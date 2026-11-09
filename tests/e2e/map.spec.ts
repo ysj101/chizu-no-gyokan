@@ -6,7 +6,7 @@ const mapRegion = (page: Page) => page.getByRole('region', { name: 'マラッカ
 const point = (page: Page) => page.getByRole('button', { name: '地図上のマラッカ海峡を選択', exact: true });
 async function ready(page: Page) {
   await page.goto('/');
-  await expect(page.getByRole('status')).toHaveText('地図を読み込みました。通常時の地図を探索できます。');
+  await expect(page.locator('#load-status')).toHaveText('地図を読み込みました。通常時の地図を探索できます。');
 }
 // Read only rendered DOM geometry, relative to the visible map (independent of page scroll).
 async function renderedBox(page: Page, locator: Locator) {
@@ -22,6 +22,25 @@ async function center(page: Page) {
 async function expectRestored(page: Page, locator: Locator, before: Awaited<ReturnType<typeof renderedBox>>) {
   for (const key of ['x', 'y', 'width', 'height'] as const) {
     await expect.poll(async () => Math.abs((await renderedBox(page, locator))[key] - before[key])).toBeLessThan(2);
+  }
+}
+// Check visible targets and names, not Leaflet's internal bounds or marker origins.
+async function expectCandidateOverview(page: Page) {
+  const map = await mapRegion(page).boundingBox();
+  if (!map) throw new Error('Map missing');
+  for (const id of ['sunda', 'lombok']) {
+    for (const locator of [
+      page.locator(`.callout-${id} .map-feature`),
+      page.locator(`.callout-${id} .feature-name`),
+      page.locator(`path.${id}-route`),
+    ]) {
+      await expect(locator).toBeVisible();
+      const box = await renderedBox(page, locator);
+      expect(box.x).toBeGreaterThanOrEqual(4);
+      expect(box.y).toBeGreaterThanOrEqual(4);
+      expect(box.x + box.width).toBeLessThanOrEqual(map.width - 4);
+      expect(box.y + box.height).toBeLessThanOrEqual(map.height - 4);
+    }
   }
 }
 // Coordinate dots stay at the authored geographic anchors, unlike offset callouts
@@ -44,7 +63,8 @@ async function expectMapNotScrolled(page: Page) {
 }
 async function screenshot(page: Page, label: string, project: string) {
   await mkdir('artifacts/map-exploration', { recursive: true });
-  await page.screenshot({ path: `artifacts/map-exploration/${project}-${label}.png`, fullPage: true });
+  const filename = label.startsWith('scenario-') ? `scenario-${project}-${label.slice(9)}` : `${project}-${label}`;
+  await page.screenshot({ path: `artifacts/map-exploration/${filename}.png`, fullPage: true });
 }
 async function activate(locator: Locator, mobile: boolean) {
   if (mobile) await locator.tap();
@@ -263,12 +283,25 @@ for (const failure of ['http', 'json', 'geometry']) {
         body: failure === 'json' ? '{broken' : failure === 'geometry' ? '{"type":"FeatureCollection","features":[]}' : '{}' });
     });
     await page.goto('/');
-    await expect(page.getByRole('status')).toContainText('読み込めませんでした');
+    await expect(page.locator('#load-status')).toContainText('読み込めませんでした');
     await expect(page.locator('.map-feature')).toHaveCount(0);
     await screenshot(page, `${failure}-error`, info.project.name);
+    await page.getByRole('button', { name: '通行不可（仮定）', exact: true }).click();
+    await expect(page.locator('#load-status')).toContainText('読み込めませんでした');
+    await expect(page.locator('path.route-candidate')).toHaveCount(0);
+    await page.getByRole('button', { name: '通常時', exact: true }).click();
+    await expect(page.locator('#load-status')).toContainText('読み込めませんでした');
+    await expect(page.locator('.map-feature')).toHaveCount(0);
+    await page.getByRole('button', { name: '通行不可（仮定）', exact: true }).click();
+    expect(count).toBe(1);
     await page.getByRole('button', { name: '地理データを再読み込み', exact: true }).click();
-    await expect(page.getByRole('status')).toContainText('探索できます');
+    await expect(page.locator('#load-status')).toContainText('探索できます');
     await expect(point(page)).toBeVisible(); expect(count).toBe(2);
+    await expect(page.locator('path.route-candidate')).toHaveCount(2);
+  // No pan or zoom since initial load: both straits and complete lines fit.
+  await expectCandidateOverview(page);
+    await expect(page.locator('#load-status')).toContainText('通行不可（仮定）');
+    await screenshot(page, 'scenario-retry-' + failure, info.project.name);
     await expect(page.getByRole('button', { name: '地理データを再読み込み', exact: true })).toBeHidden();
   });
 }
@@ -283,6 +316,145 @@ test('external strings cannot create executable HTML', async ({ page }) => {
   await page.route('**/data/countries.json', route => route.fulfill({ contentType: 'application/json', body: JSON.stringify(raw) }));
   await ready(page);
   await expect(page.getByText(payload, { exact: true })).toBeAttached();
+  await page.getByRole('button', { name: '通行不可（仮定）', exact: true }).click();
+  await page.getByRole('button', { name: '通常時', exact: true }).click();
+  await expect(page.getByText(payload, { exact: true })).toBeAttached();
   await expect(page.locator('img[src="x"]')).toHaveCount(0);
   await expect(page.locator('body')).not.toHaveAttribute('data-injected');
+});
+
+test('scenario round trip synchronizes differences, selected explanations and sources without fetching or navigation', async ({ page }, info) => {
+  let dataRequests = 0; let documents = 0;
+  page.on('request', request => {
+    if (request.url().includes('/data/countries.json')) dataRequests++;
+    if (request.isNavigationRequest() && request.resourceType() === 'document') documents++;
+  });
+  await ready(page);
+  const mobile = info.project.name === 'mobile';
+  const normal = page.getByRole('button', { name: '通常時', exact: true });
+  const closed = page.getByRole('button', { name: '通行不可（仮定）', exact: true });
+  await activate(point(page), mobile);
+  const anchorBefore = await renderedBox(page, page.locator('.coordinate-dot').first());
+  await activate(closed, mobile);
+  await expect(closed).toHaveAttribute('aria-pressed', 'true');
+  await expect(normal).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.locator('#current-condition')).toHaveText('現在：通行不可（仮定）');
+  await expect(page.locator('#map-condition')).toHaveText('現在：通行不可（仮定）');
+  await expect(page.locator('#selected-name')).toHaveText('マラッカ海峡');
+  await expect(page.locator('#selected-scenario')).toContainText('この海峡を使えない');
+  await expectRestored(page, page.locator('.coordinate-dot').first(), anchorBefore);
+  await expect(page.locator('#scenario-summary')).toContainText('通常時との差分');
+  await expect(page.locator('#normal-legend')).toContainText('使用しない比較線（点線');
+  await expect(page.locator('#candidate-legend')).toContainText('長短破線');
+  await expect(page.locator('path.normal-route')).toHaveAttribute('stroke-dasharray', '2 7');
+  await expect(page.locator('path.route-candidate')).toHaveCount(2);
+  // No pan or zoom since initial load: both straits and complete lines fit.
+  await expectCandidateOverview(page);
+  for (const route of await page.locator('path.route-candidate').all()) await expect(route).toHaveAttribute('stroke-dasharray', '14 5 3 5');
+  await expect(page.locator('.callout-malacca .feature-symbol')).toHaveText('×◇');
+  await expect(page.locator('.callout-sunda .feature-symbol')).toHaveText('＋◇');
+  await expect(page.locator('.assumption')).toContainText('現実の航行規制・出来事を示しません');
+  await expect(page.locator('#scenario-limits')).toContainText('輸送能力を検証していません');
+  await expect(page.locator('.scenario-source')).toContainText('2026-03-03');
+  await expect(page.locator('.scenario-source')).toContainText('参照日2026-11-09');
+  await expect(page.locator('.scenario-source')).toContainText('public domain');
+  await expect(page.locator('.scenario-source')).toContainText('再利用ライセンス未設定');
+  await expect(page.locator('.scenario-source a').first()).toHaveAttribute('href', /eia.gov.*World_Oil_Transit_Chokepoints/);
+  await screenshot(page, 'scenario-closed', info.project.name);
+  for (const name of ['通常主要航路', 'シンガポール', 'ペナン島']) {
+    await activate(page.getByRole('button', { name: `${name}を選択`, exact: true }), mobile);
+    await expect(page.locator('#selected-scenario')).toContainText(name === '通常主要航路' ? '使用しません' : '位置は変わりません');
+  }
+  for (const id of ['sunda', 'lombok']) {
+    const name = id === 'sunda' ? 'スンダ' : 'ロンボク';
+    await activate(page.getByRole('button', { name: `${name}経由候補を選択`, exact: true }), mobile);
+    await expect(page.locator('#selected-description')).toContainText('EIA');
+    await expect(page.locator('#selected-limit')).toContainText('未収録');
+    await expect(page.locator('#selected-scenario')).toContainText('＋仮定時に追加');
+    await activate(page.getByRole('button', { name: `${name}海峡へ移動`, exact: true }), mobile);
+    await activate(page.getByRole('button', { name: `地図上の${name}海峡を選択`, exact: true }), mobile);
+    await expect(page.locator('#selected-name')).toHaveText(`${name}海峡`);
+    await screenshot(page, `scenario-${id}-selected`, info.project.name);
+  }
+  // A candidate disappears on return; selection explicitly falls back to Malacca.
+  await activate(normal, mobile);
+  await expect(page.locator('#selected-name')).toHaveText('マラッカ海峡');
+  await expect(page.locator('#selected-scenario')).toHaveText('現在は通常時の表示です。');
+  await expect(page.locator('#map-condition')).toHaveText('現在：通常時');
+  await expect(page.locator('path.route-candidate')).toHaveCount(0);
+  await expect(page.locator('.callout-sunda, .callout-lombok')).toHaveCount(0);
+  await expect(page.locator('#candidate-legend')).toBeHidden();
+  await expect(page.locator('path.normal-route')).toHaveAttribute('stroke-dasharray', '9 7');
+  // Round trip with the normal route selected keeps the same selection and updates it.
+  await activate(page.getByRole('button', { name: '通常主要航路を選択', exact: true }), mobile);
+  await activate(closed, mobile);
+  await expect(page.locator('#selected-scenario')).toContainText('使用しません');
+  await activate(normal, mobile);
+  await expect(page.locator('#selected-name')).toHaveText('通常主要航路');
+  await expect(page.locator('#selected-scenario')).toContainText('通常時');
+  await activate(page.getByRole('button', { name: '対象地域に戻る', exact: true }), mobile);
+  if (mobile) await page.getByRole('button', { name: 'タッチ移動を開始', exact: true }).tap();
+  const before = await center(page);
+  await drag(page, mobile);
+  await expect.poll(async () => Math.abs((await center(page)).x - before.x)).toBeGreaterThan(20);
+  const scale = await anchorSeparation(page);
+  await activate(page.getByRole('button', { name: '地図を拡大', exact: true }), mobile);
+  await expectScaleDoubled(page, scale);
+  await activate(page.getByRole('button', { name: 'シンガポールを選択', exact: true }), mobile);
+  await expect(page.locator('#selected-name')).toHaveText('シンガポール');
+  // Reset after actual exploration, keeping the current condition and its extent.
+  await activate(closed, mobile);
+  await activate(page.getByRole('button', { name: '対象地域に戻る', exact: true }), mobile);
+  await expectCandidateOverview(page);
+  await expectRestored(page, page.locator('.coordinate-dot').first(), anchorBefore);
+  await activate(normal, mobile);
+  await expectRestored(page, page.locator('.coordinate-dot').first(), anchorBefore);
+  expect(dataRequests).toBe(1); expect(documents).toBe(1);
+  expect(new URL(page.url()).search).toBe(''); expect(new URL(page.url()).hash).toBe('');
+  expect(await page.evaluate(() => [localStorage.length, sessionStorage.length])).toEqual([0, 0]);
+  await screenshot(page, 'scenario-restored-exploration', info.project.name);
+});
+
+test('scenario keyboard round trip respects focus, pressed state and reduced motion', async ({ page }, info) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await ready(page);
+  const normal = page.getByRole('button', { name: '通常時', exact: true });
+  const closed = page.getByRole('button', { name: '通行不可（仮定）', exact: true });
+  // Reach the control by Tab, then keep native keyboard activation throughout.
+  for (let i = 0; i < 10; i++) {
+    await page.keyboard.press('Tab');
+    if (await normal.evaluate(el => document.activeElement === el)) break;
+  }
+  await expect(normal).toBeFocused();
+  await page.keyboard.press('Tab'); await expect(closed).toBeFocused();
+  await page.keyboard.press('Space');
+  await expect(closed).toBeFocused(); await expect(closed).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#scenario-summary')).toHaveAttribute('aria-live', 'polite');
+  await expect(page.locator('#scenario-summary')).toContainText('長短破線');
+  expect(await closed.evaluate(el => getComputedStyle(el).outlineStyle)).toBe('solid');
+  expect(await closed.evaluate(el => getComputedStyle(el).transitionDuration)).toBe('0s');
+  await page.keyboard.press('Shift+Tab'); await page.keyboard.press('Enter');
+  await expect(normal).toBeFocused(); await expect(normal).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('path.route-candidate')).toHaveCount(0);
+  await screenshot(page, 'scenario-keyboard-reduced-motion', info.project.name);
+});
+
+test('scenario chosen during loading survives the initial response', async ({ page }) => {
+  let release!: () => void;
+  const waiting = new Promise<void>(resolve => { release = resolve; });
+  let count = 0;
+  await page.route('**/data/countries.json', async route => {
+    count++; await waiting;
+    await route.fulfill({ contentType: 'application/json', body: geography });
+  });
+  await page.goto('/');
+  await page.getByRole('button', { name: '通行不可（仮定）', exact: true }).click();
+  await expect(page.locator('#load-status')).toContainText('読み込んでいます');
+  await expect(page.locator('path.route-candidate')).toHaveCount(0);
+  release();
+  await expect(page.locator('#load-status')).toContainText('通行不可（仮定）の地図を探索できます');
+  await expect(page.locator('path.route-candidate')).toHaveCount(2);
+  // No pan or zoom since initial load: both straits and complete lines fit.
+  await expectCandidateOverview(page);
+  expect(count).toBe(1);
 });

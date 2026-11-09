@@ -9,7 +9,7 @@
 | React + TypeScript + Leaflet | 宣言的な説明描画、状態とUIの同期 | React本体・統合境界・ライフサイクルが追加される |
 | plain TypeScript + Leaflet | 小さい依存、単一選択と読込状態を直接表現 | DOM更新の責務を手動で限定する必要がある |
 
-後者を採用。Viteで配信し、Leafletの地図は一度だけ生成。選択説明はtextContent、地図マーカーもDOM要素で作る。外部JSONはunknownからPolygon/MultiPolygonと必要属性を検証する。strictとnoUncheckedIndexedAccessを有効にする。将来のシナリオや汎用レイヤー管理は作らない。
+後者を採用。Viteで配信し、Leafletの地図は一度だけ生成。選択説明はtextContent、地図マーカーもDOM要素で作る。外部JSONはunknownからPolygon/MultiPolygonと必要属性を検証する。strictとnoUncheckedIndexedAccessを有効にする。CG-05で以下の二値シナリオを追加。汎用レイヤー管理は作らない。
 
 ## 先に定義するドメイン
 
@@ -37,3 +37,15 @@ Mobile: `[ 地図 ][ 選択要約 ][ 対象一覧 / 資料 ]`
 ## 検証の境界
 
 依存導入とブラウザ実走はcoordinator担当。Playwrightはbuild済みpreviewを実UIから操作し、内部map APIを呼ばない。固定artifactsへ証拠を保存する。人間自由探索は未実施で、合格扱いにしない。メール保護は提供shellを参考にPython stdlibで実装し、Git失敗時の終了値を握りつぶさない。identityは読取結果を表示しない。フック設定helperはworktree設定だけを使用し、既存設定を上書きしない。
+
+## CG-05 条件実験
+
+`Scenario`は`normal | malacca-closed-assumption`の判別共用体。`scenarios`静的表が表示対象・通常航路の役割・条件名・要約を定義し、`routeStyles`で通常の破線／使用しない比較線の点線／候補の長短破線を対応させる。色以外に×／＋、凡例とテキストで差分を伝える。URL・保存・復元は実装しない。
+
+Leafletインスタンスと地理背景groupは維持し、切替時はscenario用groupと対象一覧・説明を再描画する。fetchは初回と明示的な再試行だけ。通常時と共通の選択は維持し、通常時に存在しない候補を選んで戻した場合はマラッカ海峡を選択する。pan/zoomは切替で変更しない。初期表示と地域復帰は両候補海峡・候補線全体を含む共通のboundsを使い、移動範囲制限は探索中心の範囲に最小zoom時の画面半幅・半高を投影座標で加え、初期化とresize時に設定する。画面全体を収めるLeafletのmaxBoundsが、広い画面で中心移動を固定しないようにする。探索中に画面外となった候補は「スンダ海峡へ移動」「ロンボク海峡へ移動」で探索できる。読込中・失敗時も条件は選べるが地図対象は描画せず、成功後に選んだ条件を反映する。statusの失敗案内は切替で上書きしない。
+
+著者作成の短い航路は表示線・選択線とも`noClip: true`で点列を保持し、パン・zoomによる端点の切詰めと破線開始位置の変化を避ける。海岸の描画最適化は維持し、航路の画面外描画はSVGと地図コンテナで切り取る。
+
+EIA World Oil Transit Chokepointsの2026-03-03版、Strait of Malacca節を2026-11-09に実際に開いて確認。代替経路としてスンダ・ロンボク海峡が挙がること、両海峡も狭窄部であることだけを候補の根拠とする。点列・海域間の接続は著者作成の概略モデル（`src/candidate-routes.json`）。原文はwaypointや運航可否を検証する資料ではない。図・AIS・統計は使わず、距離・時間・容量・費用も作らない。船舶条件・輸送能力は未検証、数値は未収録。著者作成物のライセンスは未設定のまま。一次資料の短い日本語要約・原文・対象時点・帰属・利用条件は初期表示から案内する。
+
+geometry検査は通常線と両候補すべてについて配布Natural Earthの14か国の陸地内部・海岸交差・接触を拒否する。小島の省略された一般化地形に対する検査であり、航海用の保証にはならない。最新実走の結果と画像確認状況はCIとPR本文を参照。表示範囲の変更後はbuild/verify/auditと実画像確認を再実行する。所有previewのみ停止する。リモートCI・人間自由探索・実スクリーンリーダー音声は未実施。再実行手順はREADMEとfeature mapを参照。

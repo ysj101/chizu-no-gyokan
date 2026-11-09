@@ -1,0 +1,39 @@
+# CG-05 条件実験
+
+## 利用者の導線
+
+地図を開く→マラッカ海峡を選ぶ→「通行不可（仮定）」→候補と差分・限界を確認→「通常時」で戻す。同じ画面に双方の条件ボタンがあり、現在条件はheaderと地図内のラベルにも表示する。切替では地図の位置・倍率を保持する。
+
+通常の破線を、仮定時は「使用しない比較線」の点線として残す。スンダ・ロンボク経由候補の長短破線と両海峡の＋◇を追加し、マラッカは×◇になる。凡例・表示対象・差分テキスト・選択説明は同時に更新する。色を使わなくても意味を読める。
+
+初期表示と「対象地域に戻る」は両候補海峡と候補線全体が入る範囲。通常時は候補を描画せず、条件切替でも地図を自動移動しない。探索中に候補が画面外なら「スンダ海峡へ移動」「ロンボク海峡へ移動」を押し、地図の代表点を選ぶ。mobileでは対象選択後に説明へスクロールする。共通対象の選択は往復で保持し、候補を選んで通常時に戻すとマラッカ海峡の説明に戻る。
+
+## 根拠と限界
+
+[EIA World Oil Transit Chokepoints](https://www.eia.gov/international/content/analysis/special_topics/World_Oil_Transit_Chokepoints/)、更新2026-03-03、参照2026-11-09。Strait of Malacca節を実際に開いて確認した。採用する記述範囲はインド洋・太平洋の接続、スンダ・ロンボク両海峡が代替経路に挙がり、それらも狭窄部であることだけ。短い日本語要約は地図の行間が作成。図・統計・AISの転載なし。本文public domain、第三者資料は不使用。著者作成の点列・代表点の再利用ライセンスは未設定。
+
+候補線のwaypoint・接続海域は著者の概略モデルで、EIAが運航を検証した線ではない。船舶条件・輸送能力は検証せず、距離・日数・輸送量・費用は作らない。未収録は0や無影響を意味しない。通行不可は演習上の仮定で現実の規制・出来事ではない。自動迂回・予測・航行案内として使わない。
+
+## 自動検証
+
+`npm run test:privacy` / `npm run test:geometry` / `npm test` / `npm run build` / `npm run verify` / `npm audit --json`。Node 24を使用する。新依存は追加しない。
+
+Playwrightは既存PC/mobile両projectで、初期の位置・倍率のまま仮定へ切り替え、ユーザーに見える海峡ボタン・名称と候補線のbounding boxが地図内に収まること、地域復帰後も同じ範囲に戻ることを確認する。往復・共通選択の同期・候補選択後の復帰・凡例と実SVGのdash・追加記号・出典・仮定と限界・request数・URL/storage非保存を確認する。往復後も実ドラッグ・zoom・選択を操作。キーボードはTabから条件ボタンへ移動してSpace/Enter、aria-pressedとフォーカスを検査。reduced motionを設定する。読込中・HTTP/JSON/geometry失敗時に切り替え、再試行の成功後に条件を反映。外部文字列の非実行も往復後に検査する。
+
+主なselector:
+
+- `getByRole('button', { name: '通常時', exact: true })`
+- `getByRole('button', { name: '通行不可（仮定）', exact: true })`
+- `getByRole('button', { name: 'スンダ経由候補を選択', exact: true })`（ロンボクも同様）
+- `getByRole('button', { name: 'スンダ海峡へ移動', exact: true })`
+- `#scenario-summary`は差分のlive status、`#load-status`は読込状態。
+
+内部Leaflet呼出し・force click・DOMイベントのJS dispatch・既存検査の削除は使わない。geometryは通常線・両候補のすべてを配布Natural Earthに対して検査し、陸地内部・海岸との交差/接触を拒否する。
+
+## 証拠と残ゲート
+
+画像保存先は`artifacts/map-exploration/scenario-{desktop|mobile}-{closed|sunda-selected|lombok-selected|restored-exploration|keyboard-reduced-motion|retry-*}.png`。両候補の局所表示だけでなく、パン・縮小して全線を追い、陸地との見た目を確認する。取得した画像を実際に開いて可読性・差分・地形を確認し、結果を記録する。
+
+最新実走の結果と画像確認状況はCIとPR本文を参照。対象地域の範囲・E2E更新後は、上記コマンドと画像確認を再実行する。所有previewのみ停止する。
+
+人間の自由探索と実スクリーンリーダー音声、リモートCIは未実施。人間探索で変更点・候補の制約・仮定/モデル/欠損の理解を観察する。自動検証だけで§17やMVP全体の完了としない。PR #7既知のmobileラベル近接は変更していない。

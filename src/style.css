@@ -25,7 +25,6 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) 340px; }
 .legend li { display: flex; align-items: center; gap: 7px; }
 .key { width: 26px; display: inline-block; text-align: center; }
 .key.border { border-top: 1px solid #667e77; }
-.key.route { border-top: 3px dashed #885229; }
 .key.strait { font-size: 23px; font-weight: bold; line-height: 1; color: #146d78; }
 .key.point { color: #146d78; }
 aside { border-left: 1px solid #cad7d5; padding: 24px; }
@@ -80,3 +79,22 @@ footer { padding: 12px 28px; border-top: 1px solid #cad7d5; font-size: 12px; }
   .guide { margin-top: 12px; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; } }
+.scenario-controls { margin-bottom: 12px; }
+.scenario-controls [role='group'] { display: flex; flex-wrap: wrap; gap: 8px; }
+.scenario-controls p { margin: 6px 0; font-size: 12px; }
+#scenario-summary { border-left: 3px solid #844a72; padding-left: 10px; }
+.assumption { color: #633d35; }
+#candidate-navigation { margin-bottom: 10px; }
+#candidate-navigation[hidden], .legend li[hidden] { display: none; }
+#visible-layers, #point-diff { font-size: 12px; margin: 6px 0; }
+.key.normal { border-top: 3px dashed #885229; }
+.key.unavailable { border-top: 3px dotted #697277; }
+.key.candidate { height: 3px; background: repeating-linear-gradient(to right, #844a72 0 14px, transparent 14px 19px, #844a72 19px 22px, transparent 22px 27px); }
+.callout-sunda, .callout-lombok { --target-x: 10px; --target-y: 12px; }
+.callout-sunda .feature-leader, .callout-lombok .feature-leader { transform: rotate(48deg); }
+#selected-scenario { font-size: 12px; }
+
+.map-condition { position: absolute; bottom: 8px; left: 8px; z-index: 600; max-width: calc(100% - 16px); padding: 3px 8px; background: #fafcfa; border: 1px solid #829e9b; border-radius: 3px; color: #203c45; font: 12px/1.6 -apple-system, BlinkMacSystemFont, sans-serif; pointer-events: none; }
+
+/* Keep the eastern candidate name inside the narrow overview. */
+.callout-lombok .feature-name { left: auto; right: 40px; }

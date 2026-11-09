@@ -1,6 +1,6 @@
-# 地図の行間 — CG-01 地図探索
+# 地図の行間 — CG-01 地図探索 / CG-05 条件実験
 
-マラッカ海峡周辺を実座標で動かし、海峡・通常主要航路・少数の関連地点を選んで最小説明と根拠を読む独立成果。**通常時だけ**。条件切替・代替航路・比較・独立レイヤーON/OFF・詳細全項目・メモ・ログイン・予測計算は含まない。MVP全体・spec §17の完成ではない。
+マラッカ海峡周辺の地図で対象を選び、通常時⇄通行不可（仮定）を往復する教材。スンダ・ロンボク経由候補、通常航路を使用しない比較線、追加地点・凡例・差分要約・選択説明が同期する。条件はページ内のみ。候補の出典・仮定・限界は初回から読める。独立レイヤー操作・詳細全項目・メモ・保存・国別切替・予測計算は含まない。人間の自由探索は未実施で、MVP全体・spec §17の完成ではない。
 
 plain TypeScript（strict）＋Leaflet＋Vite。[構成比較とdecision trail](docs/architecture.md)。外部タイル・runtime外部通信・契約・API keyなし。背景JSONは同一originからfetchする。出典リンクは利用者の操作で外部へ開く。
 
@@ -32,13 +32,13 @@ verifyはbuild済みpreviewを起動、HTTP/portのDoctor、実UIのPlaywright�
 
 依存導入済み。`package-lock.json`を保全し、CIは`npm ci --ignore-scripts`で固定依存を導入する。
 
-coordinatorがNode 24.19.0でVite 6.4.5 / Vitest 4.1.12を導入済み。2026-11-09の最終audit（`/Users/ysj/orca/tmp/chizu-map-exploration/npm-audit-final.json`）は脆弱性0件。lockと導入済み依存も4.1.12で一致する。このaudit時点の結果であり、将来の脆弱性不存在を保証するものではない。override / forceは使用していない。
+監査は`npm audit --json`で再実行する。外側coordinatorのrunnerでは脆弱性0件を確認済み。
 
 ## 出典・権利
 
 - [Natural Earth countries v5.1.2](https://raw.githubusercontent.com/nvkelso/natural-earth-vector/v5.1.2/geojson/ne_50m_admin_0_countries.geojson)。[全vector/raster public domain](https://www.naturalearthdata.com/about/terms-of-use/)。Made with Natural Earth。国境/海岸は一般化された小縮尺・de facto境界。高ズーム精度や政治的承認を表さない。
-- [EIA World Oil Transit Chokepoints](https://www.eia.gov/international/content/analysis/special_topics/world_oil_transit_chokepoints/)、公開・更新2026-03-03。原資料の表は2020〜1H25だが不使用。インド洋と太平洋を結ぶ基本論点のみ、翻訳・日本語要約：**地図の行間**。[EIA reuse](https://www.eia.gov/about/copyrights_reuse.php)：政府出版物public domain、第三者資料・ロゴ・写真は別権利。本アプリでは画像・図・AIS・統計は転載しない。
-- 著者作成の通常航路は実座標による概略モデル。実際の船舶航跡・検証済み航行線ではない。出典は地理的位置関係の根拠であり各waypointの運航検証ではない。海峡/地点は代表点。航行案内に使用しない。運航量・所要時間・船舶条件は**未収録**で、0/無影響ではない。
+- [EIA World Oil Transit Chokepoints](https://www.eia.gov/international/content/analysis/special_topics/world_oil_transit_chokepoints/)、公開・更新2026-03-03。原資料の表は2020〜1H25だが不使用。インド洋と太平洋の接続、およびStrait of Malacca節がスンダ・ロンボク両海峡を代替経路・狭窄部として挙げる記述だけを採用。翻訳・日本語要約：**地図の行間**。[EIA reuse](https://www.eia.gov/about/copyrights_reuse.php)：政府出版物public domain、第三者資料・ロゴ・写真は別権利。本アプリでは画像・図・AIS・統計は転載しない。
+- 著者作成の通常航路・候補航路は実座標による概略モデル。実際の船舶航跡・検証済み航行線ではない。出典は地理的位置関係の根拠であり各waypointの運航検証ではない。海峡/地点は代表点。航行案内に使用しない。運航量・所要時間・船舶条件は**未収録**で、0/無影響ではない。
 
 資料の権利ページとEIA本文はcoordinatorが2026-11-09 JST確認済み。詳細registryは[src/domain.ts](src/domain.ts)。日本語国名・ラベル位置・代表点は著者表記。著者作成の航路・代表点・ラベル配置およびコード全体の再利用ライセンスは未設定で、再利用は別途確認が必要。Natural Earth/EIAのpublic domainはこれら自作物には適用されない。Leaflet 1.9.4はBSD-2-Clause。配布物の[NOTICE](public/NOTICE.txt)に導入済み`node_modules/leaflet/LICENSE`の著作権・条件・免責全文を保持し、アプリfooterからリンクする。
 
@@ -66,12 +66,8 @@ prepareはCIでは何もしない。ローカルhelperはcoordinatorが有効化
 
 ## 検証状況と残るゲート
 
-実施済み: Natural Earth指定SHA256照合・再生成。Node 24.19.0でTypeScript typecheck・production build・unit 13件、配布陸地と航路線分の交差検査が合格。Pythonメール保護fixture 6件とCI検査範囲fixture 5件も合格。航路の不正入力はobject tableで1件ずつ全体を渡し、可変長配列のtuple推論エラーを解消した。
+最新実走の結果と画像確認状況はCIとPR本文を参照。検証対象はPython、unit、通常・スンダ・ロンボクのgeometry、typecheck/build、audit、PC/mobile実ChromiumのE2Eとする。`npm run verify`は所有previewのみを停止する。
 
-coordinatorの最新Chromium再実走はdesktop/mobile計16件中14件合格。残る2件はdesktopのkeyboard zoom往復（2.197906px差）とmobileのペナン島tap遮断。初期viewport・タッチボタン・引出線・PC地図の可読性と巨大余白の解消はcoordinatorが実画面で確認済み。
+対象地域の範囲とE2E検査を更新した後は、上記コマンドで再build・verify・auditを行い、画像も開いて両候補海峡・候補線全体・可読性を確認する。[CG-05の導線と検証手順](features/scenario-switch.md)、[verify skill](.cursor/skills/verify-chizu-no-gyokan/SKILL.md)を参照。
 
-今回の最終修正は、矢印移動後のmaxBounds戻りアニメーションを避ける移動先の事前制限、地図上ボタンのtouch clickが連続選択をdouble tap zoomに変えていた伝播の遮断、地図内部のブラウザスクロールを防ぐ`overflow: clip`。既存の2px未満の復帰判定を維持し、画面上の代表座標点の間隔による倍率検査と連続実タップ時の位置・海岸サイズ不変／内部scroll 0の回帰検査を追加した。[原因と証拠](docs/map-exploration-final-review.md)。SVG内部原点の一致や巨大な国全体bboxは倍率の根拠にしない。
-
-**未完了**: 今回の最終修正後の一括実走と実画面確認、verify全工程の成功確認、リモートCI実行。外側coordinator shellがprivacy・geometry・unit・build・verifyを一括実行する。実スクリーンリーダーの音声確認も未実施であり、自動キーボード操作・ARIA検査とは区別する。
-
-**人間自由探索も未実施で、PRのゲートは未通過**。誘導を抑えた探索で、移動・選択・説明と事実/モデルの理解を観察し、問題を修正することがCG-01の受入ゲート。自動テストだけで完了にしない。coordinatorへdiffを返す段階であり、commit/push/PR/Issue操作・マージは行っていない。
+残ゲートはリモートCI、人間自由探索、実スクリーンリーダー音声（いずれも未実施）。自動検証・画像確認の合格だけで§17やMVP全体の受入完了とはしない。

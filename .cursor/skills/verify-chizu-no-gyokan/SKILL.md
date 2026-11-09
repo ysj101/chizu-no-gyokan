@@ -1,13 +1,13 @@
 ---
 name: verify-chizu-no-gyokan
-description: CG-01の通常時地図探索をbuild済みpreviewで起動確認し、PC・モバイルの操作とHTTP失敗をPlaywrightで検証して証拠を保存する。
+description: CG-01地図探索とCG-05条件実験をbuild済みpreviewで起動確認し、PC・モバイルの操作とHTTP失敗をPlaywrightで検証して証拠を保存する。
 ---
 
-# Verify CG-01 map exploration
+# Verify CG-01 map exploration / CG-05 scenario switch
 
 実施担当はcoordinator。これは実行可能な手順であり、このファイルの存在を実施済みの証拠にしない。依存導入・Chromium導入の権限は担当者が確認する。人間の自由探索を自動検証で代用しない。
 
-2026-11-09の直近結果: Node 24.19.0、privacy/CI fixture 11件・unit 13件・geometry・typecheck/build合格、audit 0件。E2E 14/16件。最終修正後の再実走は未実施でcoordinator担当。リモートCI・人間自由探索・実screenreader音声も未実施。
+最新実走の結果と画像確認状況はCIとPR本文を参照。変更後は以下を再実行し、画像を開いて確認する。所有previewのみ停止する。残ゲートのリモートCI・人間自由探索・実screenreader音声は未実施。
 
 ## Launch
 
@@ -20,6 +20,7 @@ npm run test:geometry
 npm test
 npm run build
 npm run verify
+npm audit --json
 ```
 
 `verify`は`node scripts/verify.mjs`。distが必要。実コマンドは`node node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port 4173 --strictPort`。4173が使用中なら拒否し、既存serverに流用しない。stdoutの`http://127.0.0.1:4173`とHTTP 200を最大12秒で検出する。Viteのdev serverは検証対象にしない。
@@ -57,3 +58,15 @@ port 4173のHTTPを読み取り、`/`のタイトル文字列と`/data/countries
 ## Cleanup
 
 一括verifyはfinallyで、自分がspawnしたpreviewのChildProcessだけにSIGTERMを送り、必要時だけ同じchildへSIGKILLする。--serveはそのterminalでCtrl-C。同じwrapperが所有PIDのみ停止しcleanupを記録する。Doctorはserverを作らない。`pkill`、portから特定した無関係PIDのkill、証拠削除をしない。異常終了後に残ったPIDをファイルの数値だけでkillしない。
+
+## CG-05 条件実験のDrive
+
+詳細は[feature map](../../../features/scenario-switch.md)。次をPCとmobile双方で検証する。証拠名は既存と区別し`scenario-desktop-*` / `scenario-mobile-*`。
+
+1. 初期の位置・倍率のまま仮定へ切り替え、両候補海峡のボタン・名称と候補線全体のbounding boxが地図内に収まることをPC/mobileで確認する。パン・zoom後の「対象地域に戻る」でも同じ範囲を確認する。`マラッカ海峡`を選択し、`getByRole('button', { name: '通行不可（仮定）', exact: true })`で切替。`通常時`ボタンも同画面に残り、aria-pressedが逆転、`#current-condition`と`#scenario-summary`が更新される。
+2. 通常線が点線、候補2本が長短破線、マラッカは×◇、追加海峡は＋◇。凡例・差分要約・選択説明が同じ条件を示す。通常線は「使用しない比較線」である。
+3. 通常航路・既存地点を選択したまま往復し、説明と選択状態の同期を確認。候補を選んで戻した場合はマラッカへ復帰し、候補線・代表点・一覧項目が消える。
+4. 両候補海域への移動ボタンと実地図の海峡ボタンを操作。出典（EIA 2026-03-03/参照2026-11-09）、日本語要約主体、原文、public domain、著者ライセンス未設定、仮定、狭窄部・未検証・未収録を初回から確認する。
+5. Tab/Shift+Tab、Enter/Spaceで往復。フォーカス・aria-pressed・live statusを照合し、reduced motion設定でも確認する。往復後に実ドラッグ・zoom・選択を継続。documentとcountriesのrequestは各1回、URL・storageへ状態を保存しない。
+6. 初回HTTPを遅延し読込中に切替。HTTP 503/不正JSON/不正geometryでも切替を往復し、失敗案内と再試行を維持。回復時に選択条件の候補を描画する。外部HTML文字列は往復後もtextのままで実行されない。
+7. `scenario-*.png`を実際に開き、PC/mobileの文字・凡例・差分・選択説明、候補の陸地交差を確認する。geometry合格で画像確認を代用しない。人間自由探索と実screenreader音声を別に記録する。

@@ -1,0 +1,82 @@
+:root { color: #203c45; background: #fafcfa; font: 15px/1.75 -apple-system, BlinkMacSystemFont, 'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif; font-synthesis: none; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+a { color: #176473; text-underline-offset: 3px; }
+button, summary { font: inherit; cursor: pointer; }
+button { min-height: 44px; border: 1px solid #a4b8b8; border-radius: 5px; padding: 6px 13px; color: #203c45; background: #fafcfa; }
+button:hover { background: #e2eef0; }
+button[aria-pressed='true'] { background: #dcecf0; border-color: #146d78; box-shadow: inset 3px 0 #146d78; }
+:focus-visible { outline: 3px solid #146d78 !important; outline-offset: 3px; }
+.skip { position: absolute; left: 10px; top: -80px; z-index: 2000; padding: 10px; background: white; }
+.skip:focus { top: 10px; }
+header { display: flex; align-items: center; gap: 28px; padding: 18px 28px; border-bottom: 1px solid #cad7d5; }
+.brand { font: 600 26px/1.4 'Yu Mincho', 'Hiragino Mincho ProN', serif; text-decoration: none; color: #203c45; white-space: nowrap; }
+header p { margin: 0; }
+.condition { margin-left: auto; border: 1px solid #829e9b; border-radius: 30px; padding: 2px 15px; white-space: nowrap; }
+main { display: grid; grid-template-columns: minmax(0, 1fr) 340px; }
+.atlas { padding: 18px 22px; min-width: 0; }
+.map-toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+/* Clip geographic overflow without creating a scroll container that focus or
+   scrollIntoView can move independently of Leaflet panes. */
+#map { overflow: clip; width: 100%; height: max(490px, calc(100dvh - 290px)); max-height: 850px; background: #dcecf0; border: 1px solid #92aaaf; border-radius: 6px; isolation: isolate; }
+#map-help, #load-status, .attribution { font-size: 12px; margin: 7px 0; }
+#load-status { min-height: 21px; }
+.legend { display: flex; flex-wrap: wrap; list-style: none; gap: 5px 18px; padding: 0; margin: 12px 0 6px; font-size: 12px; }
+.legend li { display: flex; align-items: center; gap: 7px; }
+.key { width: 26px; display: inline-block; text-align: center; }
+.key.border { border-top: 1px solid #667e77; }
+.key.route { border-top: 3px dashed #885229; }
+.key.strait { font-size: 23px; font-weight: bold; line-height: 1; color: #146d78; }
+.key.point { color: #146d78; }
+aside { border-left: 1px solid #cad7d5; padding: 24px; }
+h1 { font: 600 27px/1.5 'Yu Mincho', 'Hiragino Mincho ProN', serif; margin: 8px 0 16px; }
+.kind { font-size: 12px; margin: 0; color: #48666b; }
+#selected-description { font-size: 15px; }
+#selected-limit, #selected-source { font-size: 12px; }
+.note { border-left: 3px solid #819b9f; padding-left: 10px; }
+.guide { font-size: 12px; border-top: 1px solid #cad7d5; margin-top: 22px; padding-top: 8px; }
+#feature-list { display: grid; gap: 7px; margin: 20px 0; }
+#feature-list button { text-align: left; }
+details { font-size: 12px; border-top: 1px solid #cad7d5; padding-top: 12px; }
+summary { min-height: 44px; padding: 8px 0; font-size: 14px; }
+#source-list section { margin-bottom: 22px; }
+#source-list h2 { font-size: 14px; font-weight: 600; line-height: 1.6; }
+#source-list a { overflow-wrap: anywhere; }
+footer { padding: 12px 28px; border-top: 1px solid #cad7d5; font-size: 12px; }
+.geo-label { pointer-events: none; text-align: center; white-space: nowrap; }
+.country-label, .sea-label { font-size: 12px; color: #3f5956; text-shadow: 0 1px 2px #fafcfa, 1px 0 2px #fafcfa; }
+.sea-label { color: #476e7e; letter-spacing: 2px; }
+.leaflet-marker-icon.feature-icon { border: none; background: none; pointer-events: none; }
+.feature-icon button { pointer-events: auto; }
+.feature-callout { --target-x: -58px; --target-y: 4px; }
+.callout-penang { --target-y: -60px; }
+.callout-singapore { --target-x: 14px; --target-y: 10px; }
+.feature-callout .map-feature { position: absolute; left: var(--target-x); top: var(--target-y); }
+.coordinate-dot { position: absolute; width: 6px; height: 6px; left: -3px; top: -3px; border-radius: 50%; background: #146d78; }
+.feature-leader { position: absolute; left: 0; top: 0; width: 45px; border-top: 1px solid #146d78; transform-origin: 0 0; transform: rotate(144deg); }
+.callout-penang .feature-leader { width: 53px; transform: rotate(-133deg); }
+.callout-singapore .feature-leader { width: 48px; transform: rotate(42deg); }
+.callout-malacca .feature-name, .callout-penang .feature-name { left: auto; right: 40px; }
+.map-feature { position: relative; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; background: transparent; border: none; }
+.feature-symbol { display: block; font-size: 25px; color: #146d78; text-shadow: 0 0 3px white; line-height: 1; }
+.feature-name { pointer-events: none; position: absolute; left: 38px; top: 10px; background: #fafcfaf0; padding: 2px 5px; border-radius: 3px; font-size: 12px; white-space: nowrap; color: #203c45; }
+.selected .feature-symbol { outline: 2px solid #146d78; outline-offset: 2px; border-radius: 50%; }
+.selected .feature-name { font-weight: bold; }
+.route-label { padding: 4px 10px; color: #885229; font-size: 12px; white-space: nowrap; background: #fafcfae8; }
+.route-hit { cursor: pointer; }
+#touch-mode[hidden] { display: none; }
+@media (max-width: 760px) {
+  header { flex-wrap: wrap; gap: 6px 15px; padding: 13px 16px; }
+  header p { order: 3; width: 100%; font-size: 12px; }
+  .brand { font-size: 23px; }
+  main { display: block; }
+  .atlas { padding: 12px; }
+  #map { height: 48dvh; min-height: 320px; max-height: 500px; }
+  aside { border-left: none; padding: 0 16px 22px; }
+  #selection { padding: 12px 0 8px; background: #fafcfaf7; border-bottom: 1px solid #cad7d5; }
+  #selection h1 { font-size: 22px; margin: 3px 0; }
+  #selection p { margin: 4px 0; }
+  #selected-description { font-size: 13px; }
+  .guide { margin-top: 12px; }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; } }

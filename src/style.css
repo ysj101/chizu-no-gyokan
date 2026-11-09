@@ -106,3 +106,9 @@ footer { padding: 12px 28px; border-top: 1px solid #cad7d5; font-size: 12px; }
 #detail-panel dd p { font-size: 12px; margin: 3px 0 0; }
 #detail-evidence h3 { font-size: 13px; }
 #detail-evidence section { margin-bottom: 18px; }
+
+.layer-controls { margin-bottom: 12px; }
+.layer-controls [role='group'] { display: flex; flex-wrap: wrap; gap: 8px; }
+#layer-help, #selected-visibility, .feature-visibility { font-size: 12px; }
+#selected-visibility { border-left: 3px solid #697277; padding-left: 10px; }
+.legend .layer-off .key { opacity: .35; }

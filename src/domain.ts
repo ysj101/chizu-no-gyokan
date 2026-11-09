@@ -150,3 +150,37 @@ export function scenarioExplanation(id: SelectedFeatureId, scenario: Scenario): 
   if (['sunda', 'lombok', 'sunda-route', 'lombok-route'].includes(id)) return '＋仮定時に追加：EIAが挙げる代替経路の検討対象です。運航可能性を保証しません。';
   return '仮定時も地理的位置は変わりません。この地点への影響や輸送量は未収録です。';
 }
+
+// Page-local visibility, independent of the scenario and selected feature.
+export type LayerId = 'borders' | 'routes' | 'points';
+export type LayerVisibility = Record<LayerId, boolean>;
+export const layerNames: Record<LayerId, string> = { borders: '国境', routes: '主要航路', points: '注目地点' };
+export const layerIds: readonly LayerId[] = ['borders', 'routes', 'points'];
+export function featureLayer(feature: ExplorationFeature): 'routes' | 'points' {
+  return feature.kind === 'route' ? 'routes' : 'points';
+}
+export function hiddenFeatureMessage(feature: ExplorationFeature, visibility: LayerVisibility): string {
+  const layer = featureLayer(feature);
+  return visibility[layer] ? '' : `この対象は現在地図上で非表示（${layerNames[layer]}レイヤーOFF）`;
+}
+export function layerPresentation(visibility: LayerVisibility, scenario: Scenario) {
+  const closed = scenario.kind !== 'normal';
+  const state = (id: LayerId) => visibility[id] ? '表示中' : '非表示';
+  const legendText = (id: LayerId, text: string) => `${text}（${state(id)}）`;
+  return {
+    status: layerIds.map(id => `${layerNames[id]}：${state(id)}`).join(' / '),
+    explanation: '国境OFFでも位置を把握するため陸地の塗りと海域名は残します。非表示の対象も一覧から選択でき、選択と詳細は保持します。'
+      + (!visibility.routes ? ' 主要航路レイヤーOFF：航路線・候補線・航路ラベルは地図上で非表示です。' : '')
+      + (!visibility.points ? ' 注目地点レイヤーOFF：代表点・引出線・コールアウトは地図上で非表示です。' : ''),
+    scenarioSummary: scenarioDefinition(scenario).summary
+      + (!visibility.routes ? ' 主要航路レイヤーOFFのため、条件に対応する航路線は地図上で非表示です。再表示すると現在条件の航路が現れます。' : '')
+      + (!visibility.points ? ' 注目地点レイヤーOFFのため、条件に対応する代表点は地図上で非表示です。' : ''),
+    legends: {
+      borders: { text: legendText('borders', '国境・海岸（地理）'), hidden: false, off: !visibility.borders },
+      normal: { text: legendText('routes', routeStyles[closed ? 'unavailable' : 'normal'].label), hidden: false, off: !visibility.routes },
+      candidate: { text: legendText('routes', routeStyles.candidate.label), hidden: !closed, off: !visibility.routes },
+      strait: { text: legendText('points', '海峡の代表点'), hidden: false, off: !visibility.points },
+      place: { text: legendText('points', '関連地点の代表点'), hidden: false, off: !visibility.points },
+    },
+  };
+}

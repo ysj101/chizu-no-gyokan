@@ -1,6 +1,6 @@
-# 地図の行間 — CG-01 地図探索 / CG-05 条件実験 / CG-02 詳細情報
+# 地図の行間 — CG-01 地図探索 / CG-05 条件実験 / CG-02 詳細情報 / CG-03 レイヤー切替
 
-マラッカ海峡周辺の地図で対象を選び、通常時⇄通行不可（仮定）を往復する教材。スンダ・ロンボク経由候補、通常航路を使用しない比較線、追加地点・凡例・差分要約・選択説明が同期する。条件はページ内のみ。候補の出典・仮定・限界は初回から読める。選択対象の詳細は項目ごとの区分・出典・日付・権利・未収録を表示する。関連はテキストのみ。独立レイヤー操作・メモ・保存・国別切替・予測計算は含まない。人間の自由探索は未実施で、MVP全体・spec §17の完成ではない。
+マラッカ海峡周辺の地図で対象を選び、通常時⇄通行不可（仮定）を往復する教材。スンダ・ロンボク経由候補、通常航路を使用しない比較線、追加地点・凡例・差分要約・選択説明が同期する。条件はページ内のみ。候補の出典・仮定・限界は初回から読める。選択対象の詳細は項目ごとの区分・出典・日付・権利・未収録を表示する。関連はテキストのみ。国境・主要航路・注目地点を個別に切り替え、非表示の対象も選択と詳細を保持する。メモ・保存・国別切替・予測計算は含まない。人間の自由探索は未実施で、MVP全体・spec §17の完成ではない。
 
 plain TypeScript（strict）＋Leaflet＋Vite。[構成比較とdecision trail](docs/architecture.md)。外部タイル・runtime外部通信・契約・API keyなし。背景JSONは同一originからfetchする。出典リンクは利用者の操作で外部へ開く。
 
@@ -32,7 +32,7 @@ verifyはbuild済みpreviewを起動、HTTP/portのDoctor、実UIのPlaywright�
 
 依存導入済み。`package-lock.json`を保全し、CIは`npm ci --ignore-scripts`で固定依存を導入する。
 
-監査は`npm audit --json`で再実行する。最新実走はCIとPR本文参照。
+監査は`npm audit --json`で再実行する。最新の実走結果はCIとPR本文を参照。
 
 ## 出典・権利
 
@@ -64,12 +64,14 @@ sh scripts/check-email-privacy.sh --commit-msg /path/to/message
 
 prepareはCIでは何もしない。ローカルhelperはcoordinatorが有効化した`extensions.worktreeConfig=true`が前提。既存core.hooksPathがあれば上書きせず、未設定時のみ`git config --worktree core.hooksPath .githooks`を設定する。共有Git設定は変更しない。fixtureは実在のidentityを読まずexample.testのsyntheticとfake Gitだけを使う。
 
-## 検証状況と残るゲート
+## 検証
 
-最新実走の結果と画像確認状況はCIとPR本文を参照。検証対象はPython、unit、通常・スンダ・ロンボクのgeometry、typecheck/build、audit、PC/mobile実ChromiumのE2Eとする。`npm run verify`は所有previewのみを停止する。
+最新の実走結果はCIとPR本文を参照。検証対象はPython、unit、通常・スンダ・ロンボクのgeometry、typecheck/build、audit、PC/mobile実ChromiumのE2Eとする。`npm run verify`は所有previewのみを停止する。
 
 対象地域の範囲とE2E検査を更新した後は、上記コマンドで再build・verify・auditを行い、画像も開いて両候補海峡・候補線全体・可読性を確認する。[CG-02の詳細と資料対応](features/detail-evidence.md)、[CG-05の導線と検証手順](features/scenario-switch.md)、[verify skill](.cursor/skills/verify-chizu-no-gyokan/SKILL.md)を参照。
 
 CG-02の証拠は`artifacts/map-exploration/detail-*.png`。ブラウザ実走・画像確認・auditはcoordinator runnerで実行する。
 
-残ゲートはリモートCI、人間自由探索、実スクリーンリーダー音声（いずれも未実施）。自動検証・画像確認の合格だけで§17やMVP全体の受入完了とはしない。
+人間の自由探索と実スクリーンリーダー確認は未実施。自動検証・画像確認の合格だけで§17やMVP全体の受入完了とはしない。
+
+[CG-03の操作と検証](features/layer-toggles.md)：全表示組合せで両条件を往復し、表示・凡例・非表示理由・選択保持を照合する。画像は`artifacts/map-exploration/layers-*.png`。ブラウザ実走・画像確認・auditはcoordinator runnerで実行する。最新の実走結果はCIとPR本文を参照。

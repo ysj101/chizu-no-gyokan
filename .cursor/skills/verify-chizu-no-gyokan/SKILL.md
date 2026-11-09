@@ -1,13 +1,13 @@
 ---
 name: verify-chizu-no-gyokan
-description: CG-01地図探索とCG-05条件実験をbuild済みpreviewで起動確認し、PC・モバイルの操作とHTTP失敗をPlaywrightで検証して証拠を保存する。
+description: CG-01地図探索・CG-05条件実験・CG-02詳細・CG-03レイヤー切替をbuild済みpreviewで起動確認し、PC・モバイルの操作とHTTP失敗をPlaywrightで検証して証拠を保存する。
 ---
 
 # Verify CG-01 map exploration / CG-05 scenario switch
 
 実施担当はcoordinator。これは実行可能な手順であり、このファイルの存在を実施済みの証拠にしない。依存導入・Chromium導入の権限は担当者が確認する。人間の自由探索を自動検証で代用しない。
 
-最新実走の結果と画像確認状況はCIとPR本文を参照。変更後は以下を再実行し、画像を開いて確認する。所有previewのみ停止する。残ゲートのリモートCI・人間自由探索・実screenreader音声は未実施。
+最新の実走結果はCIとPR本文を参照。変更後は以下を再実行し、画像を開いて確認する。所有previewのみ停止する。人間自由探索と実screenreader音声は未実施。
 
 ## Launch
 
@@ -79,3 +79,17 @@ port 4173のHTTPを読み取り、`/`のタイトル文字列と`/data/countries
 PC/mobileで通常対象と仮定時の追加対象を選択し、`getByRole('region', { name: '選択対象の詳細', exact: true })`内の全項目・区分・資料名/URL・確認日/更新日不明・対象時点・使用範囲・権利・未収録を確認する。関連は文章のみ。同じ通常対象を選択したまま両条件を往復し、詳細意味・注意事項・最小説明・凡例を照合する。Enter/Spaceで根拠を開閉し、Tab/Shift+Tab・フォーカス・aria・reduced motionを確認する。HTML風の編集入力をビルド済みJSのHTTP境界で置換し、テキストのままで実行されないことを検証する。
 
 `artifacts/map-exploration/detail-*.png`を保存して実際に開き、狭い画面の可読性、根拠の初回表示とスクロール、地図選択後の説明を目視する。待受・registryがsandboxで拒否される場合は回避せず、coordinator runnerで同じverify/auditを実行する。人間自由探索と実スクリーンリーダーは未実施として残し、ブラウザや画像の未実走を合格にしない。
+
+
+## CG-03 レイヤー独立切替のDrive
+
+[CG-03 feature map](../../../features/layer-toggles.md)と`tests/e2e/layers.spec.ts`を参照。既存の一括`npm run verify`に含む。実行前に`npm run typecheck`、`npm test`、`npm run test:privacy`、`npm run test:geometry`、`npm run build`を実行する。最新の実走結果はCIとPR本文を参照。
+
+1. PC/mobileで「国境：表示中」「主要航路：表示中」「注目地点：表示中」を個別操作し、全組合せで他レイヤーが不変、実描画と文字・aria-pressed・`#visible-layers`・凡例が一致することを確認する。国境OFFでも陸地の塗りと海域名は残す。
+2. 各組合せで通常→仮定→通常を往復。設定保持、現在条件、候補と点の線種・記号、差分・注意の同期を確認する。全OFFでも非表示理由を読め、航路OFFでも仮定・注意が残ること、再表示で現在条件の候補と説明が現れることを確認する。
+3. 海峡と航路を選んでから隠す。選択・詳細・根拠・区分・未収録・根拠の開閉を保持し、詳細と一覧が非表示理由を文字で伝えることを確認する。隠したまま一覧から通常対象と候補を選ぶ。候補を選んで通常へ戻した場合は従来のマラッカ復帰規則を確認する。
+4. 切替後に地図regionの矢印・＋/−、地域復帰、地図上の選択を続ける。documentとcountriesの不要なrequestなし、URL/storage保存なし。読込中・取得失敗中にも設定し、再試行成功後に反映することを確認する。
+5. Tab/Shift+Tabでトグルを辿りEnter/Spaceで切り替える。フォーカス表示と保持、live status、reduced motion設定下の操作を確認する。
+6. `artifacts/map-exploration/layers-{desktop|mobile}-*.png`に全ON・全OFF・航路のみOFFの仮定時・非表示対象選択時・キーボード操作を保存し、実際に開いて文字と凡例、注意、狭い画面の操作・スクロールを確認する。
+
+待受がEPERM、registryがENOTFOUNDの環境では回避せず、coordinator runnerでverifyとauditを実行する。最新の実走結果はCIとPR本文を参照。人間の自由探索と実際のスクリーンリーダー確認は未実施。自動操作で代用せず、表示状態と非表示理由の理解を観察して別に記録する。

@@ -45,7 +45,7 @@ interface FeatureBase {
   id: SelectedFeatureId;
   name: string;
   description: string;
-  sources: readonly SourceId[];
+  sources: readonly [SourceId, ...SourceId[]];
   limitation: string;
 }
 export type ExplorationFeature =

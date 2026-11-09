@@ -29,9 +29,13 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) 340px; }
 .key.point { color: #146d78; }
 aside { border-left: 1px solid #cad7d5; padding: 24px; }
 h1 { font: 600 27px/1.5 'Yu Mincho', 'Hiragino Mincho ProN', serif; margin: 8px 0 16px; }
-.kind { font-size: 12px; margin: 0; color: #48666b; }
+.kind, #selected-related { font-size: 12px; color: #48666b; }
+.kind { margin: 0; }
 #selected-description { font-size: 15px; }
-#selected-limit, #selected-source { font-size: 12px; }
+#selected-why { font-size: 13px; }
+.tag { display: inline-block; margin-right: 5px; font-size: 11px; line-height: 1.5; padding: 0 6px; border: 1px solid #a4b8b8; border-radius: 3px; color: #35535a; background: #eef3f2; vertical-align: 1px; }
+.tag-fact { border-color: #5f8a7a; }
+.tag-assumption { border-color: #a45a7e; background: #f4e8ef; }
 .note { border-left: 3px solid #819b9f; padding-left: 10px; }
 .guide { margin-top: 22px; }
 details > p { margin: 6px 0; }
@@ -106,7 +110,7 @@ footer { padding: 12px 28px; border-top: 1px solid #cad7d5; font-size: 12px; }
 #detail-title { font-size: 17px; }
 #detail-panel dt { font-weight: 600; margin-top: 12px; }
 #detail-panel dd { margin-left: 0; }
-#detail-panel dd p { font-size: 12px; margin: 3px 0 0; }
+#detail-panel details { border-top: none; padding-top: 4px; }
 #detail-evidence h3 { font-size: 13px; }
 #detail-evidence section { margin-bottom: 18px; }
 

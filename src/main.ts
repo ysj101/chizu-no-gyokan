@@ -1,14 +1,14 @@
 import { restoredMapState } from './note-restore';
 import type { DiscoveryNote, NoteMapState, Result } from './notes';
 import { mountNotes } from './notes-panel';
-import { detailItems } from './details';
-import { renderDetailPanel } from './detail-panel';
+import { detailView } from './details';
+import { renderDetail } from './detail-panel';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './style.css';
 import { features, labels } from './content';
-import { parseCountries, sourceRegistry, scenarioDefinition, selectionForScenario, scenarioExplanation, routeStyles, layerIds, layerNames, layerPresentation, featureLayer, hiddenFeatureMessage } from './domain';
-import type { ExplorationFeature, LoadState, SelectedFeatureId, SourceId, Scenario, LayerVisibility } from './domain';
+import { parseCountries, sourceRegistry, scenarioDefinition, selectionForScenario, routeStyles, layerIds, layerNames, layerPresentation, featureLayer, hiddenFeatureMessage } from './domain';
+import type { ExplorationFeature, LoadState, SelectedFeatureId, Scenario, LayerVisibility } from './domain';
 
 function element<T extends HTMLElement>(id: string, constructor: { new(...args: never[]): T }): T {
   const value = document.getElementById(id);
@@ -74,20 +74,11 @@ function link(title: string, url: string): HTMLAnchorElement {
   const a = document.createElement('a'); a.textContent = title; a.href = url;
   return a;
 }
-function sourceText(ids: readonly SourceId[]): void {
-  const target = element('selected-source', HTMLParagraphElement);
-  target.replaceChildren(document.createTextNode('根拠：'));
-  ids.forEach((id, index) => {
-    if (index > 0) target.append(document.createTextNode(' / '));
-    const source = sourceRegistry[id];
-    target.append(link(source.title, source.url));
-  });
-}
 function selectFeature(id: SelectedFeatureId | null, reveal = false): void {
   if (id === null) {
     selectedFeatureId = null;
     element('selected-name', HTMLHeadingElement).textContent = '選択なし';
-    for (const key of ['selected-kind', 'selected-description', 'selected-scenario', 'selected-limit', 'selected-source', 'detail-fields', 'detail-evidence']) {
+    for (const key of ['selected-kind', 'selected-description', 'selected-why', 'selected-scenario', 'selected-related', 'detail-fields', 'detail-evidence']) {
       element(key, HTMLElement).replaceChildren();
     }
     updateSelectedVisibility(); updateSelectionAppearance(); return;
@@ -98,11 +89,11 @@ function selectFeature(id: SelectedFeatureId | null, reveal = false): void {
   element('selected-name', HTMLHeadingElement).textContent = feature.name;
   element('selected-kind', HTMLParagraphElement).textContent = feature.classification === 'teaching-model'
     ? '航路 / モデル上の説明' : `${feature.kind === 'strait' ? '海峡' : '関連地点'} / 地理的事実（位置は代表点）`;
-  element('selected-description', HTMLParagraphElement).textContent = feature.description;
-  element('selected-scenario', HTMLParagraphElement).textContent = scenarioExplanation(feature.id, scenario);
-  element('selected-limit', HTMLParagraphElement).textContent = feature.limitation;
-  sourceText(feature.sources);
-  renderDetailPanel(element('detail-fields', HTMLDivElement), element('detail-evidence', HTMLDivElement), detailItems(feature.id, scenario));
+  renderDetail({
+    description: element('selected-description', HTMLParagraphElement), why: element('selected-why', HTMLParagraphElement),
+    scenario: element('selected-scenario', HTMLParagraphElement), related: element('selected-related', HTMLParagraphElement),
+    more: element('detail-fields', HTMLDivElement), evidence: element('detail-evidence', HTMLDivElement),
+  }, detailView(feature.id, scenario));
   if (reveal && matchMedia('(max-width: 760px)').matches) {
     element('selection', HTMLElement).scrollIntoView({ block: 'start', behavior: 'instant' });
   }

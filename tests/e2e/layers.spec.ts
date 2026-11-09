@@ -139,20 +139,20 @@ test('hidden selections retain evidence and return as current candidates; explor
     const evidenceNode = await evidence.locator('section').first().elementHandle();
     const fieldsNode = await fields.locator('dl').elementHandle();
     await page.locator('#detail-sources summary').click();
-    await expect(page.locator('#detail-sources')).not.toHaveAttribute('open', '');
+    await expect(page.locator('#detail-sources')).toHaveAttribute('open', '');
     await toggle(page, id).click();
     await expect(page.locator('#selected-name')).toHaveText(name);
     await expect(page.locator('#selected-visibility')).toHaveText(`この対象は現在地図上で非表示（${names[id]}レイヤーOFF）`);
     await expect(page.locator(`#feature-list [data-feature-id="${id === 'routes' ? 'normal-route' : 'malacca'}"]`)).toContainText('地図上で非表示');
     expect(await evidence.locator('section').first().evaluate((el, old) => el === old, evidenceNode)).toBe(true);
     expect(await fields.locator('dl').evaluate((el, old) => el === old, fieldsNode)).toBe(true);
-    await expect(page.locator('#detail-sources')).not.toHaveAttribute('open', '');
+    await expect(page.locator('#detail-sources')).toHaveAttribute('open', '');
     // Hiding changes only the visibility message within the detail panel.
     expect((await panel.textContent())!.replace((await page.locator('#selected-visibility').textContent())!, '')).toBe(before);
     const list = page.getByRole('button', { name: `${name}を選択`, exact: true });
     await list.click(); await expect(list).toHaveAttribute('aria-pressed', 'true');
     await page.locator('#detail-sources summary').click();
-    await expect(page.locator('#detail-sources')).toHaveAttribute('open', '');
+    await expect(page.locator('#detail-sources')).not.toHaveAttribute('open', '');
     await screenshot(page, info.project.name, `hidden-selected-${id}`);
     await scenarioButton(page, true).click();
     await expect(page.locator('#selected-name')).toHaveText(name);

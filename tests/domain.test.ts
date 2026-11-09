@@ -81,41 +81,57 @@ describe('scenario projection', () => {
   });
 });
 
-import { detailItems, classificationLabels } from '../src/details';
+import { detailView, classificationLabels, classificationTags, unrecordedFields } from '../src/details';
+import type { DetailView } from '../src/details';
+const detailItems = (view: DetailView) => [view.overview, view.why, view.related, view.scenario, ...view.more];
 describe('selected detail evidence', () => {
-  it('covers every visible target with classified, sourced fields and explicit missing values', () => {
+  it('covers every visible target in three tiers with classified, sourced items and one explicit missing-data item', () => {
     for (const scenario of [normal, closed]) for (const id of scenarioDefinition(scenario).featureIds) {
-      const items = detailItems(id, scenario);
-      expect(items.map(item => item.label)).toEqual(['名称', '位置（地域）', '短い解説', '関連航路・関連地点', '現在シナリオでの意味', '注意事項', '距離', '所要時間', '船舶条件', '輸送能力', '運航量', '費用']);
-      expect(items.find(item => item.label === '名称')).toMatchObject({ text: features.find(feature => feature.id === id)!.name });
-      for (const item of items) {
+      const view = detailView(id, scenario);
+      const feature = features.find(feature => feature.id === id)!;
+      expect(view.overview).toMatchObject({ label: '概要', text: feature.description, sources: feature.sources });
+      expect(view.overview.classification).toBe(feature.classification === 'geographic-fact' ? 'fact' : 'explanation');
+      expect(view.why.label).toBe('なぜ重要か'); expect(view.related.label).toBe('関連する場所'); expect(view.scenario.label).toBe('現在の条件での意味');
+      const labels = view.more.map(item => item.label);
+      expect(labels.slice(0, 2)).toEqual(['位置（地域）', '注意事項']);
+      expect(labels.at(-1)).toBe('この教材では扱わないデータ');
+      expect(labels.includes('用語')).toBe(['malacca', 'sunda', 'lombok'].includes(id));
+      for (const item of detailItems(view)) {
         expect(classificationLabels[item.classification]).toBeTruthy();
+        expect(classificationTags[item.classification]).toBeTruthy();
         expect(item.sources.length).toBeGreaterThan(0);
         for (const sourceId of item.sources) {
           const source = sourceRegistry[sourceId];
           for (const key of ['title', 'url', 'consulted', 'updated', 'period', 'usage', 'rights', 'rightsUrl'] as const) expect(source[key]).toBeTruthy();
         }
         if (item.status === 'unrecorded') {
+          expect(item.fields).toEqual(unrecordedFields);
           expect(item.reason).toContain('ゼロや無影響を意味しません');
           expect('text' in item).toBe(false);
         }
       }
-      expect(items.filter(item => item.status === 'unrecorded').map(item => item.label)).toEqual(['距離', '所要時間', '船舶条件', '輸送能力', '運航量', '費用']);
+      expect(detailItems(view).filter(item => item.status === 'unrecorded')).toHaveLength(1);
+      // Evidence lists each source once, with every item that cites it.
+      expect(new Set(view.evidence.map(entry => entry.source)).size).toBe(view.evidence.length);
+      for (const entry of view.evidence) expect(entry.items).toEqual(detailItems(view).filter(item => item.sources.includes(entry.source)).map(item => item.label));
+      for (const item of detailItems(view)) for (const source of item.sources) expect(view.evidence.some(entry => entry.source === source)).toBe(true);
     }
+    expect(unrecordedFields).toEqual(['距離', '所要時間', '船舶条件', '輸送能力', '運航量', '費用']);
     expect(sourceRegistry.naturalEarth.updated).toContain('不明');
     expect(sourceRegistry.eia.updated).toBe('2026-03-03');
   });
   it('derives round trips from the same selection and shared scenario explanation without mutating data', () => {
     for (const id of scenarios.normal.featureIds) {
-      const before = detailItems(id, normal);
-      const changed = detailItems(id, closed);
-      expect(changed.find(item => item.label === '現在シナリオでの意味')).toMatchObject({ classification: 'assumption', text: scenarioExplanation(id, closed) });
-      expect(before.find(item => item.label === '現在シナリオでの意味')).toMatchObject({ classification: 'explanation', text: scenarioExplanation(id, normal) });
-      expect(changed.find(item => item.label === '注意事項')).not.toEqual(before.find(item => item.label === '注意事項'));
-      expect(detailItems(id, normal)).toEqual(before);
+      const before = detailView(id, normal);
+      const changed = detailView(id, closed);
+      expect(changed.scenario).toMatchObject({ classification: 'assumption', text: scenarioExplanation(id, closed) });
+      expect(before.scenario).toMatchObject({ classification: 'explanation', text: scenarioExplanation(id, normal) });
+      expect(changed.more.find(item => item.label === '注意事項')).not.toEqual(before.more.find(item => item.label === '注意事項'));
+      expect(changed.why).toEqual(before.why); expect(changed.related).toEqual(before.related);
+      expect(detailView(id, normal)).toEqual(before);
     }
-    for (const id of ['malacca', 'sunda', 'lombok'] as const) expect(detailItems(id, closed).find(item => item.label === '短い解説')).toMatchObject({ classification: 'fact', sources: ['eia'] });
-    for (const feature of features.filter(feature => feature.kind === 'route')) expect(detailItems(feature.id, closed).find(item => item.label === '短い解説')?.classification).toBe('explanation');
+    for (const id of ['malacca', 'sunda', 'lombok'] as const) expect(detailView(id, closed).why).toMatchObject({ classification: 'fact', sources: ['eia'] });
+    for (const feature of features.filter(feature => feature.kind === 'route')) expect(detailView(feature.id, closed).why.classification).toBe('explanation');
   });
 });
 

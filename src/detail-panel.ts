@@ -1,5 +1,7 @@
 import { classificationLabels, classificationTags } from './details';
-import type { DetailItem, DetailView, RelatedLink } from './details';
+import type { Classification, DetailItem, DetailView, RelatedLink } from './details';
+import { perspectiveTitle } from './perspectives';
+import type { Perspective } from './perspectives';
 import { sourceRegistry } from './domain';
 import type { SelectedFeatureId, Source } from './domain';
 
@@ -14,20 +16,18 @@ function sourceLink(source: Source): HTMLAnchorElement {
   const a = document.createElement('a'); a.textContent = source.title; a.href = source.url; return a;
 }
 // A short tag carries the classification; its full label stays readable as the title.
-function classificationTag(item: DetailItem): HTMLElement {
-  return tagElement(classificationTags[item.classification], item.classification, classificationLabels[item.classification]);
+function tagged(classification: Classification, text: string): Node[] {
+  return [tagElement(classificationTags[classification], classification, classificationLabels[classification]), textElement('span', text)];
 }
 function itemText(item: DetailItem): string {
   return item.status === 'recorded' ? item.text : `未収録：${item.fields.join('・')}。${item.reason}`;
 }
-function taggedText(item: DetailItem): Node[] {
-  return [classificationTag(item), textElement('span', itemText(item))];
-}
+function taggedText(item: DetailItem): Node[] { return tagged(item.classification, itemText(item)); }
 export interface DetailTargets { description: HTMLElement; why: HTMLElement; scenario: HTMLElement; related: HTMLElement; relatedStatus: HTMLElement; more: HTMLElement; evidence: HTMLElement }
 // Selecting a related place and previewing it on the map are the caller's business.
 export interface DetailActions { select(id: SelectedFeatureId): void; preview(id: SelectedFeatureId | null): void }
 // The only interactive tier: one button per related place, with delegated listeners on the list.
-function renderRelated(target: HTMLElement, status: HTMLElement, label: string, relatedLinks: readonly RelatedLink[], actions: DetailActions): void {
+export function renderRelated(target: HTMLElement, status: HTMLElement, label: string, relatedLinks: readonly RelatedLink[], actions: DetailActions): void {
   const links = document.createElement('ul');
   const byId = new Map(relatedLinks.map(link => [link.id, link]));
   for (const link of relatedLinks) {
@@ -36,7 +36,9 @@ function renderRelated(target: HTMLElement, status: HTMLElement, label: string, 
     // The visible name is the accessible name; the list buttons keep their distinct 「〜を選択」 names.
     if (!link.available) button.classList.add('unavailable');
     const hint = link.available ? '' : `（${link.shownIn.join('・')}で表示）`;
-    const entry = textElement('li', ''); entry.append(button, textElement('span', `${link.reason}${hint}`, 'reason')); links.append(entry);
+    const entry = textElement('li', ''); entry.append(button);
+    if (link.reason || hint) entry.append(textElement('span', `${link.reason}${hint}`, 'reason'));
+    links.append(entry);
   }
   const linkAt = (event: Event) => byId.get((event.target as HTMLElement).closest('button')?.dataset.relatedId as SelectedFeatureId);
   links.addEventListener('click', event => {
@@ -71,4 +73,19 @@ export function renderDetail(targets: DetailTargets, view: DetailView, actions: 
     const rights = document.createElement('a'); rights.textContent = '利用条件の原文'; rights.href = source.rightsUrl; section.append(rights);
     targets.evidence.append(section);
   }
+}
+
+export interface PerspectiveTargets { title: HTMLElement; meaning: HTMLElement; statements: HTMLElement }
+// The country view's text: a tagged meaning line, then sourced statements with their data period
+// (or the source's update date). The focus list is rendered separately because it depends on the condition.
+export function renderPerspectiveContent(targets: PerspectiveTargets, view: Perspective): void {
+  targets.title.textContent = perspectiveTitle(view);
+  targets.meaning.replaceChildren(...tagged(view.meaning.classification, view.meaning.text));
+  targets.statements.replaceChildren(...view.statements.map(statement => {
+    const item = textElement('li', ''); item.append(...tagged(statement.classification, statement.text));
+    const source = textElement('p', '資料：', 'statement-source');
+    statement.sources.forEach((id, index) => { if (index) source.append(' / '); source.append(sourceLink(sourceRegistry[id])); });
+    source.append(`（${statement.period ?? `更新 ${sourceRegistry[statement.sources[0]].updated}`}）`); item.append(source);
+    return item;
+  }));
 }

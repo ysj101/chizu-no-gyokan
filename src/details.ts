@@ -59,19 +59,25 @@ const definitions: Record<SelectedFeatureId, DetailDefinition> = {
   'lombok-route': { region: 'インド洋側からロンボク海峡を経て東側へ描いた概略線。', related: [{ id: 'lombok', reason: '経由する海峡' }, { id: 'malacca', reason: '使えないと仮定した海峡' }, { id: 'normal-route', reason: '比較対象の通常航路' }], why: candidateRoute },
 };
 export const unrecordedFields = ['距離', '所要時間', '船舶条件', '輸送能力', '運航量', '費用'] as const;
-// Names of the conditions that show each feature; static, so computed once.
-const shownIn = (id: SelectedFeatureId): readonly string[] => Object.values(scenarios).filter(definition => (definition.featureIds as readonly SelectedFeatureId[]).includes(id)).map(definition => definition.name);
+// Names of the conditions that show each feature; static, so computed once per id.
+const shownInCache = new Map<SelectedFeatureId, readonly string[]>();
+function shownIn(id: SelectedFeatureId): readonly string[] {
+  let names = shownInCache.get(id);
+  if (!names) shownInCache.set(id, names = Object.values(scenarios).filter(definition => (definition.featureIds as readonly SelectedFeatureId[]).includes(id)).map(definition => definition.name));
+  return names;
+}
+// A link to another feature, with the wording shown when the current condition hides it.
+export function relatedLink(targetId: SelectedFeatureId, reason: string, scenario: Scenario): RelatedLink {
+  const name = featureById(targetId).name; const available = featureRole(targetId, scenario) !== undefined; const conditions = shownIn(targetId);
+  return { id: targetId, name, reason, available, shownIn: conditions,
+    note: available ? '' : `${name}は「${conditions.join('・')}」で表示されます。条件を切り替えると選べます。` };
+}
 export function detailView(id: SelectedFeatureId, scenario: Scenario): DetailView {
   const definition = definitions[id];
   const feature = featureById(id);
   const closed = scenario.kind === 'malacca-closed-assumption';
   const overview = item('概要', feature.description, featureClassification(feature), feature.sources);
-  const relatedLinks: RelatedLink[] = definition.related.map(({ id: targetId, reason }) => {
-    const name = featureById(targetId).name; const available = featureRole(targetId, scenario) !== undefined; const conditions = shownIn(targetId);
-    // The note is the wording shown when the reader asks for a place the current condition hides.
-    return { id: targetId, name, reason, available, shownIn: conditions,
-      note: available ? '' : `${name}は「${conditions.join('・')}」で表示されます。条件を切り替えると選べます。` };
-  });
+  const relatedLinks = definition.related.map(({ id: targetId, reason }) => relatedLink(targetId, reason, scenario));
   const related = item('関連する場所', relatedLinks.map(link => `${link.name}（${link.reason}）`).join('、'));
   const current = item('現在の条件での意味', scenarioExplanation(id, scenario), closed ? 'assumption' : 'explanation');
   const more: DetailItem[] = [

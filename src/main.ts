@@ -4,8 +4,8 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './style.css';
 import { features, labels } from './content';
-import { parseCountries, sourceRegistry, scenarioDefinition, selectionForScenario, scenarioExplanation, routeStyles } from './domain';
-import type { ExplorationFeature, LoadState, SelectedFeatureId, SourceId, Scenario } from './domain';
+import { parseCountries, sourceRegistry, scenarioDefinition, selectionForScenario, scenarioExplanation, routeStyles, layerIds, layerNames, layerPresentation, featureLayer, hiddenFeatureMessage } from './domain';
+import type { ExplorationFeature, LoadState, SelectedFeatureId, SourceId, Scenario, LayerVisibility } from './domain';
 
 function element<T extends HTMLElement>(id: string, constructor: { new(...args: never[]): T }): T {
   const value = document.getElementById(id);
@@ -17,6 +17,7 @@ const statusElement = element('load-status', HTMLParagraphElement);
 const retry = element('retry', HTMLButtonElement);
 let selectedFeatureId: SelectedFeatureId = 'malacca';
 let scenario: Scenario = { kind: 'normal' };
+const layerVisibility: LayerVisibility = { borders: true, routes: true, points: true };
 let loadState: LoadState = { status: 'loading' };
 // Include both candidate straits and complete authored routes even in normal mode.
 const initialBounds: L.LatLngBoundsExpression = [[-13, 91], [18.5, 122]];
@@ -53,7 +54,14 @@ mapElement.addEventListener('keydown', event => {
   event.preventDefault();
 });
 const mapLayers = L.layerGroup().addTo(map);
-const scenarioLayers = L.layerGroup().addTo(map);
+const layerGroups = {
+  borders: L.layerGroup().addTo(map),
+  routes: L.layerGroup().addTo(map),
+  points: L.layerGroup().addTo(map),
+};
+function clearScenarioLayers(): void {
+  layerGroups.routes.clearLayers(); layerGroups.points.clearLayers(); selectionLayers.clear();
+}
 const selectionLayers = new Map<SelectedFeatureId, L.Path | L.Marker>();
 
 function latLng(coordinate: [number, number]): L.LatLngTuple {
@@ -87,6 +95,16 @@ function selectFeature(id: SelectedFeatureId, reveal = false): void {
   if (reveal && matchMedia('(max-width: 760px)').matches) {
     element('selection', HTMLElement).scrollIntoView({ block: 'start', behavior: 'instant' });
   }
+  updateSelectedVisibility();
+  updateSelectionAppearance();
+}
+function updateSelectedVisibility(): void {
+  const feature = features.find(item => item.id === selectedFeatureId);
+  const message = feature ? hiddenFeatureMessage(feature, layerVisibility) : '';
+  const target = element('selected-visibility', HTMLParagraphElement);
+  target.textContent = message; target.hidden = !message;
+}
+function updateSelectionAppearance(): void {
   for (const button of document.querySelectorAll<HTMLButtonElement>('[data-feature-id]')) {
     button.setAttribute('aria-pressed', String(button.dataset.featureId === selectedFeatureId));
   }
@@ -113,6 +131,10 @@ function renderFeatureList(): void {
     button.setAttribute('aria-label', `${feature.name}を選択`);
     button.setAttribute('aria-pressed', 'false');
     button.addEventListener('click', () => selectFeature(feature.id, true));
+    const visibility = document.createElement('span'); visibility.className = 'feature-visibility';
+    visibility.id = `feature-visibility-${feature.id}`;
+    button.setAttribute('aria-describedby', visibility.id);
+    button.append(visibility);
     featureList.append(button);
   }
 }
@@ -139,9 +161,9 @@ function marker(feature: ExplorationFeature): void {
     // These bounded authored lines are small: retain their full geometry so
     // panning/zooming does not trim endpoints or restart the dash pattern at
     // the renderer edge. SVG and #map still clip the visible drawing.
-    const route = L.polyline(feature.coordinates.map(latLng), { noClip: true, color: style.color, weight: 3, dashArray: style.dashArray, className: `${feature.id} route-${role}`, interactive: false }).addTo(scenarioLayers);
+    const route = L.polyline(feature.coordinates.map(latLng), { noClip: true, color: style.color, weight: 3, dashArray: style.dashArray, className: `${feature.id} route-${role}`, interactive: false }).addTo(layerGroups.routes);
     L.polyline(feature.coordinates.map(latLng), { noClip: true, opacity: 0, weight: 24, className: 'route-hit', bubblingMouseEvents: false })
-      .on('click', () => selectFeature(feature.id, true)).addTo(scenarioLayers);
+      .on('click', () => selectFeature(feature.id, true)).addTo(layerGroups.routes);
     selectionLayers.set(feature.id, route);
     const routeButton = document.createElement('button');
     routeButton.dataset.featureId = feature.id; routeButton.setAttribute('aria-pressed', 'false');
@@ -149,7 +171,7 @@ function marker(feature: ExplorationFeature): void {
     routeButton.className = 'route-label'; routeButton.textContent = `${role === 'unavailable' ? '×' : role === 'candidate' ? '＋' : '┄'} ${feature.name}`;
     routeButton.setAttribute('aria-label', `地図上の${feature.name}を選択`);
     routeButton.addEventListener('click', () => selectFeature(feature.id, true));
-    L.marker(feature.id === 'sunda-route' ? [-3.5, 108.8] : feature.id === 'lombok-route' ? [-5, 113] : [6.7, 108], { keyboard: false, icon: L.divIcon({ html: routeButton, className: 'feature-icon route-icon', iconSize: [155, 44], iconAnchor: [10, 44] }) }).addTo(scenarioLayers);
+    L.marker(feature.id === 'sunda-route' ? [-3.5, 108.8] : feature.id === 'lombok-route' ? [-5, 113] : [6.7, 108], { keyboard: false, icon: L.divIcon({ html: routeButton, className: 'feature-icon route-icon', iconSize: [155, 44], iconAnchor: [10, 44] }) }).addTo(layerGroups.routes);
     return;
   }
   const button = document.createElement('button');
@@ -170,7 +192,7 @@ function marker(feature: ExplorationFeature): void {
   const item = L.marker(latLng(feature.coordinate), {
     keyboard: false,
     icon: L.divIcon({ html: callout, className: 'feature-icon', iconSize: [0, 0], iconAnchor: [0, 0] }),
-  }).addTo(scenarioLayers);
+  }).addTo(layerGroups.points);
   selectionLayers.set(feature.id, item);
 }
 function showState(): void {
@@ -179,31 +201,32 @@ function showState(): void {
     : loadState.status === 'ready' ? `地図を読み込みました。${scenarioDefinition(scenario).name}の地図を探索できます。`
       : '地理データを読み込めませんでした。取得先やデータの状態を確認して、再試行してください。';
   retry.hidden = loadState.status !== 'error';
-  element('visible-layers', HTMLParagraphElement).textContent = loadState.status === 'ready'
-    ? '表示：国境・海岸 / 航路 / 注目地点（常時表示）'
-    : '表示予定：国境・海岸 / 航路 / 注目地点（地理データ未表示）';
-  element('scenario-summary', HTMLParagraphElement).textContent = scenarioDefinition(scenario).summary
+  const presentation = layerPresentation(layerVisibility, scenario);
+  element('visible-layers', HTMLParagraphElement).textContent = `${loadState.status === 'ready' ? '表示' : '表示予定'}：${presentation.status}`
+    + (loadState.status === 'ready' ? '' : '（地理データ未表示）');
+  element('scenario-summary', HTMLParagraphElement).textContent = presentation.scenarioSummary
     + (loadState.status === 'ready' ? '' : ' 地理データは未表示です。条件設定のみ反映しています。');
 }
 async function loadGeography(): Promise<void> {
   loadState = { status: 'loading' }; showState();
-  mapLayers.clearLayers(); scenarioLayers.clearLayers(); selectionLayers.clear();
+  mapLayers.clearLayers(); layerGroups.borders.clearLayers(); clearScenarioLayers();
   try {
     const response = await fetch(`${import.meta.env.BASE_URL}data/countries.json`);
     if (!response.ok) throw new Error('Geography HTTP failure');
     const raw: unknown = await response.json();
     const countries = parseCountries(raw);
-    L.geoJSON(countries, { interactive: false, style: feature => ({ color: '#81968e', weight: 1, fillColor: '#edf0e5', fillOpacity: 1, className: `country-${String(feature?.properties.code)}` }) }).addTo(mapLayers);
+    L.geoJSON(countries, { interactive: false, style: feature => ({ stroke: false, fillColor: '#edf0e5', fillOpacity: 1, className: `country-${String(feature?.properties.code)}` }) }).addTo(mapLayers);
+    L.geoJSON(countries, { interactive: false, style: feature => ({ color: '#81968e', weight: 1, fill: false, className: `border-country-${String(feature?.properties.code)}` }) }).addTo(layerGroups.borders);
     for (const label of labels) {
       const text = document.createElement('span');
       text.textContent = countries.features.find(country => country.properties.code === label.code)?.properties.name ?? label.name;
       text.className = label.sea ? 'sea-label' : 'country-label';
       L.marker(latLng(label.coordinate), { interactive: false, keyboard: false,
-        icon: L.divIcon({ html: text, className: 'geo-label', iconSize: [100, 20], iconAnchor: [50, 10] }) }).addTo(mapLayers);
+        icon: L.divIcon({ html: text, className: 'geo-label', iconSize: [100, 20], iconAnchor: [50, 10] }) }).addTo(label.sea ? mapLayers : layerGroups.borders);
     }
     loadState = { status: 'ready' }; renderScenario();
   } catch {
-    mapLayers.clearLayers(); scenarioLayers.clearLayers(); selectionLayers.clear(); loadState = { status: 'error' };
+    mapLayers.clearLayers(); layerGroups.borders.clearLayers(); clearScenarioLayers(); loadState = { status: 'error' };
   }
   showState();
 }
@@ -214,17 +237,45 @@ function renderScenario(): void {
   for (const id of ['current-condition', 'map-condition']) element(id, HTMLElement).textContent = `現在：${definition.name}`;
   element('scenario-normal', HTMLButtonElement).setAttribute('aria-pressed', String(!closed));
   element('scenario-closed', HTMLButtonElement).setAttribute('aria-pressed', String(closed));
-  for (const [id, role] of [['normal-legend', closed ? 'unavailable' : 'normal'], ['candidate-legend', 'candidate']] as const) {
-    const item = element(id, HTMLLIElement);
-    const key = document.createElement('span'); key.className = `key ${role}`;
-    item.replaceChildren(key, document.createTextNode(routeStyles[role].label));
-    item.hidden = role === 'candidate' && !closed;
-  }
   element('point-diff', HTMLParagraphElement).hidden = !closed;
   element('candidate-navigation', HTMLDivElement).hidden = !closed;
-  scenarioLayers.clearLayers(); selectionLayers.clear();
+  clearScenarioLayers();
   if (loadState.status === 'ready') for (const feature of visibleFeatures()) marker(feature);
-  renderFeatureList(); selectFeature(selectedFeatureId); showState();
+  renderFeatureList(); selectFeature(selectedFeatureId); renderLayerVisibility();
+}
+function renderLayerVisibility(): void {
+  const presentation = layerPresentation(layerVisibility, scenario);
+  for (const id of layerIds) {
+    const button = element(`layer-${id}`, HTMLButtonElement);
+    button.setAttribute('aria-pressed', String(layerVisibility[id]));
+    button.textContent = `${layerNames[id]}：${layerVisibility[id] ? '表示中' : '非表示'}`;
+    if (layerVisibility[id]) layerGroups[id].addTo(map);
+    else map.removeLayer(layerGroups[id]);
+  }
+  element('layer-help', HTMLParagraphElement).textContent = presentation.explanation;
+  const closed = scenario.kind !== 'normal';
+  for (const [key, id, symbol] of [
+    ['borders', 'border-legend', 'border'], ['normal', 'normal-legend', closed ? 'unavailable' : 'normal'],
+    ['candidate', 'candidate-legend', 'candidate'], ['strait', 'strait-legend', 'strait'], ['place', 'place-legend', 'point'],
+  ] as const) {
+    const item = element(id, HTMLLIElement);
+    const legend = presentation.legends[key];
+    const swatch = document.createElement('span'); swatch.className = `key ${symbol}`;
+    swatch.textContent = symbol === 'strait' ? '◇' : symbol === 'point' ? '●' : '';
+    item.replaceChildren(swatch, document.createTextNode(legend.text));
+    item.hidden = legend.hidden;
+    item.classList.toggle('layer-off', legend.off);
+  }
+  for (const feature of visibleFeatures()) {
+    const label = featureList.querySelector(`[data-feature-id="${feature.id}"] .feature-visibility`);
+    if (label) label.textContent = layerVisibility[featureLayer(feature)] ? '' : `（地図上で非表示：${layerNames[featureLayer(feature)]}レイヤーOFF）`;
+  }
+  updateSelectedVisibility(); updateSelectionAppearance(); showState();
+}
+for (const id of layerIds) {
+  element(`layer-${id}`, HTMLButtonElement).addEventListener('click', () => {
+    layerVisibility[id] = !layerVisibility[id]; renderLayerVisibility();
+  });
 }
 element('scenario-normal', HTMLButtonElement).addEventListener('click', () => { scenario = { kind: 'normal' }; renderScenario(); });
 element('scenario-closed', HTMLButtonElement).addEventListener('click', () => { scenario = { kind: 'malacca-closed-assumption' }; renderScenario(); });

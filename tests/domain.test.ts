@@ -118,3 +118,40 @@ describe('selected detail evidence', () => {
     for (const feature of features.filter(feature => feature.kind === 'route')) expect(detailItems(feature.id, closed).find(item => item.label === '短い解説')?.classification).toBe('explanation');
   });
 });
+
+import { layerPresentation, hiddenFeatureMessage, featureLayer } from '../src/domain';
+import type { LayerVisibility } from '../src/domain';
+const combinations: LayerVisibility[] = Array.from({ length: 8 }, (_, bits) => ({
+  borders: Boolean(bits & 4), routes: Boolean(bits & 2), points: Boolean(bits & 1),
+}));
+describe('independent layer presentation in both scenarios', () => {
+  for (const scenario of [normal, closed]) {
+    it.each(combinations)(`${scenario.kind}: %j`, visibility => {
+      const original = structuredClone(visibility);
+      const view = layerPresentation(visibility, scenario);
+      const borders = visibility.borders ? '表示中' : '非表示';
+      const routes = visibility.routes ? '表示中' : '非表示';
+      const points = visibility.points ? '表示中' : '非表示';
+      expect(view.status).toBe(`国境：${borders} / 主要航路：${routes} / 注目地点：${points}`);
+      expect(view.legends).toEqual({
+        borders: { text: `国境・海岸（地理）（${borders}）`, hidden: false, off: !visibility.borders },
+        normal: { text: `${scenario.kind === 'normal' ? '通常主要航路（破線・概略モデル）' : '通常主要航路：使用しない比較線（点線・仮定）'}（${routes}）`, hidden: false, off: !visibility.routes },
+        candidate: { text: `追加：スンダ・ロンボク経由候補（長短破線・概略モデル）（${routes}）`, hidden: scenario.kind === 'normal', off: !visibility.routes },
+        strait: { text: `海峡の代表点（${points}）`, hidden: false, off: !visibility.points },
+        place: { text: `関連地点の代表点（${points}）`, hidden: false, off: !visibility.points },
+      });
+      expect(view.explanation).toContain('陸地の塗りと海域名は残します');
+      expect(view.explanation).toContain('選択と詳細は保持します');
+      expect(view.scenarioSummary).toContain(scenarioDefinition(scenario).summary);
+      expect(view.scenarioSummary.includes('主要航路レイヤーOFF')).toBe(!visibility.routes);
+      expect(view.scenarioSummary.includes('注目地点レイヤーOFF')).toBe(!visibility.points);
+      for (const feature of features) {
+        const layer = feature.kind === 'route' ? 'routes' : 'points';
+        expect(featureLayer(feature)).toBe(layer);
+        expect(hiddenFeatureMessage(feature, visibility)).toBe(visibility[layer] ? ''
+          : `この対象は現在地図上で非表示（${layer === 'routes' ? '主要航路' : '注目地点'}レイヤーOFF）`);
+      }
+      expect(visibility).toEqual(original);
+    });
+  }
+});

@@ -25,7 +25,7 @@ await page.getByRole('button', { name: '対象地域に戻る', exact: true }).c
 ## Gotchas
 
 - 世界全体の精密地図ではない。zoom 4〜7、移動範囲制限あり。小縮尺de facto境界と代表点を使う。
-- 初期3レイヤーは常時表示。独立ON/OFF、詳細全項目、メモ等は範囲外。条件変更・代替航路はCG-05で追加。
+- 初期は全レイヤーを表示。[CG-03](layer-toggles.md)で独立ON/OFF、[CG-02](detail-evidence.md)で詳細項目を追加。メモ等は範囲外。条件変更・代替航路はCG-05で追加。
 - 運航量/所要時間/船舶条件は未収録。航路はAISでも検証済み航行線でもない。
 - 外部タイルなし。資料リンクの利用者による遷移を除きruntimeは同一origin内だけ。
 - 最新実走の結果と画像確認状況はCIとPR本文を参照。変更後はbuild/verify/auditと画像確認を再実行する。リモートCI、人間自由探索、実screenreader音声は未実施。MVP全体・§17の受入完了を意味しない。
@@ -34,4 +34,4 @@ await page.getByRole('button', { name: '対象地域に戻る', exact: true }).c
 
 ## CG-05による追加
 
-[条件実験](scenario-switch.md)で通常時⇄通行不可（仮定）を往復できる。読込statusは`#load-status`、条件差分のlive statusは`#scenario-summary`なので、status全体の曖昧なselectorを使わない。初期表示・地域復帰は両候補海峡と候補線全体を含む。条件切替で位置・倍率は変えない。再実行手順と残ゲートはREADMEを参照。
+[条件実験](scenario-switch.md)で通常時⇄通行不可（仮定）を往復できる。読込statusは`#load-status`、条件差分のlive statusは`#scenario-summary`なので、status全体の曖昧なselectorを使わない。初期表示・地域復帰は両候補海峡と候補線全体を含む。条件切替で位置・倍率は変えない。再実行手順はREADMEを参照。最新の実走結果はCIとPR本文を参照。

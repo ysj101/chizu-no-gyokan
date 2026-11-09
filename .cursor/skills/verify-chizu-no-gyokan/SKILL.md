@@ -1,6 +1,6 @@
 ---
 name: verify-chizu-no-gyokan
-description: CG-01地図探索・CG-05条件実験・CG-02詳細・CG-03レイヤー切替をbuild済みpreviewで起動確認し、PC・モバイルの操作とHTTP失敗をPlaywrightで検証して証拠を保存する。
+description: CG-01地図探索・CG-05条件実験・CG-02詳細・CG-03レイヤー切替・CG-04発見メモをbuild済みpreviewで起動確認し、PC・モバイルの操作とHTTP失敗をPlaywrightで検証して証拠を保存する。
 ---
 
 # Verify CG-01 map exploration / CG-05 scenario switch
@@ -93,3 +93,17 @@ PC/mobileで通常対象と仮定時の追加対象を選択し、`getByRole('re
 6. `artifacts/map-exploration/layers-{desktop|mobile}-*.png`に全ON・全OFF・航路のみOFFの仮定時・非表示対象選択時・キーボード操作を保存し、実際に開いて文字と凡例、注意、狭い画面の操作・スクロールを確認する。
 
 待受がEPERM、registryがENOTFOUNDの環境では回避せず、coordinator runnerでverifyとauditを実行する。最新の実走結果はCIとPR本文を参照。人間の自由探索と実際のスクリーンリーダー確認は未実施。自動操作で代用せず、表示状態と非表示理由の理解を観察して別に記録する。
+
+## CG-04 地図状態付き発見メモのDrive
+
+[CG-04 feature map](../../../features/map-notes.md)と`tests/e2e/notes.spec.ts`を参照。既存の一括`npm run verify`に含む。実行前に`npm run typecheck`、`npm test`、`npm run test:privacy`、`npm run test:geometry`、`npm run build`を実行する。最新の実走結果はCIとPR本文を参照。
+
+1. PC/mobileで`getByRole('region', { name: '発見メモ', exact: true })`へ移動。空状態と、このブラウザ内のみ・自動同期なし・アカウント不要・外部送信なしの説明を読む。`getByRole('textbox', { name: 'メモ本文', exact: true })`へ入力し、「メモを保存」を操作する。
+2. 異なるシナリオ・レイヤー・選択で複数件保存し、新しい順で本文・JST日時・条件・全レイヤー・選択が対応することを読む。保存後に地図を変更しても一覧は不変。保存されたviewportも記録する。選択なしと必須状態の欠落はfixtureとunitで区別し、不完全な記録は正常扱いにしない。地図状態を変更するメモのボタンは表示しない。
+3. 再読込して全内容が保持されることを確認。本文と日時で識別できる削除ボタンで対象を削除し、次／前の削除ボタン、空なら入力欄へフォーカスが移ることを確認する。再読込して削除したものだけが消えていることを確かめる。
+4. 空白だけの本文で理由と入力欄へのフォーカスを確認。`page.addInitScript`で`Storage.prototype.setItem`を例外にし、保存失敗・入力保持・一覧不追加を検査する。削除失敗時は既存メモを保持する。localStorageアクセス拒否と不正記録の件数も検査する。
+5. HTML文字列を入力・保存・再読込。本文がtextのままで、dialog・onerror実行・img/script生成がないことを確認する。全操作中のネットワーク要求を記録し、同一originの静的アセットと既存データだけで、メモ本文・関連状態をURLや要求本文に含めないことを確認する。
+6. Tab/Shift+Tab、Enter/Spaceで保存・一覧閲覧・削除を操作し、ラベル、フォーカス表示と移動、`#notes-status`のlive regionを照合する。reduced motionで同じ操作を行う。
+7. `artifacts/map-exploration/notes-{desktop|mobile}-{empty|multiple|save-failure|html|keyboard}.png`を保存して実際に開き、本文と条件の対応、文字の折返し、狭い画面のスクロール、キーボードフォーカスを確認する。
+
+待受がEPERM、registryがENOTFOUNDの環境では回避せず、coordinator runnerでverifyとauditを実行する。最新の実走結果はCIとPR本文を参照。人間の自由探索と実際のスクリーンリーダー確認は未実施。自動操作で代用せず、保存内容と当時の条件を一覧から理解できるかを別に観察して記録する。

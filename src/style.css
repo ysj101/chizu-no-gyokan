@@ -112,3 +112,14 @@ footer { padding: 12px 28px; border-top: 1px solid #cad7d5; font-size: 12px; }
 #layer-help, #selected-visibility, .feature-visibility { font-size: 12px; }
 #selected-visibility { border-left: 3px solid #697277; padding-left: 10px; }
 .legend .layer-off .key { opacity: .35; }
+
+#notes { grid-column: 1 / -1; border-top: 1px solid #cad7d5; padding: 22px; min-width: 0; overflow-wrap: anywhere; }
+#notes form { max-width: 680px; }
+#notes label { display: block; font-weight: 600; }
+#notes textarea { display: block; width: 100%; resize: vertical; min-height: 100px; margin: 8px 0 12px; padding: 10px; font: inherit; color: inherit; background: #fff; border: 1px solid #819b9f; border-radius: 5px; }
+#notes-status { min-height: 1.75em; }
+#notes ol { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 24px; }
+#notes li { min-width: 0; border-top: 1px solid #cad7d5; padding-top: 12px; }
+#notes li p { margin: 6px 0; }
+#notes .note-body { white-space: pre-wrap; font-size: 16px; }
+#notes time { font-size: 13px; }

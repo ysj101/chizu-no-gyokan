@@ -115,8 +115,12 @@ test('initial atlas, sources, missing data and narrow scope', async ({ page }, i
   await expect(page.locator('#source-list')).toContainText('地図の行間');
   await expect(page.locator('#source-list')).toContainText('再利用ライセンスは未設定');
   await expect(page.locator('#source-list a[href="https://www.naturalearthdata.com/about/terms-of-use/"]')).toBeVisible();
-  await expect(page.locator('input, textarea, select, button:disabled')).toHaveCount(0);
-  await expect(page.getByRole('button', { name: /条件切替|代替|差分|メモ|ログイン|レイヤー/ })).toHaveCount(0);
+  // CG-04 adds exactly its labelled textarea and save button; keep every other scope exclusion.
+  await expect(page.locator('input, textarea:not(#note-body), select, button:disabled')).toHaveCount(0);
+  await expect(page.getByRole('textbox', { name: 'メモ本文', exact: true })).toHaveCount(1);
+  await expect(page.locator('#notes textarea')).toHaveCount(1);
+  await expect(page.getByRole('button', { name: /条件切替|代替|差分|メモ|ログイン|レイヤー/ })).toHaveText(['メモを保存']);
+  await expect(page.locator('#notes button')).toHaveCount(1);
   expect(external).toEqual([]);
   await screenshot(page, 'initial-and-sources', info.project.name);
 });

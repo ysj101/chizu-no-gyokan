@@ -78,6 +78,21 @@
         <nav id="feature-list" aria-label="探索する対象"></nav>
         <details id="sources"><summary>出典・対象時点・利用条件</summary><div id="source-list"></div></details>
       </aside>
+      <section id="notes" aria-labelledby="notes-title" aria-describedby="notes-privacy">
+        <h2 id="notes-title">発見メモ</h2>
+        <p id="notes-privacy">このブラウザ内だけに保存。別端末へ自動同期されず、アカウント不要、外部へ送信しない。</p>
+        <p>気づきを、保存時の地図の条件と一緒に残せます。</p>
+        <form>
+          <label for="note-body">メモ本文</label>
+          <textarea id="note-body" rows="4" aria-describedby="notes-status"></textarea>
+          <button type="submit">メモを保存</button>
+        </form>
+        <p id="notes-status" role="status" aria-live="polite" aria-atomic="true"></p>
+        <p id="notes-warning" role="status" aria-live="polite"></p>
+        <h3>保存済みメモ（新しい順）</h3>
+        <p id="notes-empty">保存したメモはまだありません。</p>
+        <ol aria-label="保存済みメモ"></ol>
+      </section>
     </main>
     <footer>CG-01 地図探索 / CG-05 条件実験。地理と仮定を比較する教材です。 <a href="%BASE_URL%NOTICE.txt">第三者ソフトウェアの権利表示</a></footer>
     <script type="module" src="/src/main.ts"></script>

@@ -1,6 +1,7 @@
 import { restoredMapState } from './note-restore';
 import type { DiscoveryNote, NoteMapState, Result } from './notes';
-import { mountNotes } from './notes-panel';
+import { mountNoteDrawer, mountNotes } from './notes-panel';
+import { describeMapState } from './notes';
 import { detailView } from './details';
 import { renderDetail, tagElement, textElement } from './detail-panel';
 import L from 'leaflet';
@@ -22,6 +23,8 @@ let selectedFeatureId: SelectedFeatureId | null = 'malacca';
 let scenario: Scenario = { kind: 'normal' };
 const layerVisibility: LayerVisibility = { borders: true, routes: true, points: true };
 let loadState: LoadState = { status: 'loading' };
+// Re-renders the note drawer's "state to be saved" line; bound once the drawer is mounted below.
+let refreshNoteContext: () => void = () => {};
 // Include both candidate straits and complete authored routes even in normal mode.
 const initialBounds: L.LatLngBoundsExpression = [[-13, 91], [18.5, 122]];
 const map = L.map(mapElement, {
@@ -103,6 +106,7 @@ function selectFeature(id: SelectedFeatureId | null, reveal = false): void {
   }
   updateSelectedVisibility();
   updateSelectionAppearance();
+  refreshNoteContext();
 }
 // Bring a selected target into view with the smallest pan; the condition and zoom stay as they are.
 // Points need room for their callout (right and below the anchor); a line counts as visible when it crosses the view.
@@ -313,7 +317,7 @@ function renderLayerVisibility(): void {
     const label = featureList.querySelector(`[data-feature-id="${feature.id}"] .feature-visibility`);
     if (label) label.textContent = layerVisibility[featureLayer(feature)] ? '' : `（地図上で非表示：${hiddenLayerReason(featureLayer(feature))}）`;
   }
-  updateSelectedVisibility(); updateSelectionAppearance(); showState();
+  updateSelectedVisibility(); updateSelectionAppearance(); showState(); refreshNoteContext();
 }
 for (const id of layerIds) {
   element(`layer-${id}`, HTMLButtonElement).addEventListener('click', () => {
@@ -396,4 +400,7 @@ function applyNote(note: DiscoveryNote): Result<{ adjusted: boolean }> {
   map.setView([state.viewport.latitude, state.viewport.longitude], state.viewport.zoom, { animate: false });
   return { ok: true, value: { adjusted: result.value.adjusted } };
 }
-mountNotes(element('notes', HTMLElement), snapshot, applyNote);
+const noteForm = element('note-form', HTMLFormElement);
+const drawer = mountNoteDrawer(element('note-open', HTMLButtonElement), noteForm, element('note-close', HTMLButtonElement), element('note-context', HTMLParagraphElement), () => describeMapState(snapshot()));
+refreshNoteContext = drawer.refresh; refreshNoteContext();
+mountNotes({ list: element('notes', HTMLElement), form: noteForm, snapshot, restore: applyNote, focusWhenEmpty: drawer.focus });

@@ -74,6 +74,19 @@
           <div id="selected-related"></div>
           <p id="related-status" role="status" aria-live="polite"></p>
         </section>
+        <section id="note-drawer" aria-label="発見メモの入力">
+          <button id="note-open" type="button" aria-expanded="false" aria-controls="note-form">この発見をメモする</button>
+          <form id="note-form" hidden aria-describedby="notes-privacy">
+            <p id="note-context"></p>
+            <label for="note-body">メモ本文</label>
+            <textarea id="note-body" rows="4" aria-describedby="note-save-status"></textarea>
+            <div class="note-actions">
+              <button type="submit">メモを保存</button>
+              <button type="button" id="note-close">メモ欄を閉じる</button>
+            </div>
+            <p id="note-save-status" role="status" aria-live="polite" aria-atomic="true"></p>
+          </form>
+        </section>
         <nav id="feature-list" aria-label="探索する対象"></nav>
         <section id="detail-panel" aria-labelledby="detail-title">
           <h2 id="detail-title">選択対象の詳細</h2>
@@ -95,12 +108,7 @@
       <section id="notes" aria-labelledby="notes-title" aria-describedby="notes-privacy">
         <h2 id="notes-title">発見メモ</h2>
         <p id="notes-privacy">このブラウザ内だけに保存。別端末へ自動同期されず、アカウント不要、外部へ送信しない。</p>
-        <p>気づきを、保存時の地図の条件と一緒に残せます。</p>
-        <form>
-          <label for="note-body">メモ本文</label>
-          <textarea id="note-body" rows="4" aria-describedby="notes-status"></textarea>
-          <button type="submit">メモを保存</button>
-        </form>
+        <p>気づきは、地点を選んだ説明欄の「この発見をメモする」から、保存時の地図の条件と一緒に残せます。</p>
         <p id="notes-status" role="status" aria-live="polite" aria-atomic="true"></p>
         <p id="notes-warning" role="status" aria-live="polite"></p>
         <h3>保存済みメモ（新しい順）</h3>

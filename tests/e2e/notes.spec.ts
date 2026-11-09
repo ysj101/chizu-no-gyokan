@@ -6,13 +6,15 @@ const key = 'chizu-no-gyokan.notes.v1';
 const notes = (page: Page) => page.getByRole('region', { name: '発見メモ', exact: true });
 const items = (page: Page) => notes(page).getByRole('listitem');
 const input = (page: Page) => page.getByRole('textbox', { name: 'メモ本文', exact: true });
+// The input lives in a drawer beside the selected place; open it when it is closed.
+async function openDrawer(page: Page) { if (await input(page).isHidden()) await page.getByRole('button', { name: /^この発見をメモする/ }).click(); }
 const saveButton = (page: Page) => page.getByRole('button', { name: 'メモを保存', exact: true });
 async function ready(page: Page) {
   await page.goto('/'); await expect(page.locator('#load-status')).toContainText('探索できます');
 }
 async function save(page: Page, body: string) {
-  await input(page).fill(body); await saveButton(page).click();
-  await expect(page.locator('#notes-status')).toHaveText('メモを保存しました。');
+  await openDrawer(page); await input(page).fill(body); await saveButton(page).click();
+  await expect(page.locator('#note-save-status')).toHaveText('メモを保存しました。');
   await expect(input(page)).toHaveValue('');
 }
 async function screenshot(page: Page, project: string, state: string) {
@@ -72,7 +74,8 @@ test('snapshots keep scenario, all layers, selection and viewport through change
   await page.reload(); await expect(items(page)).toHaveCount(1);
   expect((await stored(page)).notes).toEqual([first]);
   await expect(items(page).first()).toContainText('CG04一');
-  await notes(page).getByRole('button', { name: /のメモを削除/ }).click(); await expect(input(page)).toBeFocused();
+  // The drawer is closed after the reload, so focus falls back to its opener.
+  await notes(page).getByRole('button', { name: /のメモを削除/ }).click(); await expect(page.getByRole('button', { name: /^この発見をメモする/ })).toBeFocused();
   await page.reload(); await expect(items(page)).toHaveCount(0); await expect(page.locator('#notes-empty')).toBeVisible();
   const origin = new URL(page.url()).origin;
   expect(requests.length).toBeGreaterThan(0);
@@ -94,11 +97,11 @@ test('whitespace and write failures leave text in place, with no successful entr
     };
   });
   await ready(page);
-  await input(page).fill('　 \n'); await saveButton(page).click();
-  await expect(page.locator('#notes-status')).toContainText('空白だけ'); await expect(input(page)).toBeFocused();
+  await openDrawer(page); await input(page).fill('　 \n'); await saveButton(page).click();
+  await expect(page.locator('#note-save-status')).toContainText('空白だけ'); await expect(input(page)).toBeFocused();
   await expect(input(page)).toHaveAttribute('aria-invalid', 'true');
   await input(page).fill('失敗しても残す本文'); await saveButton(page).click();
-  await expect(page.locator('#notes-status')).toContainText('保存できませんでした');
+  await expect(page.locator('#note-save-status')).toContainText('保存できませんでした');
   await expect(input(page)).toHaveValue('失敗しても残す本文'); await expect(items(page)).toHaveCount(0);
   expect(await page.evaluate(storageKey => localStorage.getItem(storageKey), key)).toBeNull();
   await screenshot(page, info.project.name, 'save-failure');
@@ -115,18 +118,21 @@ test('HTML remains literal text after save and reload; keyboard flow and reduced
   let dialogs = 0; page.on('dialog', dialog => { dialogs++; void dialog.dismiss(); });
   await ready(page);
   const html = '<img src=x onerror="window.notesExecuted=true;alert(1)"><script>window.notesExecuted=true</script>';
-  await input(page).focus(); await page.keyboard.insertText(html);
+  await openDrawer(page); await input(page).focus(); await page.keyboard.insertText(html);
   await page.keyboard.press('Tab'); await expect(saveButton(page)).toBeFocused();
   await page.keyboard.press('Shift+Tab'); await expect(input(page)).toBeFocused();
   await page.keyboard.press('Tab'); await page.keyboard.press('Enter');
   await expect(items(page).first().locator('.note-body')).toHaveText(html);
-  await expect(page.locator('#notes-status')).toHaveAttribute('role', 'status');
-  await expect(page.locator('#notes-status')).toHaveText('メモを保存しました。');
+  await expect(page.locator('#note-save-status')).toHaveAttribute('role', 'status');
+  await expect(page.locator('#note-save-status')).toHaveText('メモを保存しました。');
   await screenshot(page, info.project.name, 'html');
   await page.reload(); await expect(items(page).first().locator('.note-body')).toHaveText(html);
   await expect(notes(page).locator('img, script')).toHaveCount(0);
   expect(await page.evaluate(() => 'notesExecuted' in window)).toBe(false); expect(dialogs).toBe(0);
-  await input(page).focus(); await page.keyboard.press('Tab'); await page.keyboard.press('Tab'); await page.keyboard.press('Tab');
+  // From the drawer: save, close, then the list's restore and delete actions.
+  await openDrawer(page); await input(page).focus(); await page.keyboard.press('Tab'); await expect(saveButton(page)).toBeFocused();
+  await page.keyboard.press('Tab'); await expect(page.getByRole('button', { name: 'メモ欄を閉じる', exact: true })).toBeFocused();
+  await notes(page).getByRole('button', { name: /このメモの地図状態に戻す$/ }).focus(); await page.keyboard.press('Tab');
   const remove = notes(page).getByRole('button', { name: /のメモを削除/ }); await expect(remove).toBeFocused();
   expect(await remove.evaluate(el => getComputedStyle(el).outlineStyle)).not.toBe('none');
   expect(await page.evaluate(() => matchMedia('(prefers-reduced-motion: reduce)').matches)).toBe(true);
@@ -154,8 +160,8 @@ test('invalid records are counted, complete null selection is explicit, and deni
   await expect(page.locator('#notes-warning')).toHaveText('読み込めない記録が2件あります。');
   await page.addInitScript(() => { Object.defineProperty(window, 'localStorage', { get() { throw new DOMException('Denied', 'SecurityError'); } }); });
   await page.reload(); await expect(page.locator('#notes-warning')).toContainText('読み込めませんでした');
-  await input(page).fill('保存領域が使えなくても残す'); await saveButton(page).click();
-  await expect(page.locator('#notes-status')).toContainText('保存できませんでした');
+  await openDrawer(page); await input(page).fill('保存領域が使えなくても残す'); await saveButton(page).click();
+  await expect(page.locator('#note-save-status')).toContainText('保存できませんでした');
   await expect(input(page)).toHaveValue('保存領域が使えなくても残す'); await expect(items(page)).toHaveCount(0);
 });
 

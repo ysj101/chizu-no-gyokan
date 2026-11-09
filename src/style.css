@@ -151,9 +151,13 @@ path[data-just-changed] { stroke-width: 7; animation: just-changed-stroke 1.2s e
 .legend .layer-off .key { opacity: .35; }
 
 #notes { grid-column: 1 / -1; border-top: 1px solid #cad7d5; padding: 22px; min-width: 0; overflow-wrap: anywhere; }
-#notes form { max-width: 680px; }
-#notes label { display: block; font-weight: 600; }
-#notes textarea { display: block; width: 100%; resize: vertical; min-height: 100px; margin: 8px 0 12px; padding: 10px; font: inherit; color: inherit; background: #fff; border: 1px solid #819b9f; border-radius: 5px; }
+#note-drawer { margin: 14px 0 6px; }
+#note-form { margin-top: 10px; padding: 12px; border: 1px solid #cad7d5; border-left: 4px solid #146d78; border-radius: 6px; background: #f1f6f5; }
+#note-form label { display: block; font-weight: 600; }
+#note-form textarea { display: block; width: 100%; resize: vertical; min-height: 90px; margin: 6px 0 10px; padding: 10px; font: inherit; color: inherit; background: #fff; border: 1px solid #819b9f; border-radius: 5px; }
+#note-context { font-size: 12px; color: #48666b; margin: 0 0 8px; }
+.note-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+#note-save-status { font-size: 13px; margin: 8px 0 0; min-height: 1.5em; }
 #notes-status { min-height: 1.75em; }
 #notes ol { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 24px; }
 #notes li { min-width: 0; border-top: 1px solid #cad7d5; padding-top: 12px; }

@@ -1,3 +1,5 @@
+import { detailItems } from './details';
+import { renderDetailPanel } from './detail-panel';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './style.css';
@@ -81,6 +83,7 @@ function selectFeature(id: SelectedFeatureId, reveal = false): void {
   element('selected-scenario', HTMLParagraphElement).textContent = scenarioExplanation(feature.id, scenario);
   element('selected-limit', HTMLParagraphElement).textContent = feature.limitation;
   sourceText(feature.sources);
+  renderDetailPanel(element('detail-fields', HTMLDivElement), element('detail-evidence', HTMLDivElement), detailItems(feature.id, scenario));
   if (reveal && matchMedia('(max-width: 760px)').matches) {
     element('selection', HTMLElement).scrollIntoView({ block: 'start', behavior: 'instant' });
   }
@@ -117,7 +120,7 @@ for (const source of Object.values(sourceRegistry)) {
   const section = document.createElement('section');
   const heading = document.createElement('h2'); heading.append(link(source.title, source.url));
   section.append(heading);
-  for (const text of [`参照日：${source.consulted}`, `対象時点：${source.period}`, `使用範囲：${source.usage}`, `利用条件：${source.rights}`]) {
+  for (const text of [`参照日：${source.consulted}`, `更新日：${source.updated}`, `対象時点：${source.period}`, `使用範囲：${source.usage}`, `利用条件：${source.rights}`]) {
     const p = document.createElement('p'); p.textContent = text; section.append(p);
   }
   section.append(link('利用条件の原文', source.rightsUrl));

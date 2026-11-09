@@ -70,3 +70,12 @@ port 4173のHTTPを読み取り、`/`のタイトル文字列と`/data/countries
 5. Tab/Shift+Tab、Enter/Spaceで往復。フォーカス・aria-pressed・live statusを照合し、reduced motion設定でも確認する。往復後に実ドラッグ・zoom・選択を継続。documentとcountriesのrequestは各1回、URL・storageへ状態を保存しない。
 6. 初回HTTPを遅延し読込中に切替。HTTP 503/不正JSON/不正geometryでも切替を往復し、失敗案内と再試行を維持。回復時に選択条件の候補を描画する。外部HTML文字列は往復後もtextのままで実行されない。
 7. `scenario-*.png`を実際に開き、PC/mobileの文字・凡例・差分・選択説明、候補の陸地交差を確認する。geometry合格で画像確認を代用しない。人間自由探索と実screenreader音声を別に記録する。
+
+
+## CG-02 詳細情報のDrive
+
+[詳細のfeature map](../../../features/detail-evidence.md)と`tests/e2e/detail.spec.ts`を参照。既存の一括`npm run verify`に含む。最新実走はCIとPR本文参照。
+
+PC/mobileで通常対象と仮定時の追加対象を選択し、`getByRole('region', { name: '選択対象の詳細', exact: true })`内の全項目・区分・資料名/URL・確認日/更新日不明・対象時点・使用範囲・権利・未収録を確認する。関連は文章のみ。同じ通常対象を選択したまま両条件を往復し、詳細意味・注意事項・最小説明・凡例を照合する。Enter/Spaceで根拠を開閉し、Tab/Shift+Tab・フォーカス・aria・reduced motionを確認する。HTML風の編集入力をビルド済みJSのHTTP境界で置換し、テキストのままで実行されないことを検証する。
+
+`artifacts/map-exploration/detail-*.png`を保存して実際に開き、狭い画面の可読性、根拠の初回表示とスクロール、地図選択後の説明を目視する。待受・registryがsandboxで拒否される場合は回避せず、coordinator runnerで同じverify/auditを実行する。人間自由探索と実スクリーンリーダーは未実施として残し、ブラウザや画像の未実走を合格にしない。

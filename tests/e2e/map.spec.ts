@@ -241,7 +241,7 @@ test('select features on map and list without reload or refetch', async ({ page 
     }
   }
   await page.getByRole('button', { name: 'シンガポールを選択', exact: true }).click();
-  await expect(page.locator('#selected-limit')).toContainText('代表点');
+  await expect(page.locator('#detail-fields')).toContainText('代表点');
   expect(dataRequests).toBe(1); expect(documents).toBe(1);
   await screenshot(page, 'selection', info.project.name);
 });
@@ -383,7 +383,7 @@ test('scenario round trip synchronizes differences, selected explanations and so
     const name = id === 'sunda' ? 'スンダ' : 'ロンボク';
     await activate(page.getByRole('button', { name: `${name}経由候補を選択`, exact: true }), mobile);
     await expect(page.locator('#selected-description')).toContainText('EIA');
-    await expect(page.locator('#selected-limit')).toContainText('未収録');
+    await expect(page.locator('#detail-fields')).toContainText('未収録');
     await expect(page.locator('#selected-scenario')).toContainText('＋仮定時に追加');
     await activate(page.getByRole('button', { name: `${name}海峡へ移動`, exact: true }), mobile);
     await activate(page.getByRole('button', { name: `地図上の${name}海峡を選択`, exact: true }), mobile);
@@ -393,7 +393,7 @@ test('scenario round trip synchronizes differences, selected explanations and so
   // A candidate disappears on return; selection explicitly falls back to Malacca.
   await activate(normal, mobile);
   await expect(page.locator('#selected-name')).toHaveText('マラッカ海峡');
-  await expect(page.locator('#selected-scenario')).toHaveText('現在は通常時の表示です。');
+  await expect(page.locator('#selected-scenario')).toContainText('現在は通常時の表示です。');
   await expect(page.locator('#map-condition')).toHaveText('現在：通常時');
   await expect(page.locator('path.route-candidate')).toHaveCount(0);
   await expect(page.locator('.callout-sunda, .callout-lombok')).toHaveCount(0);

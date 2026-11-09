@@ -1,3 +1,4 @@
+import { mountNotes } from './notes-panel';
 import { detailItems } from './details';
 import { renderDetailPanel } from './detail-panel';
 import L from 'leaflet';
@@ -308,3 +309,11 @@ new ResizeObserver(() => {
 }).observe(mapElement);
 renderScenario();
 void loadGeography();
+
+mountNotes(element('notes', HTMLElement), () => {
+  const center = map.getCenter();
+  return {
+    scenarioId: scenario.kind, layers: { ...layerVisibility }, selectedFeatureId,
+    viewport: { longitude: center.lng, latitude: center.lat, zoom: map.getZoom() },
+  };
+});

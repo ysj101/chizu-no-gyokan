@@ -3,18 +3,19 @@ import type { DetailItem, DetailView } from './details';
 import { sourceRegistry } from './domain';
 import type { Source } from './domain';
 
-function textElement(tag: 'p' | 'dt' | 'dd' | 'h3' | 'span' | 'strong', text: string): HTMLElement {
-  const element = document.createElement(tag); element.textContent = text; return element;
+export function textElement(tag: 'p' | 'dt' | 'dd' | 'h3' | 'span' | 'strong' | 'li', text: string, className = ''): HTMLElement {
+  const element = document.createElement(tag); element.textContent = text; if (className) element.className = className; return element;
+}
+// Short tag pill; `modifier` picks the colour, `title` carries the full label when there is one.
+export function tagElement(label: string, modifier: string, title = ''): HTMLElement {
+  const tag = textElement('span', label, `tag tag-${modifier}`); if (title) tag.title = title; return tag;
 }
 function sourceLink(source: Source): HTMLAnchorElement {
   const a = document.createElement('a'); a.textContent = source.title; a.href = source.url; return a;
 }
 // A short tag carries the classification; its full label stays readable as the title.
 function classificationTag(item: DetailItem): HTMLElement {
-  const tag = textElement('span', classificationTags[item.classification]);
-  tag.className = `tag tag-${item.classification}`;
-  tag.title = classificationLabels[item.classification];
-  return tag;
+  return tagElement(classificationTags[item.classification], item.classification, classificationLabels[item.classification]);
 }
 function itemText(item: DetailItem): string {
   return item.status === 'recorded' ? item.text : `未収録：${item.fields.join('・')}。${item.reason}`;

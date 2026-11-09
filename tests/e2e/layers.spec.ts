@@ -89,7 +89,7 @@ async function assertState(page: Page, visibility: LayerVisibility, closed: bool
     await expect(page.locator('#candidate-legend')).toContainText(visibility.routes ? '表示中' : '非表示');
     await expect(page.locator('#normal-legend')).toContainText('使用しない比較線（点線');
     await expect(page.locator('#scenario-summary')).toContainText('通常時との差分');
-    await expect(page.locator('#point-diff')).toContainText('＋◇');
+    await expect(page.locator('#scenario-summary')).toContainText('＋◇');
   } else await expect(page.locator('#scenario-summary')).toContainText('通常時：');
   await expect(page.locator('#current-condition')).toHaveText(`現在：${closed ? '通行不可（仮定）' : '通常時'}`);
   await expect(page.locator('#map-condition')).toHaveText(`現在：${closed ? '通行不可（仮定）' : '通常時'}`);

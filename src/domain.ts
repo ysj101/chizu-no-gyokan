@@ -113,33 +113,64 @@ export function parseRoute(value: unknown): [number, number][] {
 // Page-local state only: no URL or persisted scenario state.
 export type Scenario = { kind: 'normal' } | { kind: 'malacca-closed-assumption' };
 export type ScenarioId = Scenario['kind'];
-export type RouteRole = 'normal' | 'unavailable' | 'candidate';
+export type FeatureRole = 'normal' | 'unavailable' | 'candidate';
+export type RouteRole = FeatureRole;
+// Each change names what the map now shows, so the reader never has to remember the previous view.
+export type ChangeKind = 'assumption' | 'added' | 'changed' | 'shown' | 'hidden';
+export const changeLabels: Record<ChangeKind, string> = { assumption: '仮定', added: '追加', changed: '変更', shown: '表示', hidden: '非表示' };
+export interface ScenarioChange { kind: ChangeKind; text: string; features: readonly SelectedFeatureId[] }
 export interface ScenarioDefinition {
   name: string;
-  summary: string;
+  summaryTitle: string;
+  changes: readonly ScenarioChange[];
   featureIds: readonly SelectedFeatureId[];
-  routeRole: Readonly<Partial<Record<SelectedFeatureId, RouteRole>>>;
+  // Role of any feature (route or strait) in this condition; absent means 'normal'.
+  roles: Readonly<Partial<Record<SelectedFeatureId, FeatureRole>>>;
 }
 export const scenarios = {
   normal: {
     name: '通常時',
-    summary: '通常時：通常主要航路を破線で表示。仮定時に加わるスンダ・ロンボクの候補と代表点は非表示です。',
+    summaryTitle: '通常時：地図に出ているもの',
+    changes: [
+      { kind: 'shown', text: '通常主要航路（破線・概略モデル）と、マラッカ海峡・シンガポール・ペナン島の代表点。', features: ['normal-route', 'malacca', 'singapore', 'penang'] },
+      { kind: 'hidden', text: '仮定時に加わるスンダ・ロンボク経由の候補線と両海峡の代表点。', features: ['sunda-route', 'lombok-route', 'sunda', 'lombok'] },
+    ],
     featureIds: ['malacca', 'normal-route', 'singapore', 'penang'],
-    routeRole: { 'normal-route': 'normal' },
+    roles: {},
   },
   'malacca-closed-assumption': {
     name: '通行不可（仮定）',
-    summary: '通常時との差分：通常主要航路を使用しない比較線（点線）に変更。スンダ・ロンボク経由候補（長短破線）と両海峡の代表点（＋◇）を追加します。',
+    summaryTitle: '通常時との差分：何が変わった？',
+    changes: [
+      { kind: 'assumption', text: 'マラッカ海峡を通れない（×◇）。演習上の仮定で、現実の規制や出来事ではありません。', features: ['malacca'] },
+      { kind: 'changed', text: '通常主要航路は使用しない比較線（点線）として残します。', features: ['normal-route'] },
+      { kind: 'added', text: 'スンダ経由・ロンボク経由の候補線（長短破線）と両海峡の代表点（＋◇）。著者作成の概略モデルで、運航の可否は示しません。', features: ['sunda-route', 'lombok-route', 'sunda', 'lombok'] },
+    ],
     featureIds: ['malacca', 'normal-route', 'singapore', 'penang', 'sunda-route', 'lombok-route', 'sunda', 'lombok'],
-    routeRole: { 'normal-route': 'unavailable', 'sunda-route': 'candidate', 'lombok-route': 'candidate' },
+    roles: { malacca: 'unavailable', 'normal-route': 'unavailable', 'sunda-route': 'candidate', 'lombok-route': 'candidate', sunda: 'candidate', lombok: 'candidate' },
   },
 } as const satisfies Record<ScenarioId, ScenarioDefinition>;
-export const routeStyles: Record<RouteRole, { dashArray: string; color: string; label: string }> = {
+export const routeStyles: Record<FeatureRole, { dashArray: string; color: string; label: string }> = {
   normal: { dashArray: '9 7', color: '#885229', label: '通常主要航路（破線・概略モデル）' },
   unavailable: { dashArray: '2 7', color: '#697277', label: '通常主要航路：使用しない比較線（点線・仮定）' },
   candidate: { dashArray: '14 5 3 5', color: '#844a72', label: '追加：スンダ・ロンボク経由候補（長短破線・概略モデル）' },
 };
 export function scenarioDefinition(scenario: Scenario): ScenarioDefinition { return scenarios[scenario.kind]; }
+// Role of a feature in a condition; features outside the condition have none.
+export function featureRole(id: SelectedFeatureId, scenario: Scenario): FeatureRole | undefined {
+  const definition = scenarioDefinition(scenario);
+  return definition.featureIds.includes(id) ? definition.roles[id] ?? 'normal' : undefined;
+}
+const rolePrefix: Record<FeatureRole, string> = { normal: '', unavailable: '×', candidate: '＋' };
+const kindGlyph: Record<ExplorationFeature['kind'], string> = { route: '┄', strait: '◇', place: '●' };
+// The symbol drawn on the map and in the list; it carries the role without relying on colour.
+export function featureSymbol(feature: ExplorationFeature, scenario: Scenario): string {
+  return `${rolePrefix[featureRole(feature.id, scenario) ?? 'normal']}${kindGlyph[feature.kind]}`;
+}
+// Features whose role differs between two conditions, including appearing or disappearing.
+export function changedFeatureIds(from: Scenario, to: Scenario, features: readonly ExplorationFeature[]): SelectedFeatureId[] {
+  return features.filter(feature => featureRole(feature.id, from) !== featureRole(feature.id, to)).map(feature => feature.id);
+}
 export function selectionForScenario(id: SelectedFeatureId, scenario: Scenario): SelectedFeatureId {
   return scenarioDefinition(scenario).featureIds.includes(id) ? id : 'malacca';
 }
@@ -174,9 +205,14 @@ export function layerPresentation(visibility: LayerVisibility, scenario: Scenari
       : '国境OFFでも位置を把握するため陸地の塗りと海域名は残します。非表示の対象も一覧から選択でき、選択と詳細は保持します。'
       + (!visibility.routes ? ' 主要航路レイヤーOFF：航路線・候補線・航路ラベルは地図上で非表示です。' : '')
       + (!visibility.points ? ' 注目地点レイヤーOFF：代表点・引出線・コールアウトは地図上で非表示です。' : ''),
-    scenarioSummary: scenarioDefinition(scenario).summary
-      + (!visibility.routes ? ' 主要航路レイヤーOFFのため、条件に対応する航路線は地図上で非表示です。再表示すると現在条件の航路が現れます。' : '')
-      + (!visibility.points ? ' 注目地点レイヤーOFFのため、条件に対応する代表点は地図上で非表示です。' : ''),
+    scenarioSummary: {
+      title: scenarioDefinition(scenario).summaryTitle,
+      changes: scenarioDefinition(scenario).changes,
+      notes: [
+        ...(!visibility.routes ? ['主要航路レイヤーOFFのため、条件に対応する航路線は地図上で非表示です。再表示すると現在条件の航路が現れます。'] : []),
+        ...(!visibility.points ? ['注目地点レイヤーOFFのため、条件に対応する代表点は地図上で非表示です。'] : []),
+      ],
+    },
     legends: {
       borders: { text: legendText('borders', '国境・海岸（地理）'), hidden: false, off: !visibility.borders },
       normal: { text: legendText('routes', routeStyles[closed ? 'unavailable' : 'normal'].label), hidden: false, off: !visibility.routes },

@@ -38,7 +38,7 @@ describe('route model boundary', () => {
   ])('rejects malformed model $value', ({ value }) => expect(() => parseRoute(value)).toThrow());
 });
 
-import { scenarios, scenarioDefinition, selectionForScenario, scenarioExplanation, routeStyles, sourceRegistry } from '../src/domain';
+import { scenarios, scenarioDefinition, selectionForScenario, scenarioExplanation, routeStyles, sourceRegistry, featureSymbol, featureRole, changedFeatureIds } from '../src/domain';
 import { features } from '../src/content';
 import type { Scenario } from '../src/domain';
 const normal: Scenario = { kind: 'normal' };
@@ -53,7 +53,7 @@ describe('scenario projection', () => {
         const feature = features.find(item => item.id === id);
         expect(feature).toBeDefined();
         for (const source of feature!.sources) expect(sourceRegistry[source].usage).toBeTruthy();
-        if (feature!.kind === 'route') expect(definition.routeRole[id]).toBeDefined();
+        if (feature!.kind === 'route') expect(featureRole(id, scenario)).toBeDefined();
       }
     }
     for (const id of ['sunda-route', 'lombok-route'] as const) {
@@ -76,8 +76,32 @@ describe('scenario projection', () => {
       expect(selectionForScenario(id, normal)).toBe('malacca');
     }
     expect(scenarios.normal).toEqual(before);
-    expect(scenarioDefinition(normal).routeRole['normal-route']).toBe('normal');
-    expect(scenarioDefinition(closed).routeRole['normal-route']).toBe('unavailable');
+    expect(featureRole('normal-route', normal)).toBe('normal');
+    expect(featureRole('normal-route', closed)).toBe('unavailable');
+    expect(featureRole('malacca', closed)).toBe('unavailable'); expect(featureRole('sunda', normal)).toBeUndefined();
+  });
+  it('explains each condition as two or three labelled changes whose features match the derived diff', () => {
+    expect(scenarios.normal.changes.map(change => change.kind)).toEqual(['shown', 'hidden']);
+    expect(scenarios['malacca-closed-assumption'].changes.map(change => change.kind)).toEqual(['assumption', 'changed', 'added']);
+    const text = scenarios['malacca-closed-assumption'].changes.map(change => change.text).join('');
+    for (const mark of ['×◇', '＋◇', '点線', '長短破線', '運航の可否は示しません', '現実の規制や出来事ではありません']) expect(text).toContain(mark);
+    // The prose and the highlighted set describe the same difference.
+    const listed = scenarios['malacca-closed-assumption'].changes.flatMap(change => change.features);
+    expect([...listed].sort()).toEqual([...changedFeatureIds(normal, closed, features)].sort());
+    expect(scenarios.normal.changes.find(change => change.kind === 'shown')!.features.slice().sort()).toEqual([...scenarios.normal.featureIds].sort());
+    expect(scenarios.normal.changes.find(change => change.kind === 'hidden')!.features.slice().sort()).toEqual(
+      scenarios['malacca-closed-assumption'].featureIds.filter(id => !(scenarios.normal.featureIds as readonly string[]).includes(id)).sort());
+  });
+  it('derives the changed features symmetrically from roles', () => {
+    const forward = changedFeatureIds(normal, closed, features); const back = changedFeatureIds(closed, normal, features);
+    expect([...forward].sort()).toEqual(['lombok', 'lombok-route', 'malacca', 'normal-route', 'sunda', 'sunda-route']);
+    expect([...back].sort()).toEqual([...forward].sort());
+    expect(changedFeatureIds(normal, normal, features)).toEqual([]); expect(changedFeatureIds(closed, closed, features)).toEqual([]);
+    const byId = (id: string) => features.find(feature => feature.id === id)!;
+    expect(featureSymbol(byId('malacca'), normal)).toBe('◇'); expect(featureSymbol(byId('malacca'), closed)).toBe('×◇');
+    expect(featureSymbol(byId('sunda'), closed)).toBe('＋◇'); expect(featureSymbol(byId('singapore'), closed)).toBe('●');
+    expect(featureSymbol(byId('normal-route'), normal)).toBe('┄'); expect(featureSymbol(byId('normal-route'), closed)).toBe('×┄');
+    expect(featureSymbol(byId('sunda-route'), closed)).toBe('＋┄');
   });
 });
 
@@ -161,9 +185,10 @@ describe('independent layer presentation in both scenarios', () => {
         expect(view.explanation).toContain('陸地の塗りと海域名は残します');
         expect(view.explanation).toContain('選択と詳細は保持します');
       }
-      expect(view.scenarioSummary).toContain(scenarioDefinition(scenario).summary);
-      expect(view.scenarioSummary.includes('主要航路レイヤーOFF')).toBe(!visibility.routes);
-      expect(view.scenarioSummary.includes('注目地点レイヤーOFF')).toBe(!visibility.points);
+      expect(view.scenarioSummary.title).toBe(scenarioDefinition(scenario).summaryTitle);
+      expect(view.scenarioSummary.changes).toEqual(scenarioDefinition(scenario).changes);
+      expect(view.scenarioSummary.notes.some(note => note.includes('主要航路レイヤーOFF'))).toBe(!visibility.routes);
+      expect(view.scenarioSummary.notes.some(note => note.includes('注目地点レイヤーOFF'))).toBe(!visibility.points);
       for (const feature of features) {
         const layer = feature.kind === 'route' ? 'routes' : 'points';
         expect(featureLayer(feature)).toBe(layer);

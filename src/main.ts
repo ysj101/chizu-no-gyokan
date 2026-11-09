@@ -2,12 +2,12 @@ import { restoredMapState } from './note-restore';
 import type { DiscoveryNote, NoteMapState, Result } from './notes';
 import { mountNotes } from './notes-panel';
 import { detailView } from './details';
-import { renderDetail } from './detail-panel';
+import { renderDetail, tagElement, textElement } from './detail-panel';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './style.css';
 import { features, labels } from './content';
-import { parseCountries, sourceRegistry, scenarioDefinition, selectionForScenario, routeStyles, layerIds, layerNames, layerPresentation, featureLayer, hiddenFeatureMessage } from './domain';
+import { parseCountries, sourceRegistry, scenarioDefinition, selectionForScenario, routeStyles, layerIds, layerNames, layerPresentation, featureLayer, hiddenFeatureMessage, featureSymbol, featureRole, changedFeatureIds, changeLabels } from './domain';
 import type { ExplorationFeature, LoadState, SelectedFeatureId, Scenario, LayerVisibility } from './domain';
 
 function element<T extends HTMLElement>(id: string, constructor: { new(...args: never[]): T }): T {
@@ -113,7 +113,7 @@ function updateSelectionAppearance(): void {
   for (const [featureId, layer] of selectionLayers) {
     const selected = featureId === selectedFeatureId;
     if (layer instanceof L.Path) {
-      const role = scenarioDefinition(scenario).routeRole[featureId] ?? 'normal';
+      const role = featureRole(featureId, scenario) ?? 'normal';
       layer.setStyle({ color: selected ? '#146d78' : routeStyles[role].color, weight: selected ? 5 : 3 });
     }
     else layer.getElement()?.classList.toggle('selected', selected);
@@ -127,8 +127,7 @@ function renderFeatureList(): void {
   featureList.replaceChildren();
   for (const feature of visibleFeatures()) {
     const button = document.createElement('button');
-    const added = feature.id.startsWith('sunda') || feature.id.startsWith('lombok');
-    button.textContent = `${added ? '＋ ' : ''}${feature.kind === 'route' ? '┄' : feature.kind === 'strait' ? '◇' : '●'} ${feature.name}`;
+    button.textContent = `${featureSymbol(feature, scenario)} ${feature.name}`;
     button.dataset.featureId = feature.id;
     button.setAttribute('aria-label', `${feature.name}を選択`);
     button.setAttribute('aria-pressed', 'false');
@@ -158,7 +157,7 @@ function isolateMapButton(button: HTMLButtonElement): void {
 }
 function marker(feature: ExplorationFeature): void {
   if (feature.kind === 'route') {
-    const role = scenarioDefinition(scenario).routeRole[feature.id] ?? 'normal';
+    const role = featureRole(feature.id, scenario) ?? 'normal';
     const style = routeStyles[role];
     // These bounded authored lines are small: retain their full geometry so
     // panning/zooming does not trim endpoints or restart the dash pattern at
@@ -170,7 +169,7 @@ function marker(feature: ExplorationFeature): void {
     const routeButton = document.createElement('button');
     routeButton.dataset.featureId = feature.id; routeButton.setAttribute('aria-pressed', 'false');
     isolateMapButton(routeButton);
-    routeButton.className = 'route-label'; routeButton.textContent = `${role === 'unavailable' ? '×' : role === 'candidate' ? '＋' : '┄'} ${feature.name}`;
+    routeButton.className = 'route-label'; routeButton.textContent = `${featureSymbol(feature, scenario)} ${feature.name}`;
     routeButton.setAttribute('aria-label', `地図上の${feature.name}を選択`);
     routeButton.addEventListener('click', () => selectFeature(feature.id, true));
     L.marker(feature.id === 'sunda-route' ? [-3.5, 108.8] : feature.id === 'lombok-route' ? [-5, 113] : [6.7, 108], { keyboard: false, icon: L.divIcon({ html: routeButton, className: 'feature-icon route-icon', iconSize: [155, 44], iconAnchor: [10, 44] }) }).addTo(layerGroups.routes);
@@ -182,7 +181,7 @@ function marker(feature: ExplorationFeature): void {
   button.className = 'map-feature';
   button.setAttribute('aria-label', `地図上の${feature.name}を選択`);
   const symbol = document.createElement('span'); symbol.className = 'feature-symbol';
-  symbol.textContent = feature.kind === 'strait' ? (scenario.kind === 'normal' ? '◇' : feature.id === 'malacca' ? '×◇' : '＋◇') : '●';
+  symbol.textContent = featureSymbol(feature, scenario);
   const name = document.createElement('span'); name.className = 'feature-name'; name.textContent = feature.name;
   button.append(symbol, name); button.addEventListener('click', () => selectFeature(feature.id, true));
   // The dot stays at the geographic coordinate; a leader connects the separate 44px target.
@@ -206,8 +205,27 @@ function showState(): void {
   const presentation = layerPresentation(layerVisibility, scenario);
   element('visible-layers', HTMLParagraphElement).textContent = `${loadState.status === 'ready' ? '表示' : '表示予定'}：${presentation.status}`
     + (loadState.status === 'ready' ? '' : '（地理データ未表示）');
-  element('scenario-summary', HTMLParagraphElement).textContent = presentation.scenarioSummary
-    + (loadState.status === 'ready' ? '' : ' 地理データは未表示です。条件設定のみ反映しています。');
+  const summary = presentation.scenarioSummary;
+  const notes = [...summary.notes, ...(loadState.status === 'ready' ? [] : ['地理データは未表示です。条件設定のみ反映しています。'])];
+  const list = document.createElement('ul');
+  for (const change of summary.changes) {
+    const item = textElement('li', '');
+    item.append(tagElement(changeLabels[change.kind], `change-${change.kind}`), document.createTextNode(change.text)); list.append(item);
+  }
+  const target = element('scenario-summary', HTMLDivElement);
+  const next = [textElement('p', summary.title, 'summary-title'), list, ...notes.map(text => textElement('p', text, 'summary-note'))];
+  // Skip identical updates: the region is live, and re-announcing an unchanged summary is noise.
+  if (target.innerText !== next.map(node => node.innerText).join('\n')) target.replaceChildren(...next);
+}
+// Briefly mark the features whose role differs from the previous condition, so the change can be
+// seen without remembering the earlier map. Reduced motion keeps the mark static. This is a
+// transient effect applied after a render; a rebuild within the window simply clears it.
+let highlightTimer: ReturnType<typeof setTimeout> | undefined;
+function highlightChanges(from: Scenario): void {
+  if (from.kind === scenario.kind) return;
+  clearTimeout(highlightTimer);
+  for (const id of changedFeatureIds(from, scenario, features)) selectionLayers.get(id)?.getElement()?.setAttribute('data-just-changed', '');
+  highlightTimer = setTimeout(() => { for (const layer of selectionLayers.values()) layer.getElement()?.removeAttribute('data-just-changed'); }, 2500);
 }
 async function loadGeography(): Promise<void> {
   loadState = { status: 'loading' }; showState();
@@ -239,7 +257,6 @@ function renderScenario(): void {
   for (const id of ['current-condition', 'map-condition']) element(id, HTMLElement).textContent = `現在：${definition.name}`;
   element('scenario-normal', HTMLButtonElement).setAttribute('aria-pressed', String(!closed));
   element('scenario-closed', HTMLButtonElement).setAttribute('aria-pressed', String(closed));
-  element('point-diff', HTMLParagraphElement).hidden = !closed;
   element('candidate-navigation', HTMLDivElement).hidden = !closed;
   if (closed) showIntro(false);
   clearScenarioLayers();
@@ -281,7 +298,9 @@ for (const id of layerIds) {
     layerVisibility[id] = !layerVisibility[id]; renderLayerVisibility();
   });
 }
-function setScenario(kind: Scenario['kind']): void { scenario = { kind }; renderScenario(); }
+function setScenario(kind: Scenario['kind']): void {
+  const from = scenario; scenario = { kind }; renderScenario(); highlightChanges(from);
+}
 // The first-visit guide is page-local: no storage, no overlay. It leaves once the
 // assumption has been seen (see renderScenario) and can be reopened at any time.
 function showIntro(visible: boolean): void {
@@ -345,10 +364,13 @@ function applyNote(note: DiscoveryNote): Result<{ adjusted: boolean }> {
   });
   if (!result.ok) return result;
   const state = result.value.state;
+  const from = scenario;
   scenario = { kind: state.scenarioId };
   Object.assign(layerVisibility, state.layers);
   selectedFeatureId = state.selectedFeatureId;
   renderScenario();
+  // A restored condition is also a change the reader may not remember; mark it the same way.
+  highlightChanges(from);
   map.setView([state.viewport.latitude, state.viewport.longitude], state.viewport.zoom, { animate: false });
   return { ok: true, value: { adjusted: result.value.adjusted } };
 }

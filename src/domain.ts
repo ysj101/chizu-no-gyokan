@@ -169,7 +169,9 @@ export function layerPresentation(visibility: LayerVisibility, scenario: Scenari
   const legendText = (id: LayerId, text: string) => `${text}（${state(id)}）`;
   return {
     status: layerIds.map(id => `${layerNames[id]}：${state(id)}`).join(' / '),
-    explanation: '国境OFFでも位置を把握するため陸地の塗りと海域名は残します。非表示の対象も一覧から選択でき、選択と詳細は保持します。'
+    // Empty while everything is visible: the initial view needs no layer explanation.
+    explanation: layerIds.every(id => visibility[id]) ? ''
+      : '国境OFFでも位置を把握するため陸地の塗りと海域名は残します。非表示の対象も一覧から選択でき、選択と詳細は保持します。'
       + (!visibility.routes ? ' 主要航路レイヤーOFF：航路線・候補線・航路ラベルは地図上で非表示です。' : '')
       + (!visibility.points ? ' 注目地点レイヤーOFF：代表点・引出線・コールアウトは地図上で非表示です。' : ''),
     scenarioSummary: scenarioDefinition(scenario).summary

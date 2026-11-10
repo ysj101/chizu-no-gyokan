@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { nextStep } from '../src/details';
+import { features as allFeatures } from '../src/content';
 import countries from '../public/data/countries.json';
 import { candidateAfterSelection, candidateForScenario, candidateNote, candidateOf, candidates, parseCountries, parseRoute, shipLabel, straitAction } from '../src/domain';
 
@@ -108,7 +110,7 @@ describe('scenario projection', () => {
 import { detailView, unrecordedFields } from '../src/details';
 import { classificationLabels, classificationTags } from '../src/domain';
 import type { DetailView } from '../src/details';
-const detailItems = (view: DetailView) => [view.overview, view.why, view.related, view.scenario, ...view.more];
+const detailItems = (view: DetailView) => [view.finding, view.overview, view.why, view.related, view.scenario, ...view.more];
 describe('selected detail evidence', () => {
   it('covers every visible target in three tiers with classified, sourced items and one explicit missing-data item', () => {
     for (const scenario of [normal, closed]) for (const id of scenarioDefinition(scenario).featureIds) {
@@ -238,5 +240,25 @@ describe('GP-02 direct manipulation vocabulary', () => {
     expect(straitAction(closed)).toMatchObject({ next: 'normal', text: '元に戻す' });
     for (const scenario of [normal, closed]) expect(straitAction(scenario).name).toContain(straitAction(scenario).text);
     expect(straitAction(normal).name).toContain('仮定');
+  });
+});
+
+describe('GP-04 short cards', () => {
+  const normal = { kind: 'normal' } as const; const closed = { kind: 'malacca-closed-assumption' } as const;
+  it('gives every target one short finding with a source and a next step on the map', () => {
+    for (const feature of allFeatures) for (const scenario of [normal, closed]) {
+      const view = detailView(feature.id, scenario);
+      expect(view.finding.status).toBe('recorded');
+      if (view.finding.status === 'recorded') expect(view.finding.text.split('。').filter(Boolean).length).toBeLessThanOrEqual(2);
+      expect(view.finding.sources.length).toBeGreaterThan(0);
+      expect(view.next).toMatch(/^次に：/);
+      expect(view.next).not.toMatch(/正解|クイズ|[0-9]/);
+    }
+  });
+  it('suggests the experiment first, then comparison', () => {
+    expect(nextStep('malacca', normal)).toContain('通れなくしてみる');
+    expect(nextStep('malacca', closed)).toContain('ほかの道を探す');
+    expect(nextStep('sunda-route', closed)).toContain('もう一方の候補');
+    expect(detailView('malacca', normal).term?.name).toBe('狭窄部'); expect(detailView('singapore', normal).term).toBeNull();
   });
 });

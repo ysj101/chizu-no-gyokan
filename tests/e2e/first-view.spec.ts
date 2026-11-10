@@ -27,7 +27,7 @@ test('first view: the map leads, one action stands out, and long text is folded 
   // except the one-line reminder of what is assumed and what is a model.
   await expect(menu(page)).toBeHidden(); await expect(menuButton(page)).toHaveAttribute('aria-expanded', 'false');
   await expect(page.locator('#card-body')).toBeHidden(); await expect(card(page)).toHaveAttribute('aria-expanded', 'false');
-  await expect(card(page)).toHaveText('マラッカ海峡：なぜ重要？');
+  await expect(card(page)).toHaveText('◇ マラッカ海峡：なぜ重要？');
   for (const id of ['selected-description', 'feature-list', 'guide', 'sources', 'notes', 'perspective-view']) await expect(page.locator(`#${id}`)).toBeHidden();
   expect(await page.locator('#scenario-summary').evaluate(el => el.classList.contains('sr-only'))).toBe(true);
   expect(await page.locator('main p:visible:not(.sr-only)').evaluateAll(items => items.map(item => item.className))).toEqual(mobile ? ['map-hint', 'assumption note'] : ['assumption note']);
@@ -47,7 +47,7 @@ test('the explanation opens on demand or with a selection, and closes without lo
   await expect(page.locator('#card-body')).toBeHidden();
   // Selecting on the map opens it with the new target; the map keeps its condition.
   await page.getByRole('button', { name: '地図上のシンガポールを選択', exact: true }).click();
-  await expect(card(page)).toHaveAttribute('aria-expanded', 'true'); await expect(card(page)).toHaveText('シンガポール：なぜ重要？');
+  await expect(card(page)).toHaveAttribute('aria-expanded', 'true'); await expect(card(page)).toHaveText('● シンガポール：なぜ重要？');
   await expect(page.getByRole('heading', { name: 'シンガポール', exact: true })).toBeInViewport();
   await card(page).click();
   await expect(page.getByRole('button', { name: '地図上のシンガポールを選択', exact: true })).toHaveAttribute('aria-pressed', 'true');
@@ -85,7 +85,7 @@ test('the menu holds settings, the list, sources and notes; keyboard opens and c
   await page.screenshot({ path: `artifacts/map-exploration/menu-open-${info.project.name}.png`, fullPage: false });
   // Choosing from the list opens the explanation; Escape closes the menu and returns focus to its button.
   await page.getByRole('button', { name: 'ペナン島を選択', exact: true }).click();
-  await expect(card(page)).toHaveText('ペナン島：なぜ重要？'); await expect(card(page)).toHaveAttribute('aria-expanded', 'true');
+  await expect(card(page)).toHaveText('● ペナン島：なぜ重要？'); await expect(card(page)).toHaveAttribute('aria-expanded', 'true');
   await page.keyboard.press('Escape');
   await expect(menu(page)).toBeHidden(); await expect(menuButton(page)).toBeFocused(); await expect(menuButton(page)).toHaveAttribute('aria-expanded', 'false');
   await menuButton(page).click();

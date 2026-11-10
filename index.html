@@ -51,7 +51,7 @@
           </div>
           <p id="chain-change" aria-live="polite"></p>
           <p id="chain-finding"></p>
-          <p id="chain-next" class="chain-next"></p>
+          <p id="chain-next" class="next-step"></p>
           <p id="chain-limit" class="note"></p>
           <details id="chain-more">
             <summary>なぜ？・出典</summary>
@@ -66,9 +66,9 @@
             <section id="selection" aria-live="polite" aria-atomic="true" aria-labelledby="selected-name">
               <p id="selected-kind" class="kind"></p>
               <h1 id="selected-name"></h1>
-              <p id="selected-description"></p>
-              <p id="selected-why"></p>
               <p id="selected-scenario" class="note"></p>
+              <div id="selected-finding"></div>
+              <p id="selected-next" class="next-step"></p>
               <div id="selected-related" class="related-links"></div>
               <p id="related-status" role="status" aria-live="polite"></p>
             </section>
@@ -76,7 +76,7 @@
               <button id="note-open" type="button" aria-expanded="false" aria-controls="note-form">この発見をメモする</button>
               <form id="note-form" hidden aria-describedby="notes-privacy">
                 <p id="note-context"></p>
-                <label for="note-body">メモ本文</label>
+                <label for="note-body">この発見にひとこと添える</label>
                 <textarea id="note-body" rows="4" aria-describedby="note-save-status"></textarea>
                 <div class="button-row">
                   <button type="submit">メモを保存</button>
@@ -86,10 +86,10 @@
               </form>
             </section>
             <section id="detail-panel" aria-labelledby="detail-title">
-              <h2 id="detail-title">選択対象の詳細</h2>
+              <h2 id="detail-title">さらに調べる</h2>
               <p id="selected-visibility" class="note" role="status" hidden></p>
-              <details id="detail-more"><summary>詳しい情報</summary><div id="detail-fields"></div></details>
-              <details id="detail-sources"><summary>選択対象の根拠・日付・権利</summary><div id="detail-evidence"></div></details>
+              <details id="detail-more"><summary>なぜ？・詳しく知る</summary><p id="selected-description"></p><p id="selected-why"></p><div id="detail-fields"></div></details>
+              <details id="detail-sources"><summary>出典・日付・権利</summary><div id="detail-evidence"></div></details>
             </section>
           </div>
         </section>

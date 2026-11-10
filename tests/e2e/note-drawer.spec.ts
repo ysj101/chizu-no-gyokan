@@ -5,7 +5,7 @@ import { mkdir } from 'node:fs/promises';
 async function ready(page: Page) { await page.goto('/'); await expect(page.locator('#load-status')).toContainText('探索できます'); }
 const opener = (page: Page) => page.getByRole('button', { name: /^この発見をメモする/ });
 const form = (page: Page) => page.locator('#note-form');
-const input = (page: Page) => page.getByRole('textbox', { name: 'メモ本文', exact: true });
+const input = (page: Page) => page.getByRole('textbox', { name: 'この発見にひとこと添える', exact: true });
 const context = (page: Page) => page.locator('#note-context');
 
 test('a note opens beside the selected place, shows the state it will save, keeps drafts, and saves', async ({ page }, info) => {

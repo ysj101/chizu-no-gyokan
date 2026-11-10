@@ -5,7 +5,7 @@ import { mkdir } from 'node:fs/promises';
 const key = 'chizu-no-gyokan.notes.v1';
 const notes = (page: Page) => page.getByRole('region', { name: '発見メモ', exact: true });
 const items = (page: Page) => notes(page).getByRole('listitem');
-const input = (page: Page) => page.getByRole('textbox', { name: 'メモ本文', exact: true });
+const input = (page: Page) => page.getByRole('textbox', { name: 'この発見にひとこと添える', exact: true });
 // The input lives in a drawer beside the selected place; open it when it is closed.
 async function openDrawer(page: Page) { if (await input(page).isHidden()) await page.getByRole('button', { name: /^この発見をメモする/ }).click(); }
 const saveButton = (page: Page) => page.getByRole('button', { name: 'メモを保存', exact: true });

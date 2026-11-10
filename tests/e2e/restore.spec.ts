@@ -4,7 +4,7 @@ import type { DiscoveryNote } from '../../src/notes';
 import { mkdir } from 'node:fs/promises';
 
 const key = 'chizu-no-gyokan.notes.v1';
-const input = (page: Page) => page.getByRole('textbox', { name: 'メモ本文', exact: true });
+const input = (page: Page) => page.getByRole('textbox', { name: 'この発見にひとこと添える', exact: true });
 async function openDrawer(page: Page) { if (await input(page).isHidden()) await page.getByRole('button', { name: /^この発見をメモする/ }).click(); }
 const restore = (page: Page, body: string) => page.getByRole('button', { name: new RegExp(`^${body}（.*このメモの地図状態に戻す$`) });
 const map = (page: Page) => page.getByRole('region', { name: 'マラッカ海峡周辺の地図', exact: true });

@@ -22,7 +22,7 @@ function itemText(item: DetailItem): string {
   return item.status === 'recorded' ? item.text : `未収録：${item.fields.join('・')}。${item.reason}`;
 }
 function taggedText(item: DetailItem): Node[] { return tagged(item.classification, itemText(item)); }
-export interface DetailTargets { description: HTMLElement; why: HTMLElement; scenario: HTMLElement; related: HTMLElement; relatedStatus: HTMLElement; more: HTMLElement; evidence: HTMLElement }
+export interface DetailTargets { finding: HTMLElement; next: HTMLElement; description: HTMLElement; why: HTMLElement; scenario: HTMLElement; related: HTMLElement; relatedStatus: HTMLElement; more: HTMLElement; evidence: HTMLElement }
 // Selecting a related place and previewing it on the map are the caller's business.
 export interface DetailActions { select(id: SelectedFeatureId): void; preview(id: SelectedFeatureId | null): void }
 // The only interactive tier: one button per related place, with delegated listeners on the list.
@@ -51,9 +51,17 @@ export function renderRelated(target: HTMLElement, status: HTMLElement, label: s
 }
 // No HTML parsing: content and source metadata remain plain text.
 export function renderDetail(targets: DetailTargets, view: DetailView, actions: DetailActions): void {
+  // First view: now / finding (with its term, opened in place) / next.
+  targets.scenario.replaceChildren(textElement('strong', 'いま：'), ...taggedText(view.scenario));
+  targets.finding.replaceChildren(textElement('strong', '発見：'), ...taggedText(view.finding));
+  if (view.term) {
+    const term = document.createElement('details'); term.className = 'term';
+    term.append(textElement('summary', `${view.term.name}とは？`), textElement('p', view.term.text));
+    targets.finding.append(term);
+  }
+  targets.next.textContent = view.next;
   targets.description.textContent = itemText(view.overview);
   targets.why.replaceChildren(textElement('strong', `${view.why.label}：`), ...taggedText(view.why));
-  targets.scenario.replaceChildren(...taggedText(view.scenario));
   renderRelated(targets.related, targets.relatedStatus, view.related.label, view.relatedLinks, actions);
   const list = document.createElement('dl');
   for (const item of view.more) {

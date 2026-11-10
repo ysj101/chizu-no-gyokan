@@ -15,20 +15,22 @@ const unrecorded = '未収録：距離・所要時間・船舶条件・輸送能
 for (const scenario of [{ kind: 'normal' }, { kind: 'malacca-closed-assumption' }] satisfies Scenario[]) {
   test(`three tiers, evidence and missing data: ${scenario.kind}`, async ({ page }, info) => {
     await page.goto('/');
-    const panel = page.getByRole('region', { name: '選択対象の詳細', exact: true });
+    const panel = page.getByRole('region', { name: 'さらに調べる', exact: true });
     if (scenario.kind !== 'normal') await page.getByRole('button', { name: '通行不可（仮定）', exact: true }).click();
     // Tiers two and three open once and stay open across selections.
-    await page.getByText('詳しい情報', { exact: true }).click();
-    await page.getByText('選択対象の根拠・日付・権利', { exact: true }).click();
+    await page.getByText('なぜ？・詳しく知る', { exact: true }).click();
+    await page.getByText('出典・日付・権利', { exact: true }).click();
     for (const id of scenarios[scenario.kind].featureIds) {
       const feature = features.find(feature => feature.id === id)!;
       await page.getByRole('button', { name: `${feature.name}を選択`, exact: true }).click();
       const selection = page.getByRole('region', { name: feature.name, exact: true });
       await expect(page.getByRole('heading', { name: feature.name, exact: true })).toBeVisible();
       if (info.project.name === 'mobile') await expect(selection).toBeInViewport();
-      // Tier one: name, overview, why it matters, current condition and related places, with a short tag each.
-      await expect(selection.locator('#selected-why')).toContainText('なぜ重要か：');
-      await expect(selection.locator('#selected-why .tag')).toHaveText(['malacca', 'sunda', 'lombok'].includes(id) ? '事実' : 'モデル');
+      // Tier one: name, now, one finding, next and related places, with a short tag each. Why it matters
+      // in full is tier two (GP-04).
+      await expect(selection.locator('#selected-finding .tag')).toHaveCount(1);
+      await expect(page.locator('#selected-why')).toContainText('なぜ重要か：');
+      await expect(page.locator('#selected-why .tag')).toHaveText(['malacca', 'sunda', 'lombok'].includes(id) ? '事実' : 'モデル');
       await expect(selection.locator('#selected-related .related-title')).toHaveText('関連する場所');
       await expect(selection.locator('#selected-scenario')).toContainText(scenarioExplanation(feature, scenario));
       await expect(selection.locator('#selected-scenario .tag')).toHaveText(scenario.kind === 'normal' ? 'モデル' : '仮定');
@@ -66,8 +68,21 @@ for (const scenario of [{ kind: 'normal' }, { kind: 'malacca-closed-assumption' 
 
 test('first view of a selection stays short; tiers two and three are collapsed', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('#selected-why')).toBeVisible();
+  // GP-04: now / finding / next, each one line with a lead word; the longer text waits behind 「詳しく知る」.
+  await expect(page.locator('#selected-scenario')).toContainText('いま：');
+  await expect(page.locator('#selected-finding')).toContainText('発見：');
+  await expect(page.locator('#selected-next')).toHaveText(/^次に：/);
   await expect(page.locator('#selected-related')).toBeVisible();
+  await expect(page.locator('#selected-why')).toBeHidden(); await expect(page.locator('#selected-description')).toBeHidden();
+  // The term opens in place, without leaving the card.
+  const term = page.locator('#selected-finding .term');
+  await expect(term.locator('summary')).toHaveText('狭窄部とは？'); await expect(term.locator('p')).toBeHidden();
+  await term.locator('summary').click(); await expect(term.locator('p')).toContainText('チョークポイント');
+  for (const id of ['selected-scenario', 'selected-finding', 'selected-next']) {
+    const text = await page.locator(`#${id}`).evaluate(el => { const copy = el.cloneNode(true) as HTMLElement; copy.querySelectorAll('details').forEach(d => d.remove()); return copy.textContent ?? ''; });
+    const sentences = text.split('。').filter(part => part.trim());
+    expect(sentences.length, id).toBeLessThanOrEqual(2);
+  }
   await expect(page.locator('#detail-fields')).toBeHidden();
   await expect(page.locator('#detail-evidence')).toBeHidden();
   await expect(page.locator('#detail-fields')).toContainText('位置（地域）');
@@ -77,7 +92,7 @@ test('first view of a selection stays short; tiers two and three are collapsed',
 test('detail round trips retain selection and synchronize text, legend and keyboard focus with reduced motion', async ({ page }, info) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
-  const panel = page.getByRole('region', { name: '選択対象の詳細', exact: true });
+  const panel = page.getByRole('region', { name: 'さらに調べる', exact: true });
   const normal = page.getByRole('button', { name: '通常時', exact: true });
   const closed = page.getByRole('button', { name: '通行不可（仮定）', exact: true });
   for (const id of scenarios.normal.featureIds) {
@@ -103,7 +118,7 @@ test('detail round trips retain selection and synchronize text, legend and keybo
       await expect(page.getByRole('region', { name: feature.name, exact: true })).toHaveText(summaryBefore!);
     }
   }
-  const toggle = panel.getByText('選択対象の根拠・日付・権利', { exact: true });
+  const toggle = panel.getByText('出典・日付・権利', { exact: true });
   await toggle.focus(); await expect(toggle).toBeFocused();
   expect(await toggle.evaluate(el => getComputedStyle(el).outlineStyle)).toBe('solid');
   await expect(panel.getByText('更新日：不明（版番号はv5.1.2）', { exact: true })).toBeHidden();
@@ -130,8 +145,8 @@ test('detail content displays hostile strings as text through scenario round tri
     await route.fulfill({ response, body });
   });
   await page.goto('/');
-  const panel = page.getByRole('region', { name: '選択対象の詳細', exact: true });
-  await page.getByText('詳しい情報', { exact: true }).click();
+  const panel = page.getByRole('region', { name: 'さらに調べる', exact: true });
+  await page.getByText('なぜ？・詳しく知る', { exact: true }).click();
   for (const name of ['通行不可（仮定）', '通常時']) {
     await page.getByRole('button', { name, exact: true }).click();
     await expect(panel.getByText(`未収録：距離・所要時間・船舶条件・輸送能力・運航量・費用。${payload}ゼロや無影響を意味しません。`, { exact: true })).toHaveCount(1);

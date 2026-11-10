@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './panels';
 import type { Page } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 
@@ -23,7 +23,7 @@ test('phone: the map stays pinned while the explanation scrolls, and selection l
   await page.screenshot({ path: 'artifacts/map-exploration/mobile-pinned-map.png', fullPage: false });
   // Selecting from the list puts the explanation directly under the pinned map, not behind it.
   await page.getByRole('button', { name: 'ペナン島を選択', exact: true }).click();
-  const selection = await page.locator('#selection').boundingBox();
+  const selection = await page.locator('#selection-card').boundingBox();
   const mapBox = await map(page).boundingBox();
   expect(selection!.y).toBeGreaterThanOrEqual(mapBox!.y + mapBox!.height - 1);
   expect(selection!.y).toBeLessThan(mapBox!.y + mapBox!.height + 40);

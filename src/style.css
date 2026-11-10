@@ -10,28 +10,54 @@ button[aria-pressed='true'] { background: #dcecf0; border-color: #146d78; box-sh
 :focus-visible { outline: 3px solid #146d78 !important; outline-offset: 3px; }
 .skip { position: absolute; left: 10px; top: -80px; z-index: 2000; padding: 10px; background: white; }
 .skip:focus { top: 10px; }
-header { display: flex; align-items: center; gap: 28px; padding: 18px 28px; border-bottom: 1px solid #cad7d5; }
-.brand { font: 600 26px/1.4 var(--serif); text-decoration: none; color: #203c45; white-space: nowrap; }
-header p { margin: 0; }
-.condition { margin-left: auto; border: 1px solid #829e9b; border-radius: 30px; padding: 2px 15px; white-space: nowrap; }
-main { display: grid; grid-template-columns: minmax(0, 1fr) 340px; }
-.atlas { padding: 18px 22px; min-width: 0; }
+header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 4px 16px; border-bottom: 1px solid #cad7d5; }
+.brand { font: 600 22px/1.4 var(--serif); text-decoration: none; color: #203c45; white-space: nowrap; }
+/* Disclosure buttons (menu, explanation card) keep one label; the mark and aria-expanded carry the state.
+   The mark is drawn with borders, not text, so it stays out of the button's accessible name. */
+#menu-open::after, #card-toggle::after { content: ''; display: inline-block; margin-left: 8px; vertical-align: middle; border: 5px solid transparent; border-top-color: #146d78; border-bottom-width: 0; }
+#menu-open[aria-expanded='true']::after, #card-toggle[aria-expanded='true']::after { transform: rotate(180deg); }
+/* The map is the page. Cards that belong to it share one look; where they sit depends on the screen width. */
+.map-card { margin: 0 0 10px; padding: 10px 12px; border: 1px solid #cad7d5; border-radius: 6px; background: #fafcfaf5; }
+.map-tools { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin: 8px 0; }
+.map-foot { font-size: 12px; }
+.map-foot p { margin: 4px 0; }
+#selection-card { padding: 0; overflow-wrap: anywhere; }
+#card-toggle { width: 100%; border: none; background: none; text-align: left; font-weight: 600; }
+#card-body { padding: 0 12px 12px; }
+#menu { padding: 12px 20px 24px; min-width: 0; overflow-wrap: anywhere; }
+.menu-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+#menu-title { margin: 0; }
+@media (min-width: 761px) {
+  /* One screen: header, then the map with its cards laid over the left edge and the legend line over its
+     foot, so nothing that appears or wraps changes the map's size. The menu, when open, is a column of
+     its own and the map narrows beside it. */
+  body { display: flex; flex-direction: column; height: 100dvh; }
+  main { --card-width: 360px; flex: 1; min-height: 520px; display: grid; grid-template-columns: minmax(0, 1fr) auto; }
+  .atlas { min-width: 0; min-height: 0; display: grid; grid-template-columns: var(--card-width) minmax(0, 1fr); grid-template-rows: auto auto minmax(0, 1fr) auto; }
+  #map { grid-column: 1 / -1; grid-row: 1 / -1; }
+  .intro, .scenario-controls, .map-cards { grid-column: 1; z-index: 1; margin: 10px 0 0 10px; }
+  .intro { grid-row: 1; } .scenario-controls { grid-row: 2; }
+  .map-cards { grid-row: 3; align-self: start; max-height: calc(100% - 20px); overflow-y: auto; }
+  .map-card { box-shadow: 0 2px 8px -4px rgba(32, 60, 69, .5); }
+  .map-tools { grid-column: 2; grid-row: 3; z-index: 1; align-self: end; margin: 10px; }
+  .map-tools button { background: #fafcfaf0; }
+  .map-foot { grid-column: 1 / -1; grid-row: 4; z-index: 1; display: flex; flex-wrap: wrap; align-items: center; gap: 2px 20px; padding: 4px 16px; border-top: 1px solid #cad7d5; background: #fafcfaf0; }
+  #menu { width: var(--card-width); overflow-y: auto; border-left: 1px solid #cad7d5; }
+}
 /* Rows of related buttons share one layout. */
 .button-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.map-toolbar { margin-bottom: 12px; }
 /* Clip geographic overflow without creating a scroll container that focus or
    scrollIntoView can move independently of Leaflet panes. */
 /* Declared here so Leaflet does not write an inline position and the phone rule below can make it sticky. */
-#map { position: relative; overflow: clip; width: 100%; height: max(520px, calc(100dvh - 250px)); max-height: 900px; background: #dcecf0; border: 1px solid #92aaaf; border-radius: 6px; isolation: isolate; }
+#map { position: relative; overflow: clip; width: 100%; background: #dcecf0; isolation: isolate; }
 #load-status, .attribution { font-size: 12px; margin: 7px 0; }
 #load-status { min-height: 21px; }
-.legend { display: flex; flex-wrap: wrap; list-style: none; gap: 5px 18px; padding: 0; margin: 12px 0 6px; font-size: 12px; }
+.legend { display: flex; flex-wrap: wrap; list-style: none; gap: 2px 18px; padding: 0; margin: 4px 0; }
 .legend li { display: flex; align-items: center; gap: 7px; }
 .key { width: 26px; display: inline-block; text-align: center; }
 .key.border { border-top: 1px solid #667e77; }
 .key.strait { font-size: 23px; font-weight: bold; line-height: 1; color: #146d78; }
 .key.point { color: #146d78; }
-aside { border-left: 1px solid #cad7d5; padding: 24px; }
 h1 { font: 600 27px/1.5 var(--serif); margin: 8px 0 16px; }
 .kind, .related-links, #related-status, #perspective-focus-status { font-size: 12px; color: #48666b; }
 /* Lists of selectable places (related places, a view's focus) share one look. */
@@ -59,7 +85,6 @@ summary { min-height: 44px; padding: 8px 0; font-size: 14px; }
 #source-list section { margin-bottom: 22px; }
 #source-list h2 { font-size: 14px; font-weight: 600; line-height: 1.6; }
 #source-list a { overflow-wrap: anywhere; }
-footer { padding: 12px 28px; border-top: 1px solid #cad7d5; font-size: 12px; }
 .geo-label { pointer-events: none; text-align: center; white-space: nowrap; }
 .country-label, .sea-label { font-size: 12px; color: #3f5956; text-shadow: 0 1px 2px #fafcfa, 1px 0 2px #fafcfa; }
 .sea-label { color: #476e7e; letter-spacing: 2px; }
@@ -84,36 +109,32 @@ footer { padding: 12px 28px; border-top: 1px solid #cad7d5; font-size: 12px; }
 .route-label { padding: 4px 10px; color: #885229; font-size: 12px; white-space: nowrap; background: #fafcfae8; }
 .route-hit { cursor: pointer; }
 @media (max-width: 760px) {
-  header { flex-wrap: wrap; gap: 6px 15px; padding: 13px 16px; }
-  header p { order: 3; width: 100%; font-size: 12px; }
-  .brand { font-size: 23px; }
   /* Sticky ends at its containing block, and `.atlas` ends before `aside`; dropping the section's box
      makes `main` the container so the map stays while the explanation scrolls. Current engines keep the
      section's region role under display: contents. `svh` keeps the height stable while the URL bar moves. */
-  main { display: block; padding: 0 12px; --phone-map-height: clamp(300px, 46svh, 480px); }
+  main { display: block; padding: 8px 12px 0; --phone-map-height: clamp(300px, 46svh, 480px); }
   .atlas { display: contents; }
-  #selection { scroll-margin-top: calc(var(--phone-map-height) + 8px); }
+  #selection-card, #menu { scroll-margin-top: calc(var(--phone-map-height) + 8px); }
   /* The map stays at the top while the explanation scrolls beneath it: no round trips. */
   #map { position: sticky; top: 0; z-index: 700; height: var(--phone-map-height); border-radius: 0 0 6px 6px; box-shadow: 0 4px 10px -6px rgba(32, 60, 69, .45); }
-  aside { border-left: none; padding: 0 0 22px; }
-  #notes { padding: 22px 0; }
-  #selection { padding: 12px 0 8px; background: #fafcfaf7; border-bottom: 1px solid #cad7d5; }
+  #menu { padding: 0 0 22px; border-top: 1px solid #cad7d5; }
   #selection h1 { font-size: 22px; margin: 3px 0; }
   #selection p { margin: 4px 0; }
   #selected-description { font-size: 13px; }
   .guide { margin-top: 12px; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; } }
-.intro { margin: 0 0 14px; padding: 12px 16px; border: 1px solid #cad7d5; border-left: 4px solid #146d78; border-radius: 6px; background: #f1f6f5; }
-.intro h2 { font: 600 20px/1.4 var(--serif); margin: 0 0 4px; }
-.intro p { margin: 0 0 10px; font-size: 13px; }
+.intro { border-left: 4px solid #146d78; }
+.intro h2 { font: 600 17px/1.4 var(--serif); margin: 0 0 8px; }
 button.primary { background: #146d78; border-color: #146d78; color: #fafcfa; font-weight: 600; }
 button.primary:hover { background: #0f5660; }
-.text-button { min-height: 36px; margin-bottom: 8px; padding: 2px 8px; border: none; background: none; font-size: 13px; }
-.scenario-controls { margin-bottom: 12px; }
+.text-button { min-height: 36px; padding: 2px 8px; border: none; background: none; font-size: 13px; }
+.scenario-controls { padding: 6px 8px; }
+.scenario-controls button, .map-tools button { font-size: 13px; }
 .perspective-controls { margin: 0 0 12px; }
 #perspective-view { margin-bottom: 16px; padding: 12px 14px; border: 1px solid #cad7d5; border-left: 4px solid #c29a3a; border-radius: 6px; background: #fdf8ee; }
-#perspective-title { font: 600 18px/1.4 var(--serif); margin: 0 0 6px; }
+#perspective-title, #menu-title { font: 600 18px/1.4 var(--serif); }
+#perspective-title { margin: 0 0 6px; }
 #perspective-meaning { margin: 0 0 8px; font-size: 14px; }
 #perspective-statements { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; font-size: 13px; }
 #perspective-statements .statement-source { margin: 2px 0 0; font-size: 11px; color: #48666b; }
@@ -122,8 +143,8 @@ button.primary:hover { background: #0f5660; }
 .focus-note { margin-left: 6px; font-size: 11px; color: #8a6a1e; }
 .feature-icon[data-perspective-focus] .feature-name { background: #fff3d6; border: 1px solid #c29a3a; }
 path[data-perspective-focus] { stroke-width: 5; }
-#scenario-summary { border-color: #844a72; font-size: 12px; }
-#scenario-summary .summary-title { margin: 6px 0 2px; font-weight: 600; }
+#scenario-summary { border-left: 4px solid #844a72; font-size: 12px; }
+#scenario-summary .summary-title { margin: 0 0 2px; font-weight: 600; }
 #scenario-summary ul { margin: 0; padding: 0; list-style: none; }
 #scenario-summary li { margin: 2px 0; }
 #scenario-summary .summary-note { margin: 4px 0 0; color: #48666b; }
@@ -135,10 +156,9 @@ path[data-perspective-focus] { stroke-width: 5; }
 .feature-icon[data-just-changed] .feature-symbol { outline: 3px solid #844a72; outline-offset: 2px; border-radius: 50%; animation: just-changed-pulse 1.2s ease-in-out 2; }
 @keyframes just-changed-stroke { from { stroke-width: 3; } 50% { stroke-width: 9; } to { stroke-width: 3; } }
 path[data-just-changed] { stroke-width: 7; animation: just-changed-stroke 1.2s ease-in-out 2; }
-.assumption { color: #633d35; font-size: 12px; margin: 8px 0; border-color: #b48a7e; }
+.assumption { color: #633d35; border-color: #b48a7e; }
 .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0; }
 .help { margin-top: 10px; }
-#candidate-navigation { margin-bottom: 10px; }
 .key.normal { border-top: 3px dashed #885229; }
 .key.unavailable { border-top: 3px dotted #697277; }
 .key.candidate { height: 3px; background: repeating-linear-gradient(to right, #844a72 0 14px, transparent 14px 19px, #844a72 19px 22px, transparent 22px 27px); }
@@ -151,6 +171,8 @@ path[data-just-changed] { stroke-width: 7; animation: just-changed-stroke 1.2s e
 .map-overlay-button { top: 8px; right: 8px; padding: 4px 10px; font-size: 13px; background: #fafcfaf0; }
 .map-condition, .map-hint { margin: 0; padding: 3px 8px; background: #fafcfaf0; border: 1px solid #829e9b; border-radius: 3px; color: #203c45; font: 12px/1.6 -apple-system, BlinkMacSystemFont, sans-serif; pointer-events: none; }
 .map-condition { bottom: 8px; left: 8px; max-width: calc(100% - 16px); }
+/* On wide screens the cards cover the lower-left corner; the condition sits beside them at the top. */
+@media (min-width: 761px) { .map-condition { bottom: auto; top: 10px; left: calc(var(--card-width) + 22px); } }
 .map-hint { top: 60px; right: 8px; max-width: min(70%, 320px); font-size: 11px; color: #35535a; }
 
 /* Keep the eastern candidate name inside the narrow overview. */
@@ -175,7 +197,7 @@ path[data-just-changed] { stroke-width: 7; animation: just-changed-stroke 1.2s e
 #selected-visibility { border-color: #697277; }
 .legend .layer-off .key { opacity: .35; }
 
-#notes { grid-column: 1 / -1; border-top: 1px solid #cad7d5; padding: 22px; min-width: 0; overflow-wrap: anywhere; }
+#notes { border-top: 1px solid #cad7d5; margin-top: 12px; padding-top: 6px; }
 #note-drawer { margin: 14px 0 6px; }
 #note-form { margin-top: 10px; padding: 12px; border: 1px solid #cad7d5; border-left: 4px solid #146d78; border-radius: 6px; background: #f1f6f5; }
 #note-form label { display: block; font-weight: 600; }

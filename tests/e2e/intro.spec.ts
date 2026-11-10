@@ -28,7 +28,7 @@ test('first visit offers a question and one action; it switches the scenario, th
   await page.getByRole('button', { name: '通常時', exact: true }).click();
   await expect(page.locator('path.route-candidate')).toHaveCount(0);
   await expect(intro(page)).toBeHidden();
-  await page.getByRole('button', { name: 'シンガポールを選択', exact: true }).click();
+  await page.getByRole('button', { name: '地図上のシンガポールを選択', exact: true }).click();
   await expect(page.locator('#selected-name')).toHaveText('シンガポール');
   await reopen(page).click();
   await expect(intro(page)).toBeVisible(); await expect(tryClosed(page)).toBeFocused();

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './panels';
 import type { Page } from '@playwright/test';
 import type { DiscoveryNote } from '../../src/notes';
 import { mkdir } from 'node:fs/promises';

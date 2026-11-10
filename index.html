@@ -7,26 +7,94 @@
     <title>地図の行間 | マラッカ海峡の地図探索</title>
   </head>
   <body>
-    <a class="skip" href="#selection">選択した対象の説明へ</a>
-    <header><a href="#" class="brand">地図の行間</a><p>マラッカ海峡と、その先の海</p><span id="current-condition" class="condition">現在の条件：通常時</span></header>
+    <a class="skip" href="#selection-card">選択した対象の説明へ</a>
+    <header>
+      <a href="#" class="brand">地図の行間</a>
+      <button id="menu-open" type="button" aria-expanded="false" aria-controls="menu">メニュー</button>
+    </header>
     <main>
       <section class="atlas" aria-label="地図探索">
-        <section class="intro" id="intro" aria-labelledby="intro-question">
+        <section class="intro map-card" id="intro" aria-labelledby="intro-question">
           <h2 id="intro-question">もしマラッカ海峡を通れなくなったら？</h2>
-          <p>通れないと仮定したときに、地図の航路と海峡がどう変わるかを見てみましょう。</p>
           <div class="button-row">
             <button id="try-closed" class="primary">通行不可にして変化を見る</button>
             <button id="intro-close">閉じる</button>
           </div>
         </section>
-        <button id="intro-reopen" class="text-button" hidden>はじめ方を見る</button>
-        <section class="scenario-controls" aria-label="条件実験">
+        <section id="scenario-controls" class="scenario-controls map-card" aria-label="条件実験">
+          <button id="intro-reopen" class="text-button" hidden>はじめ方を見る</button>
           <div class="button-row" role="group" aria-label="条件を選ぶ">
             <button id="scenario-normal" aria-pressed="true">通常時</button>
             <button id="scenario-closed" aria-pressed="false">通行不可（仮定）</button>
           </div>
-          <div id="scenario-summary" class="note" role="status" aria-live="polite"></div>
+          <span id="current-condition" class="sr-only">現在の条件：通常時</span>
         </section>
+        <div id="map" role="region" aria-label="マラッカ海峡周辺の地図" aria-describedby="map-help current-condition scenario-summary visible-layers" tabindex="0"><span id="map-condition" class="map-condition" aria-hidden="true">現在の条件：通常時</span><button id="touch-mode" class="map-overlay-button" hidden aria-pressed="false" aria-describedby="map-hint">タッチで地図を動かす</button><p id="map-hint" class="map-hint" hidden></p></div>
+        <div class="map-tools">
+          <div id="candidate-navigation" class="button-row" hidden>
+            <button id="go-sunda">スンダ海峡へ移動</button>
+            <button id="go-lombok">ロンボク海峡へ移動</button>
+          </div>
+          <div class="button-row" role="group" aria-label="地図操作">
+            <button id="zoom-in">＋ 拡大</button>
+            <button id="zoom-out">− 縮小</button>
+            <button id="reset">対象地域に戻す</button>
+          </div>
+        </div>
+        <div class="map-cards">
+        <div id="scenario-summary" class="map-card" role="status" aria-live="polite"></div>
+        <section id="selection-card" class="map-card" aria-label="選択した対象の説明" tabindex="-1">
+          <button id="card-toggle" type="button" aria-expanded="false" aria-controls="card-body"></button>
+          <div id="card-body" hidden>
+            <section id="selection" aria-live="polite" aria-atomic="true" aria-labelledby="selected-name">
+              <p id="selected-kind" class="kind"></p>
+              <h1 id="selected-name"></h1>
+              <p id="selected-description"></p>
+              <p id="selected-why"></p>
+              <p id="selected-scenario" class="note"></p>
+              <div id="selected-related" class="related-links"></div>
+              <p id="related-status" role="status" aria-live="polite"></p>
+            </section>
+            <section id="note-drawer" aria-label="発見メモの入力">
+              <button id="note-open" type="button" aria-expanded="false" aria-controls="note-form">この発見をメモする</button>
+              <form id="note-form" hidden aria-describedby="notes-privacy">
+                <p id="note-context"></p>
+                <label for="note-body">メモ本文</label>
+                <textarea id="note-body" rows="4" aria-describedby="note-save-status"></textarea>
+                <div class="button-row">
+                  <button type="submit">メモを保存</button>
+                  <button type="button" id="note-close">メモ欄を閉じる</button>
+                </div>
+                <p id="note-save-status" role="status" aria-live="polite" aria-atomic="true"></p>
+              </form>
+            </section>
+            <section id="detail-panel" aria-labelledby="detail-title">
+              <h2 id="detail-title">選択対象の詳細</h2>
+              <p id="selected-visibility" class="note" role="status" hidden></p>
+              <details id="detail-more"><summary>詳しい情報</summary><div id="detail-fields"></div></details>
+              <details id="detail-sources"><summary>選択対象の根拠・日付・権利</summary><div id="detail-evidence"></div></details>
+            </section>
+          </div>
+        </section>
+        </div>
+        <div class="map-foot">
+          <p id="load-status" role="status" aria-live="polite">地理データを読み込んでいます。</p>
+          <button id="retry" hidden>地理データを再読み込み</button>
+          <ul class="legend" aria-label="凡例">
+            <li id="border-legend"><span class="key border"></span><span></span></li>
+            <li id="normal-legend"></li>
+            <li id="candidate-legend" hidden></li>
+            <li id="strait-legend"><span class="key strait">◇</span><span></span></li>
+            <li id="place-legend"><span class="key point">●</span><span></span></li>
+          </ul>
+          <p class="assumption note"><strong>通行不可は演習上の仮定</strong>で、現実の航行規制・出来事を示しません。<strong>破線の航路は著者作成の概略モデル</strong>で、実際の船舶航跡ではありません。</p>
+        </div>
+      </section>
+      <aside id="menu" aria-labelledby="menu-title" hidden>
+        <div class="menu-head">
+          <h2 id="menu-title" tabindex="-1">設定と資料</h2>
+          <button id="menu-close" type="button" class="text-button">メニューを閉じる</button>
+        </div>
         <section class="layer-controls perspective-controls" aria-label="国ごとの視点">
           <div class="button-row" role="group" aria-label="国ごとの視点（教材の例）">
             <span class="layer-caption" aria-hidden="true">視点</span>
@@ -37,26 +105,14 @@
             <button id="perspective-indonesia" aria-pressed="false">インドネシア</button>
           </div>
         </section>
-        <div class="map-toolbar button-row" role="group" aria-label="地図操作">
-          <button id="zoom-in">＋ 拡大</button>
-          <button id="zoom-out">− 縮小</button>
-          <button id="reset">対象地域に戻す</button>
-        </div>
-        <div id="candidate-navigation" class="button-row" hidden>
-          <button id="go-sunda">スンダ海峡へ移動</button>
-          <button id="go-lombok">ロンボク海峡へ移動</button>
-        </div>
-        <div id="map" role="region" aria-label="マラッカ海峡周辺の地図" aria-describedby="map-help current-condition scenario-summary visible-layers" tabindex="0"><span id="map-condition" class="map-condition" aria-hidden="true">現在の条件：通常時</span><button id="touch-mode" class="map-overlay-button" hidden aria-pressed="false" aria-describedby="map-hint">タッチで地図を動かす</button><p id="map-hint" class="map-hint" hidden></p></div>
-        <p id="load-status" role="status" aria-live="polite">地理データを読み込んでいます。</p>
-        <button id="retry" hidden>地理データを再読み込み</button>
-        <p class="assumption note"><strong>通行不可は演習上の仮定</strong>で、現実の航行規制・出来事を示しません。<strong>破線の航路は著者作成の概略モデル</strong>で、実際の船舶航跡ではありません。</p>
-        <ul class="legend" aria-label="凡例">
-          <li id="border-legend"><span class="key border"></span><span></span></li>
-          <li id="normal-legend"></li>
-          <li id="candidate-legend" hidden></li>
-          <li id="strait-legend"><span class="key strait">◇</span><span></span></li>
-          <li id="place-legend"><span class="key point">●</span><span></span></li>
-        </ul>
+        <section id="perspective-view" aria-labelledby="perspective-title" hidden>
+          <h2 id="perspective-title"></h2>
+          <p id="perspective-meaning"></p>
+          <ul id="perspective-statements"></ul>
+          <div id="perspective-focus" class="related-links"></div>
+          <p id="perspective-focus-status" role="status" aria-live="polite"></p>
+          <p class="note">国の視点は教材の例です。地理と資料の記述から読み取れる関係だけを示し、国家の意図や行動を地理だけで断定しません。</p>
+        </section>
         <section class="layer-controls" aria-label="表示レイヤー" aria-describedby="layer-help">
           <div class="button-row" role="group" aria-label="表示レイヤー">
             <span class="layer-caption" aria-hidden="true">表示レイヤー</span>
@@ -67,50 +123,11 @@
           <p id="layer-help" role="status" aria-live="polite" hidden></p>
         </section>
         <p id="visible-layers" class="sr-only" role="status" aria-live="polite"></p>
+        <nav id="feature-list" aria-label="探索する対象"></nav>
         <details class="help">
           <summary>地図の操作方法</summary>
-          <p id="map-help">地図にフォーカスして矢印で移動、＋/−で拡大・縮小。点と引出線につながる記号、航路、または説明欄の一覧から対象を選べます。スマートフォンでは地図が上部に留まり、説明はその下をスクロールします。通常は地図上をなぞるとページがスクロールし、「タッチで地図を動かす」をオンにすると地図をドラッグできます。</p>
+          <p id="map-help">地図にフォーカスして矢印で移動、＋/−で拡大・縮小。点と引出線につながる記号、航路、またはメニューの一覧から対象を選べます。スマートフォンでは地図が上部に留まり、説明はその下をスクロールします。通常は地図上をなぞるとページがスクロールし、「タッチで地図を動かす」をオンにすると地図をドラッグできます。</p>
         </details>
-        <p class="attribution">Made with <a href="https://www.naturalearthdata.com/">Natural Earth</a> · v5.1.2 / 1:50m</p>
-      </section>
-      <aside aria-label="対象の説明と資料">
-        <section id="perspective-view" aria-labelledby="perspective-title" hidden>
-          <h2 id="perspective-title"></h2>
-          <p id="perspective-meaning"></p>
-          <ul id="perspective-statements"></ul>
-          <div id="perspective-focus" class="related-links"></div>
-          <p id="perspective-focus-status" role="status" aria-live="polite"></p>
-          <p class="note">国の視点は教材の例です。地理と資料の記述から読み取れる関係だけを示し、国家の意図や行動を地理だけで断定しません。</p>
-        </section>
-        <section id="selection" aria-live="polite" aria-atomic="true" tabindex="-1" aria-labelledby="selected-name">
-          <p id="selected-kind" class="kind"></p>
-          <h1 id="selected-name"></h1>
-          <p id="selected-description"></p>
-          <p id="selected-why"></p>
-          <p id="selected-scenario" class="note"></p>
-          <div id="selected-related" class="related-links"></div>
-          <p id="related-status" role="status" aria-live="polite"></p>
-        </section>
-        <section id="note-drawer" aria-label="発見メモの入力">
-          <button id="note-open" type="button" aria-expanded="false" aria-controls="note-form">この発見をメモする</button>
-          <form id="note-form" hidden aria-describedby="notes-privacy">
-            <p id="note-context"></p>
-            <label for="note-body">メモ本文</label>
-            <textarea id="note-body" rows="4" aria-describedby="note-save-status"></textarea>
-            <div class="button-row">
-              <button type="submit">メモを保存</button>
-              <button type="button" id="note-close">メモ欄を閉じる</button>
-            </div>
-            <p id="note-save-status" role="status" aria-live="polite" aria-atomic="true"></p>
-          </form>
-        </section>
-        <nav id="feature-list" aria-label="探索する対象"></nav>
-        <section id="detail-panel" aria-labelledby="detail-title">
-          <h2 id="detail-title">選択対象の詳細</h2>
-          <p id="selected-visibility" class="note" role="status" hidden></p>
-          <details id="detail-more"><summary>詳しい情報</summary><div id="detail-fields"></div></details>
-          <details id="detail-sources"><summary>選択対象の根拠・日付・権利</summary><div id="detail-evidence"></div></details>
-        </section>
         <details class="guide" id="guide">
           <summary>この地図の読み方と注意</summary>
           <p>マラッカ海峡はインド洋と太平洋を結ぶ海上交通の接点です。国境・主要航路・注目地点を個別に表示・非表示にできます。</p>
@@ -121,19 +138,20 @@
           <p>運航量・所要時間・船舶条件：<strong>未収録</strong>。0や無影響を意味しません。</p>
         </details>
         <details id="sources"><summary>出典・対象時点・利用条件</summary><div id="source-list"></div></details>
+        <section id="notes" aria-labelledby="notes-title" aria-describedby="notes-privacy">
+          <h2 id="notes-title">発見メモ</h2>
+          <p id="notes-privacy">このブラウザ内だけに保存。別端末へ自動同期されず、アカウント不要、外部へ送信しない。</p>
+          <p>気づきは、地点を選んだ説明欄の「この発見をメモする」から、保存時の地図の条件と一緒に残せます。</p>
+          <p id="notes-status" role="status" aria-live="polite" aria-atomic="true"></p>
+          <p id="notes-warning" role="status" aria-live="polite"></p>
+          <h3>保存済みメモ（新しい順）</h3>
+          <p id="notes-empty">保存したメモはまだありません。</p>
+          <ol aria-label="保存済みメモ"></ol>
+        </section>
+        <p class="attribution">Made with <a href="https://www.naturalearthdata.com/">Natural Earth</a> · v5.1.2 / 1:50m</p>
+        <p class="attribution">地理と仮定を比較する教材です。 <a href="%BASE_URL%NOTICE.txt">第三者ソフトウェアの権利表示</a></p>
       </aside>
-      <section id="notes" aria-labelledby="notes-title" aria-describedby="notes-privacy">
-        <h2 id="notes-title">発見メモ</h2>
-        <p id="notes-privacy">このブラウザ内だけに保存。別端末へ自動同期されず、アカウント不要、外部へ送信しない。</p>
-        <p>気づきは、地点を選んだ説明欄の「この発見をメモする」から、保存時の地図の条件と一緒に残せます。</p>
-        <p id="notes-status" role="status" aria-live="polite" aria-atomic="true"></p>
-        <p id="notes-warning" role="status" aria-live="polite"></p>
-        <h3>保存済みメモ（新しい順）</h3>
-        <p id="notes-empty">保存したメモはまだありません。</p>
-        <ol aria-label="保存済みメモ"></ol>
-      </section>
     </main>
-    <footer>CG-01 地図探索 / CG-05 条件実験。地理と仮定を比較する教材です。 <a href="%BASE_URL%NOTICE.txt">第三者ソフトウェアの権利表示</a></footer>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

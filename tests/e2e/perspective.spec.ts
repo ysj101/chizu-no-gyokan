@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './panels';
 import type { Page } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import { perspectives } from '../../src/perspectives';

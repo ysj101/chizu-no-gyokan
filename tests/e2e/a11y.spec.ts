@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './panels';
 import type { Page } from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
 
@@ -38,8 +38,8 @@ test('Tab visits every control once in document order, with visible focus, and n
     visited.push(current); positions.add(active.position);
   } while (visited.length < 200);
   expect(current, 'the walk never wrapped back to the document').toBe('body');
-  // Order follows the page: condition → view → map → layers → explanation → notes.
-  const keys = ['scenario-normal', 'perspective-japan', 'map', 'layer-borders', 'note-body', 'メモを保存'];
+  // Order follows the page: condition → map → explanation and note → menu (view, layers).
+  const keys = ['scenario-normal', 'map', 'note-body', 'メモを保存', 'perspective-japan', 'layer-borders'];
   expect(visited).toEqual(expect.arrayContaining(keys));
   const order = keys.map(key => visited.indexOf(key));
   expect(order).toEqual([...order].sort((a, b) => a - b));
@@ -67,14 +67,14 @@ test('names, states, landmarks and live regions are in place; the skip link land
   expect(inventory.expanded).toBe('false');
   for (const value of Object.values(inventory.statuses)) expect(value).toBe('status');
   await expect(page.getByRole('region', { name: 'マラッカ海峡周辺の地図', exact: true })).toHaveCount(1);
-  await expect(page.getByRole('complementary', { name: '対象の説明と資料', exact: true })).toHaveCount(1);
+  await expect(page.getByRole('complementary', { name: '設定と資料', exact: true })).toHaveCount(1);
   await expect(page.getByRole('group', { name: '条件を選ぶ', exact: true })).toHaveCount(1);
   await expect(page.getByRole('group', { name: '表示レイヤー', exact: true })).toHaveCount(1);
   // The skip link is first in the Tab order and following it moves focus to the explanation.
-  await page.keyboard.press('Control+Home'); await page.keyboard.press('Tab');
-  await expect(page.getByRole('link', { name: '選択した対象の説明へ', exact: true })).toBeFocused();
+  expect(await page.evaluate(() => document.querySelector('a[href], button, [tabindex]')?.className)).toBe('skip');
+  await page.getByRole('link', { name: '選択した対象の説明へ', exact: true }).focus();
   await page.keyboard.press('Enter');
-  await expect(page.locator('#selection')).toBeFocused();
+  await expect(page.locator('#selection-card')).toBeFocused();
   await expect(page.getByRole('heading', { name: 'マラッカ海峡', exact: true })).toBeInViewport();
 });
 

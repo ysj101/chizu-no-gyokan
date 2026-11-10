@@ -1,6 +1,7 @@
 import directionData from './japan-direction.json';
-import { candidateForScenario, candidates, parseRoute } from './domain';
+import { candidateForScenario, candidateIds, candidates, parseRoute } from './domain';
 import type { CandidateId, Classification, Scenario, SelectedFeatureId, SourceId } from './domain';
+import type { PerspectiveId } from './perspectives';
 
 // GP-03: the "so what?" chain. A change at the strait is followed along the routes to a place it matters
 // to — here Japan, which lies off this map to the north-east. The chain says what changed, what that
@@ -47,4 +48,21 @@ export function japanChain(scenario: Scenario, candidate: CandidateId | null): C
     next: '次に：もう一方の候補と比べる。',
     features: ['malacca', ...features],
   };
+}
+
+// GP-06: at most two side trips from where the chain stands, each to something this atlas has content
+// for (a condition, a candidate, or a country view). They are suggestions, not stages: ignoring them is
+// fine, and "寄り道の前に戻る" returns to the state before the last one taken.
+export type Branch =
+  | { label: string; kind: 'scenario'; to: Scenario['kind'] }
+  | { label: string; kind: 'candidate'; to: CandidateId }
+  | { label: string; kind: 'perspective'; to: PerspectiveId };
+export function nextBranches(scenario: Scenario, candidate: CandidateId | null): readonly Branch[] {
+  if (scenario.kind === 'normal') {
+    return [{ label: '通れなくしてみる', kind: 'scenario', to: 'malacca-closed-assumption' }, { label: '日本以外では？（中国から見る）', kind: 'perspective', to: 'china' }];
+  }
+  const chosen = candidateForScenario(candidate, scenario);
+  if (chosen === null) return candidateIds.map(id => ({ label: `${candidates[id].strait}は？`, kind: 'candidate', to: id }));
+  const other = candidateIds.find(id => id !== chosen)!;
+  return [{ label: `${candidates[other].strait}は？`, kind: 'candidate', to: other }, { label: '候補の海峡がある国は？（インドネシアから見る）', kind: 'perspective', to: 'indonesia' }];
 }

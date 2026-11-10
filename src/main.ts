@@ -4,7 +4,8 @@ import { mountNoteDrawer, mountNotes } from './notes-panel';
 import { describeMapState } from './notes';
 import { detailView, relatedLink } from './details';
 import { renderDetail, renderPerspectiveContent, renderRelated, sourceSection, tagged } from './detail-panel';
-import { chainLimit, destination, japanChain, japanDirection } from './relations';
+import { chainLimit, destination, japanChain, japanDirection, nextBranches } from './relations';
+import type { Branch } from './relations';
 import { chainDiscovery } from './discoveries';
 import { mountDiscoveryPanel } from './discovery-panel';
 import type { DetailActions, DetailTargets } from './detail-panel';
@@ -39,6 +40,10 @@ let touchDrag = false;
 let candidate: CandidateId | null = null;
 // The "so what?" chain towards Japan is shown on request; page-local, not saved.
 let chainShown = false;
+// For each side trip taken from the chain card, the one facet it changed and its value before, so the
+// reader can go back one trip at a time without undoing changes made elsewhere.
+type BranchUndo = { kind: 'scenario'; from: Scenario['kind'] } | { kind: 'candidate'; from: CandidateId | null } | { kind: 'perspective'; from: PerspectiveId | null };
+const branchHistory: BranchUndo[] = [];
 // The explanation of the selection stays folded until the reader selects something or opens it.
 let cardOpen = false;
 // Re-renders the note drawer's "state to be saved" line; bound once the drawer is mounted below.
@@ -429,7 +434,47 @@ function renderChain(): void {
   chainTargets.change.replaceChildren(...tagged(view.change.classification, view.change.text));
   chainTargets.finding.replaceChildren(textElement('strong', '発見：'), ...tagged(view.finding.classification, view.finding.text));
   chainTargets.next.textContent = view.next;
+  renderBranches();
 }
+const branchRow = element('branches', HTMLDivElement);
+const branchBack = element('branch-back', HTMLButtonElement);
+// The buttons are rebuilt only when the offer changes, so a focused trip button survives other repaints.
+let branches: readonly Branch[] = [];
+function renderBranches(): void {
+  const next = nextBranches(scenario, candidate);
+  if (next.map(branch => branch.label).join('\n') !== branches.map(branch => branch.label).join('\n')) {
+    branches = next;
+    branchRow.replaceChildren(...branches.map((branch, index) => {
+      const button = textElement('button', branch.label, 'branch'); button.type = 'button'; button.dataset.index = String(index);
+      return button;
+    }));
+  }
+  branchBack.hidden = branchHistory.length === 0;
+}
+branchRow.addEventListener('click', event => {
+  const index = (event.target as HTMLElement).closest<HTMLButtonElement>('button.branch')?.dataset.index;
+  const branch = index === undefined ? undefined : branches[Number(index)];
+  if (branch) takeBranch(branch);
+});
+function focusBranches(): void { (branchRow.querySelector('button') ?? branchBack).focus(); }
+function applyPerspective(id: PerspectiveId | null): void { perspective = id; renderPerspectiveText(); renderFeatureList(); renderPerspectiveFocus(); }
+// A side trip changes one thing; the chain card follows it and stays open.
+function takeBranch(branch: Branch): void {
+  if (branch.kind === 'scenario') { branchHistory.push({ kind: 'scenario', from: scenario.kind }); setScenario(branch.to); }
+  else if (branch.kind === 'candidate') { branchHistory.push({ kind: 'candidate', from: candidate }); setCandidate(branch.to); revealOnMap(candidates[branch.to].route); }
+  else { branchHistory.push({ kind: 'perspective', from: perspective }); applyPerspective(branch.to); }
+  renderBranches();
+  // A country view opens in the menu and takes focus there; the other trips keep focus in the card.
+  if (branch.kind === 'perspective') setMenuOpen(true); else focusBranches();
+}
+branchBack.addEventListener('click', () => {
+  const undo = branchHistory.pop(); if (!undo) return;
+  if (undo.kind === 'scenario') setScenario(undo.from);
+  else if (undo.kind === 'candidate') setCandidate(candidateForScenario(undo.from, scenario));
+  else applyPerspective(undo.from);
+  renderBranches();
+  if (branchBack.hidden) focusBranches(); else branchBack.focus();
+});
 function setChainShown(shown: boolean): void {
   chainShown = shown; renderChain();
   if (shown) showBelowMap(chainCard);
@@ -523,7 +568,7 @@ function renderPerspectiveFocus(): void {
   markLayers('data-perspective-focus', new Set(view?.focus ?? []));
 }
 for (const [id, button] of perspectiveButtons) {
-  button.addEventListener('click', () => { perspective = id; renderPerspectiveText(); renderFeatureList(); renderPerspectiveFocus(); });
+  button.addEventListener('click', () => applyPerspective(id));
 }
 
 // ---- Menu: settings, the list of places, sources and saved notes. A disclosure whose only state is

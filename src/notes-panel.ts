@@ -3,7 +3,7 @@ import { textElement } from './dom';
 import type { DiscoveryNote, NoteStorage, Result } from './notes';
 
 // The adapter delays localStorage access so a denied getter is handled by the Result boundary.
-const browserStorage: NoteStorage = {
+export const browserStorage: NoteStorage = {
   getItem: key => window.localStorage.getItem(key),
   setItem: (key, value) => window.localStorage.setItem(key, value),
 };

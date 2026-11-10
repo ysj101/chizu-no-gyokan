@@ -13,7 +13,7 @@ export type Result<T> = { ok: true; value: T } | { ok: false; error: string };
 export interface NoteStorage { getItem(key: string): string | null; setItem(key: string, value: string): void }
 export const notesKey = 'chizu-no-gyokan.notes.v1';
 interface NoteCollection { notes: DiscoveryNote[]; unreadable: number; records: unknown[] }
-const failure = (error: string): { ok: false; error: string } => ({ ok: false, error });
+export const failure = (error: string): { ok: false; error: string } => ({ ok: false, error });
 function record(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

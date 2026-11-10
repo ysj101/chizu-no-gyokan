@@ -5,6 +5,8 @@ import { describeMapState } from './notes';
 import { detailView, relatedLink } from './details';
 import { renderDetail, renderPerspectiveContent, renderRelated, sourceSection, tagged } from './detail-panel';
 import { chainLimit, destination, japanChain, japanDirection } from './relations';
+import { chainDiscovery } from './discoveries';
+import { mountDiscoveryPanel } from './discovery-panel';
 import type { DetailActions, DetailTargets } from './detail-panel';
 import { setMessage, tagElement, textElement } from './dom';
 import { perspectiveIds, perspectives } from './perspectives';
@@ -408,6 +410,11 @@ const chainTargets = {
 };
 renderPerspectiveContent({ title: element('chain-more-title', HTMLElement), meaning: element('chain-meaning', HTMLElement), statements: element('chain-statements', HTMLElement) }, perspectives.japan);
 chainTargets.limit.textContent = chainLimit;
+const discoveryPanel = mountDiscoveryPanel({
+  add: element('discovery-add', HTMLButtonElement), addTitle: element('discovery-add-title', HTMLParagraphElement), addStatus: element('discovery-add-status', HTMLParagraphElement),
+  view: element('discovery-view', HTMLDivElement), list: element('discovery-list', HTMLOListElement),
+  empty: element('discovery-empty', HTMLParagraphElement), status: element('discovery-status', HTMLParagraphElement),
+});
 function renderChain(): void {
   chainCard.hidden = !chainShown;
   chain?.button.setAttribute('aria-expanded', String(chainShown));
@@ -415,6 +422,8 @@ function renderChain(): void {
   if (!chainShown) { markLayers('data-chain', new Set(), true); return; }
   const view = japanChain(scenario, candidate);
   markLayers('data-chain', new Set(view.features), true);
+  // What "発見マップに追加" would keep: the relation this state of the chain shows.
+  discoveryPanel.setCurrent(chainDiscovery(scenario, candidate));
   // The change line is live: rewrite the card only when its text is new, so a repaint is not re-announced.
   if (chainTargets.change.textContent?.endsWith(view.change.text) && chainTargets.next.textContent === view.next) return;
   chainTargets.change.replaceChildren(...tagged(view.change.classification, view.change.text));

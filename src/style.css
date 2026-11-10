@@ -144,6 +144,28 @@ path.chain-link[data-chain] { stroke-width: 3; opacity: 1; animation-delay: .5s;
 #chain-limit { font-size: 12px; color: #48666b; }
 #chain-statements { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 #chain-statements .statement-source { margin: 2px 0 0; font-size: 11px; color: #48666b; }
+#discovery-add { margin: 6px 0 2px; font-size: 13px; }
+#discovery-add:disabled { cursor: default; color: #48666b; background: #eef3f2; }
+#discovery-add-status { margin: 2px 0 0; font-size: 12px; color: #35535a; }
+#discovery-add-status:empty { display: none; }
+/* GP-05: the discovery map in the menu. Found relations are drawn; places not yet reached stay faint. */
+#discovery-map { border-top: 1px solid #cad7d5; margin-top: 12px; padding-top: 6px; }
+.discovery-intro, #discovery-empty, #discovery-status { font-size: 12px; color: #48666b; }
+.discovery-network { width: 100%; max-width: 360px; height: auto; display: block; margin: 6px 0; background: #dcecf0; border-radius: 6px; }
+.discovery-node circle { fill: #fafcfa; stroke: #92aaaf; stroke-width: 1.5; }
+.discovery-node text { font-size: 11px; fill: #6b7f82; }
+.discovery-node.reached circle { fill: #146d78; stroke: #146d78; }
+.discovery-node.reached text { fill: #203c45; font-weight: 600; }
+.discovery-edge { stroke: #a07a22; stroke-width: 3; }
+/* An assumed relation is dashed, as on the map: not colour alone. */
+.discovery-edge.edge-assumption { stroke: #844a72; stroke-dasharray: 7 4; }
+.discovery-edge.edge-explanation { stroke-dasharray: 2 4; }
+#discovery-list { list-style: none; padding: 0; margin: 6px 0; display: grid; gap: 10px; font-size: 13px; }
+#discovery-list li { border-top: 1px solid #cad7d5; padding-top: 6px; }
+#discovery-list p { margin: 2px 0; }
+.discovery-title { font-weight: 600; }
+.discovery-date { display: block; font-size: 11px; color: #48666b; }
+#discovery-status:empty { display: none; }
 /* Trying a candidate: the chosen one is heavier, the other recedes. Weight and opacity, not colour alone. */
 path[data-candidate-chosen] { stroke-width: 6; }
 .feature-icon[data-candidate-chosen] .route-label, .feature-icon[data-candidate-chosen] .feature-name { font-weight: bold; border-color: #844a72; }

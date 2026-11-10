@@ -298,6 +298,7 @@ for (const failure of ['http', 'json', 'geometry']) {
         body: failure === 'json' ? '{broken' : failure === 'geometry' ? '{"type":"FeatureCollection","features":[]}' : '{}' });
     });
     await page.goto('/');
+    await expect(page.locator('#load-status')).toHaveAttribute('aria-live', 'polite');
     await expect(page.locator('#load-status')).toContainText('読み込めませんでした');
     await expect(page.locator('.map-feature')).toHaveCount(0);
     await screenshot(page, `${failure}-error`, info.project.name);
@@ -309,7 +310,8 @@ for (const failure of ['http', 'json', 'geometry']) {
     await expect(page.locator('.map-feature')).toHaveCount(0);
     await page.getByRole('button', { name: '通行不可（仮定）', exact: true }).click();
     expect(count).toBe(1);
-    await page.getByRole('button', { name: '地理データを再読み込み', exact: true }).click();
+    // Recovery by keyboard: the retry button takes focus and Enter re-fetches.
+    await page.getByRole('button', { name: '地理データを再読み込み', exact: true }).focus(); await page.keyboard.press('Enter');
     await expect(page.locator('#load-status')).toContainText('探索できます');
     await expect(point(page)).toBeVisible(); expect(count).toBe(2);
     await expect(page.locator('path.route-candidate')).toHaveCount(2);
@@ -368,6 +370,8 @@ test('scenario round trip synchronizes differences, selected explanations and so
   for (const route of await page.locator('path.route-candidate').all()) await expect(route).toHaveAttribute('stroke-dasharray', '14 5 3 5');
   await expect(page.locator('.callout-malacca .feature-symbol')).toHaveText('×◇');
   await expect(page.locator('.callout-sunda .feature-symbol')).toHaveText('＋◇');
+  // The list carries the same non-colour mark as the map.
+  await expect(page.locator('#feature-list [data-feature-id="normal-route"]')).toContainText('×┄');
   await expect(page.locator('.assumption')).toContainText('現実の航行規制・出来事を示しません');
   await expect(page.locator('#scenario-limits')).toContainText('輸送能力を検証していません');
   await expect(page.locator('.scenario-source')).toContainText('2026-03-03');

@@ -9,6 +9,10 @@ description: CG-01地図探索・CG-05条件実験・CG-02詳細・CG-03レイ�
 
 最新の実走結果はCIとPR本文を参照。変更後は以下を再実行し、画像を開いて確認する。所有previewのみ停止する。人間自由探索と実screenreader音声は未実施。
 
+## Accessibility regression (UX-10)
+
+`tests/e2e/a11y.spec.ts` が Tab 到達性（罠なし・順序・フォーカス可視）、アクセシブル名と aria-pressed／aria-expanded、ランドマークと live region、スキップリンク、文字拡大 150／200%、モバイルのターゲット寸法を検査する。色に依存しない記号・線種、読込失敗時の案内と復帰、reduced motion は `map.spec.ts`／`diff.spec.ts`／`layers.spec.ts` に含む。人間のスクリーンリーダー確認とユーザーテストは `docs/qa-log.md` と `docs/user-test-log.md` に記録し、自動検証で代用しない。
+
 ## Launch
 
 リポジトリroot、Node 22以上、Python 3を使う。

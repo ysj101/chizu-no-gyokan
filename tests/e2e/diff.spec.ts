@@ -26,6 +26,7 @@ for (const reduced of [false, true]) {
     const symbol = page.locator('.callout-malacca .feature-symbol');
     expect(await symbol.evaluate(el => getComputedStyle(el).outlineStyle)).toBe('solid');
     expect(await symbol.evaluate(el => getComputedStyle(el).animationName)).toBe(reduced ? 'none' : 'just-changed-pulse');
+    expect(await page.locator('#map path[data-just-changed]').first().evaluate(el => getComputedStyle(el).animationName)).toBe(reduced ? 'none' : 'just-changed-stroke');
     await mkdir('artifacts/map-exploration', { recursive: true });
     await page.screenshot({ path: `artifacts/map-exploration/diff-${info.project.name}-${reduced ? 'reduced' : 'motion'}.png`, fullPage: false });
     await expect(changed(page)).toHaveCount(0, { timeout: 5000 });

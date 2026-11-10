@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { chainLimit, destination, japanChain, japanDirection } from '../src/relations';
+import { chainLimit, destination, japanChain, japanDirection, nextBranches } from '../src/relations';
+import { perspectives } from '../src/perspectives';
 import routeData from '../src/route.json';
 import candidateRoutes from '../src/candidate-routes.json';
 import { sourceRegistry } from '../src/domain';
@@ -33,5 +34,24 @@ describe('GP-03 the chain towards Japan', () => {
     }
     expect(japanChain(normal, null).change.classification).not.toBe('assumption');
     for (const view of views.slice(2)) expect(view.change.classification).toBe('assumption');
+  });
+});
+
+describe('GP-06 side trips', () => {
+  const states = [[normal, null], [closed, null], [closed, 'sunda'], [closed, 'lombok']] as const;
+  it('offers at most two, each to something with content, never to where the reader already is', () => {
+    for (const [scenario, candidate] of states) {
+      const branches = nextBranches(scenario, candidate);
+      expect(branches.length).toBeGreaterThan(0); expect(branches.length).toBeLessThanOrEqual(2);
+      for (const branch of branches) {
+        if (branch.kind === 'perspective') expect(perspectives[branch.to].statements.length).toBeGreaterThan(0);
+        if (branch.kind === 'scenario') expect(branch.to).not.toBe(scenario.kind);
+        if (branch.kind === 'candidate') { expect(scenario.kind).toBe('malacca-closed-assumption'); expect(branch.to).not.toBe(candidate); }
+        expect(branch.label).not.toMatch(/問題|正解|ステージ|クリア/);
+      }
+    }
+    expect(nextBranches(normal, null).map(branch => branch.label)).toEqual(['通れなくしてみる', '日本以外では？（中国から見る）']);
+    expect(nextBranches(closed, null).map(branch => branch.label)).toEqual(['スンダ海峡は？', 'ロンボク海峡は？']);
+    expect(nextBranches(closed, 'sunda')[0]).toMatchObject({ kind: 'candidate', to: 'lombok', label: 'ロンボク海峡は？' });
   });
 });

@@ -45,7 +45,7 @@ test('on the map alone: close the strait, try each candidate, restore', async ({
   // The ship is not said to have been rerouted, and the model's limits are stated with the choice.
   await expect(ship(page)).toHaveAttribute('aria-label', '仮想船：スンダ経由を検討中（教材モデル）');
   await expect(page.locator('#scenario-summary')).toContainText('スンダ経由候補を強調しています。経路の概念を示す教材モデルで、実船の通航可否・所要時間・費用は検証していません。');
-  await expect(page.locator('#card-toggle')).toHaveText('スンダ海峡：なぜ重要？');
+  await expect(page.locator('#card-toggle')).toHaveText('＋◇ スンダ海峡：なぜ重要？');
   await mkdir('artifacts/map-exploration', { recursive: true });
   await page.screenshot({ path: `artifacts/map-exploration/direct-${info.project.name}-sunda.png`, fullPage: false });
   // Try the other one, on the map again (its strait this time).

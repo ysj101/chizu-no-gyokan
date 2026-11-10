@@ -242,6 +242,7 @@ function previewOnMap(id: SelectedFeatureId | null): void { markLayers('data-rel
 
 // ---- Selection
 const detailTargets: DetailTargets = {
+  finding: element('selected-finding', HTMLDivElement), next: element('selected-next', HTMLParagraphElement),
   description: element('selected-description', HTMLParagraphElement), why: element('selected-why', HTMLParagraphElement),
   scenario: element('selected-scenario', HTMLParagraphElement), related: element('selected-related', HTMLDivElement),
   relatedStatus: element('related-status', HTMLParagraphElement),
@@ -255,7 +256,9 @@ const cardToggle = element('card-toggle', HTMLButtonElement);
 const cardBody = element('card-body', HTMLDivElement);
 const noSelection = '選択なし';
 function renderCard(): void {
-  cardToggle.textContent = selectedFeatureId === null ? noSelection : `${featureById(selectedFeatureId).name}：なぜ重要？`;
+  // The card names its target with the same symbol the map uses for it, so the two read as one.
+  const feature = selectedFeatureId === null ? null : featureById(selectedFeatureId);
+  cardToggle.textContent = feature ? `${featureSymbol(feature, scenario)} ${feature.name}：なぜ重要？` : noSelection;
   cardToggle.setAttribute('aria-expanded', String(cardOpen));
   cardBody.hidden = !cardOpen;
 }

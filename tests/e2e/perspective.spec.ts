@@ -72,7 +72,7 @@ test('every country view renders, is keyboard operable, and the restore of a not
   await expect(panel(page).locator('#perspective-statements li', { hasText: 'ミャンマーから' }).locator('.statement-source')).toContainText('更新 2026-03-03');
   // A saved note records condition, layers, selection and viewport, not the country view.
   await page.getByRole('button', { name: /^この発見をメモする/ }).click();
-  await page.getByRole('textbox', { name: 'メモ本文', exact: true }).fill('視点は保存対象外');
+  await page.getByRole('textbox', { name: 'この発見にひとこと添える', exact: true }).fill('視点は保存対象外');
   await page.getByRole('button', { name: 'メモを保存', exact: true }).click();
   await expect(page.locator('#note-save-status')).toHaveText('メモを保存しました。');
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('chizu-no-gyokan.notes.v1')!).notes[0].mapState);

@@ -531,7 +531,7 @@ for (const [id, button] of perspectiveButtons) {
 const menu = element('menu', HTMLElement);
 const menuOpener = element('menu-open', HTMLButtonElement);
 function setMenuOpen(open: boolean): void {
-  menu.hidden = !open; menuOpener.setAttribute('aria-expanded', String(open));
+  menu.hidden = !open; menuOpener.setAttribute('aria-expanded', String(open)); syncMapSize();
   if (!open) { menuOpener.focus(); return; }
   element('menu-title', HTMLElement).focus({ preventScroll: phone.matches }); showBelowMap(menu);
 }
@@ -577,14 +577,17 @@ function renderTouchMode(): void {
 touchButton.addEventListener('click', () => { touchDrag = !touchDrag; renderTouchMode(); });
 coarse.addEventListener('change', renderTouchMode);
 renderTouchMode();
-new ResizeObserver(() => {
+// Called by the resize observer, and directly by the page's own layout changes (the menu) so the map is
+// right before the next interaction instead of a frame later.
+function syncMapSize(): void {
   const fitted = regionFitted; const size = map.getSize();
   map.invalidateSize({ animate: false, pan: false });
-  // The observer also reports once when it starts; nothing changed then.
+  // The observer also reports once when it starts, and after a direct call; nothing changed then.
   if (map.getSize().equals(size)) return;
   updateExplorationBounds();
   if (fitted) fitRegion();
-}).observe(mapElement);
+}
+new ResizeObserver(syncMapSize).observe(mapElement);
 renderIntro();
 renderScenario();
 void loadGeography();

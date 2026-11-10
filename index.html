@@ -44,6 +44,22 @@
         </div>
         <div class="map-cards">
         <div id="scenario-summary" class="map-card" role="status" aria-live="polite"></div>
+        <section id="chain-card" class="map-card" aria-labelledby="chain-title" hidden>
+          <div class="card-head">
+            <h2 id="chain-title">日本から見ると？</h2>
+            <button id="chain-close" type="button" class="text-button">閉じる</button>
+          </div>
+          <p id="chain-change" aria-live="polite"></p>
+          <p id="chain-finding"></p>
+          <p id="chain-next" class="chain-next"></p>
+          <p id="chain-limit" class="note"></p>
+          <details id="chain-more">
+            <summary>なぜ？・出典</summary>
+            <p id="chain-more-title" class="related-title"></p>
+            <p id="chain-meaning"></p>
+            <ul id="chain-statements"></ul>
+          </details>
+        </section>
         <section id="selection-card" class="map-card" aria-label="選択した対象の説明" tabindex="-1">
           <button id="card-toggle" type="button" aria-expanded="false" aria-controls="card-body"></button>
           <div id="card-body" hidden>

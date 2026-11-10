@@ -29,7 +29,8 @@ def inside(point, ring):
     return odd
 
 def check():
-    routes = {'normal': json.loads((ROOT/'src/route.json').read_text()), **json.loads((ROOT/'src/candidate-routes.json').read_text())}
+    routes = {'normal': json.loads((ROOT/'src/route.json').read_text()), **json.loads((ROOT/'src/candidate-routes.json').read_text()),
+              'japan-direction': json.loads((ROOT/'src/japan-direction.json').read_text())}
     countries = json.loads((ROOT/'public/data/countries.json').read_text())
     errors = []
     for route_name, route in routes.items():
@@ -44,7 +45,7 @@ def check():
                         errors.append(f"{route_name} segment {i}: crosses {feature['properties']['code']} coastline")
     if errors:
         raise SystemExit('\n'.join(sorted(set(errors))))
-    print('Normal / Sunda / Lombok routes: no land intersections in distributed Natural Earth geometry. Visual and human checks remain pending.')
+    print('Normal / Sunda / Lombok routes and the Japan direction arrow: no land intersections in distributed Natural Earth geometry. Visual and human checks remain pending.')
 
 if __name__ == '__main__':
     check()

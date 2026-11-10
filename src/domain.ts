@@ -223,9 +223,9 @@ export function scenarioExplanation(feature: Pick<ExplorationFeature, 'id' | 'ki
 // Trying one only emphasises it on the map; it never claims that a ship was rerouted.
 export type CandidateId = 'sunda' | 'lombok';
 export const candidateIds: readonly CandidateId[] = ['sunda', 'lombok'];
-export const candidates: Record<CandidateId, { name: string; route: SelectedFeatureId; features: readonly SelectedFeatureId[] }> = {
-  sunda: { name: 'スンダ経由', route: 'sunda-route', features: ['sunda-route', 'sunda'] },
-  lombok: { name: 'ロンボク経由', route: 'lombok-route', features: ['lombok-route', 'lombok'] },
+export const candidates: Record<CandidateId, { name: string; strait: string; route: SelectedFeatureId; features: readonly SelectedFeatureId[] }> = {
+  sunda: { name: 'スンダ経由', strait: 'スンダ海峡', route: 'sunda-route', features: ['sunda-route', 'sunda'] },
+  lombok: { name: 'ロンボク経由', strait: 'ロンボク海峡', route: 'lombok-route', features: ['lombok-route', 'lombok'] },
 };
 export function candidateOf(id: SelectedFeatureId): CandidateId | undefined {
   return candidateIds.find(candidate => candidates[candidate].features.includes(id));

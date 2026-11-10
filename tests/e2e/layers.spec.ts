@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './panels';
 import type { Page } from '@playwright/test';
 import { mkdir, readFile } from 'node:fs/promises';
 import type { LayerId, LayerVisibility } from '../../src/domain';
@@ -199,7 +199,7 @@ test('hidden selections retain evidence and return as current candidates; explor
 
 test('Tab, Shift+Tab, Enter and Space retain focus with reduced motion', async ({ page }, info) => {
   await page.emulateMedia({ reducedMotion: 'reduce' }); await ready(page);
-  for (let count = 0; count < 25; count++) {
+  for (let count = 0; count < 60; count++) {
     await page.keyboard.press('Tab');
     if (await toggle(page, 'borders').evaluate(el => el === document.activeElement)) break;
   }

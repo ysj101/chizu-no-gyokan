@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './panels';
 import type { Locator, Page } from '@playwright/test';
 import { readFile, mkdir } from 'node:fs/promises';
 const geography = await readFile(new URL('../../public/data/countries.json', import.meta.url), 'utf8');

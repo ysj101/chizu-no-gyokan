@@ -32,6 +32,8 @@ let perspective: PerspectiveId | null = null;
 let introVisible = true;
 // Phones scroll the page over the map until the reader turns map dragging on.
 let touchDrag = false;
+// The explanation of the selection stays folded until the reader selects something or opens it.
+let cardOpen = false;
 // Re-renders the note drawer's "state to be saved" line; bound once the drawer is mounted below.
 let refreshNoteContext: () => void = () => {};
 
@@ -49,7 +51,8 @@ const phone = matchMedia(phoneWidth);
 // Include both candidate straits and complete authored routes even in normal mode.
 const initialBounds: L.LatLngBoundsExpression = [[-13, 91], [18.5, 122]];
 const map = L.map(mapElement, {
-  zoomControl: false, attributionControl: false, minZoom: 4, maxZoom: 7,
+  // Quarter steps let the region fill whatever space the screen gives; the buttons still move a whole level.
+  zoomSnap: 0.25, zoomControl: false, attributionControl: false, minZoom: 4, maxZoom: 7,
   maxBoundsViscosity: 0.8,
   scrollWheelZoom: false, zoomAnimation: false, fadeAnimation: false,
   markerZoomAnimation: false, inertia: false, keyboard: false,
@@ -65,7 +68,28 @@ function updateExplorationBounds(): void {
   map.setMaxBounds(L.latLngBounds(map.unproject(southWest, zoom), map.unproject(northEast, zoom)));
 }
 updateExplorationBounds();
-map.fitBounds(initialBounds, { padding: [15, 15], animate: false });
+// On wide screens the cards lie over the map's left edge and the tools and legend over its foot; fit
+// the region into the part they leave free. The foot's room is a fixed allowance (tools plus up to three
+// legend lines) so that fitting gives the same view whatever the legend currently shows.
+const footRoom = 120;
+const cardColumn = element('scenario-controls', HTMLElement);
+// The part of the map that lies under the cards (left) and under the tools and legend (bottom).
+function mapInsets(): { left: number; bottom: number } {
+  if (phone.matches) return { left: 0, bottom: 0 };
+  return { left: cardColumn.getBoundingClientRect().right - mapElement.getBoundingClientRect().left, bottom: footRoom };
+}
+// True while the view is still the fitted region: then a change of the map's size (the menu opening,
+// a rotated phone) fits it again instead of cutting it off. Any move ends that. Two orderings matter:
+// fitBounds (not animated) fires moveend before the flag is set here, and the resize handler reads the
+// flag before invalidateSize fires its own moveend.
+let regionFitted = false;
+function fitRegion(): void {
+  const { left, bottom } = mapInsets();
+  map.fitBounds(initialBounds, { paddingTopLeft: [left + 15, 15], paddingBottomRight: [15, bottom + 15], animate: false });
+  regionFitted = true;
+}
+fitRegion();
+map.on('moveend', () => { regionFitted = false; });
 mapElement.addEventListener('keydown', event => {
   if (event.target !== mapElement) return;
   const offsets: Record<string, L.PointTuple> = {
@@ -154,10 +178,12 @@ function markLayers(attribute: string, ids: ReadonlySet<SelectedFeatureId>): voi
   }
 }
 // Bring a selected target into view with the smallest pan; the condition and zoom stay as they are.
-// Points need room for their callout (right and below the anchor); a line counts as visible when it crosses the view.
+// Points need room for their callout (right and below the anchor) clear of what lies over the map; a line
+// counts as visible when it crosses the view.
 function revealOnMap(id: SelectedFeatureId): void {
   const layer = selectionLayers.get(id);
-  if (layer instanceof L.Marker) map.panInside(layer.getLatLng(), { paddingTopLeft: [70, 70], paddingBottomRight: [200, 90], animate: false });
+  const { left, bottom } = mapInsets();
+  if (layer instanceof L.Marker) map.panInside(layer.getLatLng(), { paddingTopLeft: [left + 70, 70], paddingBottomRight: [200, Math.max(90, bottom)], animate: false });
   else if (layer instanceof L.Polyline && !map.getBounds().intersects(layer.getBounds())) map.panTo(layer.getBounds().getCenter(), { animate: false });
 }
 // A quiet "look here" mark on the map while a related place is focused or hovered.
@@ -174,10 +200,25 @@ const detailTargets: DetailTargets = {
 const detailActions: DetailActions = { select: id => { selectFeature(id, true); revealOnMap(id); }, preview: previewOnMap };
 const selectionHeader = { name: element('selected-name', HTMLHeadingElement), kind: element('selected-kind', HTMLParagraphElement) };
 const featureList = element('feature-list', HTMLElement);
+const cardToggle = element('card-toggle', HTMLButtonElement);
+const cardBody = element('card-body', HTMLDivElement);
+const noSelection = '選択なし';
+function renderCard(): void {
+  cardToggle.textContent = selectedFeatureId === null ? noSelection : `${featureById(selectedFeatureId).name}：なぜ重要？`;
+  cardToggle.setAttribute('aria-expanded', String(cardOpen));
+  cardBody.hidden = !cardOpen;
+}
+function setCardOpen(open: boolean): void { cardOpen = open; renderCard(); }
+cardToggle.addEventListener('click', () => setCardOpen(!cardOpen));
+// On phones the map is pinned; the target's scroll-margin-top keeps it below the map.
+function showBelowMap(target: HTMLElement): void {
+  if (phone.matches) target.scrollIntoView({ block: 'start', behavior: 'instant' });
+}
 function renderSelection(): void {
   const { name, kind } = selectionHeader;
+  renderCard();
   if (selectedFeatureId === null) {
-    name.textContent = '選択なし'; kind.textContent = '';
+    name.textContent = noSelection; kind.textContent = '';
     for (const target of Object.values(detailTargets)) target.replaceChildren();
     return;
   }
@@ -204,13 +245,12 @@ function syncSelectionMarks(): void {
 }
 function selectFeature(id: SelectedFeatureId | null, reveal = false): void {
   selectedFeatureId = id;
+  // Selecting is asking about the place: the explanation opens with it.
+  if (reveal && id !== null) cardOpen = true;
   // Narrow path: the status, legend and focus list do not depend on the selection, and rebuilding
   // the focus list would drop keyboard focus from the button that was just pressed.
   renderSelection(); syncSelectionMarks(); refreshNoteContext();
-  if (reveal && id !== null && phone.matches) {
-    // On phones the map is pinned; #selection's scroll-margin-top keeps the explanation below it.
-    element('selection', HTMLElement).scrollIntoView({ block: 'start', behavior: 'instant' });
-  }
+  if (reveal && id !== null) showBelowMap(element('selection-card', HTMLElement));
 }
 function renderFeatureList(): void {
   featureList.replaceChildren();
@@ -238,10 +278,14 @@ function renderStatus(presentation = layerPresentation(layerVisibility, scenario
     : ready ? `地図を読み込みました。${scenarioDefinition(scenario).name}の地図を探索できます。`
       : '地理データを読み込めませんでした。取得先やデータの状態を確認して、再試行してください。';
   retry.hidden = loadState !== 'error';
+  // Once the map is there it speaks for itself; the line stays for assistive technology.
+  statusElement.classList.toggle('sr-only', ready);
   visibleLayersStatus.textContent = `表示レイヤー${ready ? '' : '（予定）'}：${presentation.status}${ready ? '' : '（地理データ未表示）'}`;
   const summary = presentation.scenarioSummary;
   const notes = [...summary.notes, ...(ready ? [] : ['地理データは未表示です。条件設定のみ反映しています。'])];
   // Skip identical updates: the region is live, and re-announcing an unchanged summary is noise.
+  // The normal condition has nothing to report on screen; the summary appears with a change or a hidden layer.
+  scenarioSummary.classList.toggle('sr-only', scenario.kind === 'normal' && notes.length === 0);
   const key = [summary.title, ...summary.changes.map(change => change.kind + change.text), ...notes].join('\n');
   if (key === summaryKey) return;
   summaryKey = key;
@@ -365,6 +409,19 @@ for (const [id, button] of perspectiveButtons) {
   button.addEventListener('click', () => { perspective = id; renderPerspectiveText(); renderFeatureList(); renderPerspectiveFocus(); });
 }
 
+// ---- Menu: settings, the list of places, sources and saved notes. A disclosure whose only state is
+// whether it is shown; focus moves into it when it opens and back to its button when it closes.
+const menu = element('menu', HTMLElement);
+const menuOpener = element('menu-open', HTMLButtonElement);
+function setMenuOpen(open: boolean): void {
+  menu.hidden = !open; menuOpener.setAttribute('aria-expanded', String(open));
+  if (!open) { menuOpener.focus(); return; }
+  element('menu-title', HTMLElement).focus({ preventScroll: phone.matches }); showBelowMap(menu);
+}
+menuOpener.addEventListener('click', () => setMenuOpen(menu.hidden));
+element('menu-close', HTMLButtonElement).addEventListener('click', () => setMenuOpen(false));
+menu.addEventListener('keydown', event => { if (event.key === 'Escape') setMenuOpen(false); });
+
 // ---- First-visit guide
 function renderIntro(): void {
   element('intro', HTMLElement).hidden = !introVisible; element('intro-reopen', HTMLButtonElement).hidden = introVisible;
@@ -385,7 +442,7 @@ for (const id of ['sunda', 'lombok'] as const) {
 retry.addEventListener('click', () => { void loadGeography(); });
 element('zoom-in', HTMLButtonElement).addEventListener('click', () => map.zoomIn(1, { animate: false }));
 element('zoom-out', HTMLButtonElement).addEventListener('click', () => map.zoomOut(1, { animate: false }));
-element('reset', HTMLButtonElement).addEventListener('click', () => map.fitBounds(initialBounds, { padding: [15, 15], animate: false }));
+element('reset', HTMLButtonElement).addEventListener('click', fitRegion);
 
 // ---- Touch mode. The label stays the same; aria-pressed carries the state and the hint says what a finger does now.
 const touchButton = element('touch-mode', HTMLButtonElement);
@@ -410,8 +467,12 @@ touchButton.addEventListener('click', () => { touchDrag = !touchDrag; renderTouc
 coarse.addEventListener('change', renderTouchMode);
 renderTouchMode();
 new ResizeObserver(() => {
+  const fitted = regionFitted; const size = map.getSize();
   map.invalidateSize({ animate: false, pan: false });
+  // The observer also reports once when it starts; nothing changed then.
+  if (map.getSize().equals(size)) return;
   updateExplorationBounds();
+  if (fitted) fitRegion();
 }).observe(mapElement);
 renderIntro();
 renderScenario();
@@ -448,4 +509,4 @@ function applyNote(note: DiscoveryNote): Result<{ adjusted: boolean }> {
 const noteForm = element('note-form', HTMLFormElement);
 const drawer = mountNoteDrawer({ opener: element('note-open', HTMLButtonElement), form: noteForm, closer: element('note-close', HTMLButtonElement), context: element('note-context', HTMLParagraphElement), describe: () => describeMapState(snapshot()) });
 refreshNoteContext = drawer.refresh;
-mountNotes({ list: element('notes', HTMLElement), form: noteForm, snapshot, restore: applyNote, focusWhenEmpty: drawer.focus });
+mountNotes({ list: element('notes', HTMLElement), form: noteForm, snapshot, restore: applyNote, focusWhenEmpty: () => { setCardOpen(true); drawer.focus(); } });

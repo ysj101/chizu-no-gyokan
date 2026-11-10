@@ -195,7 +195,7 @@ export function featureRole(id: SelectedFeatureId, scenario: Scenario): FeatureR
   return definition.featureIds.includes(id) ? definition.roles[id] ?? 'normal' : undefined;
 }
 const rolePrefix: Record<FeatureRole, string> = { normal: '', unavailable: '×', candidate: '＋' };
-const kindGlyph: Record<ExplorationFeature['kind'], string> = { route: '┄', strait: '◇', place: '●' };
+export const kindGlyph: Record<ExplorationFeature['kind'], string> = { route: '┄', strait: '◇', place: '●' };
 // The symbol drawn on the map and in the list; it carries the role without relying on colour.
 export function featureSymbol(feature: ExplorationFeature, scenario: Scenario): string {
   return `${rolePrefix[featureRole(feature.id, scenario) ?? 'normal']}${kindGlyph[feature.kind]}`;
@@ -207,11 +207,15 @@ export function changedFeatureIds(from: Scenario, to: Scenario, features: readon
 export function selectionForScenario(id: SelectedFeatureId, scenario: Scenario): SelectedFeatureId {
   return scenarioDefinition(scenario).featureIds.includes(id) ? id : 'malacca';
 }
-export function scenarioExplanation(id: SelectedFeatureId, scenario: Scenario): string {
+export function scenarioExplanation(feature: Pick<ExplorationFeature, 'id' | 'kind'>, scenario: Scenario): string {
   if (scenario.kind === 'normal') return '現在は通常時の表示です。';
-  if (id === 'malacca') return '仮定：この海峡を使えない条件です。＋追加した両候補との位置関係を比較できます。';
-  if (id === 'normal-route') return '仮定：この通常主要航路は使用しません。点線は通常時との比較のために残しています。';
-  if (['sunda', 'lombok', 'sunda-route', 'lombok-route'].includes(id)) return '＋仮定時に追加：EIAが挙げる代替経路の検討対象です。運航可能性を保証しません。';
+  // Wording follows the feature's role in this condition and what kind of thing it is, not its id.
+  const role = featureRole(feature.id, scenario);
+  if (role === 'unavailable') {
+    return feature.kind === 'route' ? '仮定：この通常主要航路は使用しません。点線は通常時との比較のために残しています。'
+      : '仮定：この海峡を使えない条件です。＋追加した両候補との位置関係を比較できます。';
+  }
+  if (role === 'candidate') return '＋仮定時に追加：EIAが挙げる代替経路の検討対象です。運航可能性を保証しません。';
   return '仮定時も地理的位置は変わりません。この地点への影響や輸送量は未収録です。';
 }
 
@@ -237,17 +241,16 @@ export function layerPresentation(visibility: LayerVisibility, scenario: Scenari
   const legendText = (id: LayerId, text: string) => `${text}（${layerStateLabel(visibility[id])}）`;
   return {
     status: layerStatusLine(visibility),
-    // Empty while everything is visible: the initial view needs no layer explanation.
+    // Empty while everything is visible: the initial view needs no layer explanation. Which layer is
+    // hidden and what that removes is said once, in the scenario summary's notes below.
     explanation: layerIds.every(id => visibility[id]) ? ''
-      : '国境が非表示でも位置を把握するため陸地の塗りと海域名は残します。非表示の対象も一覧から選択でき、選択と詳細は保持します。'
-      + (!visibility.routes ? ` ${hiddenLayerReason('routes')}：航路線・候補線・航路ラベルは地図上で非表示です。` : '')
-      + (!visibility.points ? ` ${hiddenLayerReason('points')}：代表点・引出線・コールアウトは地図上で非表示です。` : ''),
+      : `${visibility.borders ? '' : '国境が非表示でも位置を把握するため陸地の塗りと海域名は残します。'}非表示の対象も一覧から選択でき、選択と詳細は保持します。`,
     scenarioSummary: {
       title: definition.summaryTitle,
       changes: definition.changes,
       notes: [
-        ...(!visibility.routes ? [`${hiddenLayerReason('routes')}のため、条件に対応する航路線は地図上で非表示です。再表示すると現在条件の航路が現れます。`] : []),
-        ...(!visibility.points ? [`${hiddenLayerReason('points')}のため、条件に対応する代表点は地図上で非表示です。`] : []),
+        ...(!visibility.routes ? [`${hiddenLayerReason('routes')}のため、航路線・候補線・航路ラベルは地図上で非表示です。再表示すると現在条件の航路が現れます。`] : []),
+        ...(!visibility.points ? [`${hiddenLayerReason('points')}のため、代表点・引出線・コールアウトは地図上で非表示です。`] : []),
       ],
     },
     legends: {

@@ -94,11 +94,11 @@ PC/mobileの実UI検査・画像・キーボード操作は[CG-03 feature map](.
 
 unitは両シナリオ・全レイヤー組合せ・選択あり／なし、範囲調整、欠落・不正状態の拒否を確認する。PC/mobileの`tests/e2e/restore.spec.ts`は実UIで保存して再読込したメモの連続復元、地図・凡例・aria・説明・詳細の同期、復元後の探索と新規保存、失敗時の不変性、通信、キーボードとモーション削減を確認する。操作と画像保存先は[CG-06 feature map](../features/note-restore.md)を参照。最新の実走結果はCIとPR本文を参照。人間の自由探索と実際のスクリーンリーダー確認は未実施。
 
-## UX-01〜UX-11 画面改善後の構成
+## UX-01〜UX-12 画面改善後の構成
 
-状態は `src/main.ts` のモジュール変数に集約する：選択（`selectedFeatureId`）、条件（`scenario`）、レイヤー（`layerVisibility`）、読込（`loadState`）、国ごとの視点（`perspective`、`src/perspectives.ts`）、初回案内の表示（`introVisible`）、タッチ移動（`touchDrag`）。条件と視点と案内は URL や storage に書かない。描画関数は状態→DOM で、副作用（スクロール、フォーカス、一時的な強調）は操作ハンドラ側に置く。条件の変更は `setScenario` の一本（条件ボタン、初回案内の主ボタン、メモの復元）で、選択の正規化と案内の終了もそこで行う（復元で仮定になった場合も案内は閉じる）。複数の状態から導かれる表示（選択の印、視点の焦点、状態行、メモの文脈）は `renderDerived` にまとめ、レイヤー切替と条件切替の両方から呼ぶ。
+状態は `src/main.ts` のモジュール変数に集約する：選択（`selectedFeatureId`）、条件（`scenario`）、レイヤー（`layerVisibility`）、読込（`loadState`）、国ごとの視点（`perspective`、`src/perspectives.ts`）、初回案内の表示（`introVisible`）、タッチ移動（`touchDrag`）。条件と視点と案内は URL や storage に書かない。描画関数は状態→DOM で、副作用（スクロール、フォーカス、一時的な強調）は操作ハンドラ側に置く。条件の変更は `setScenario` の一本（条件ボタン、初回案内の主ボタン、メモの復元）で、選択の正規化と案内の終了もそこで行う（復元で仮定になった場合も案内は閉じる）。複数の状態から導かれる表示（選択の印、視点の焦点、状態行、メモの文脈）は `renderDerived` にまとめ、選択・レイヤー切替・条件切替のすべてから呼ぶ。視点の切替は視点文・対象一覧（「（視点の焦点）」の注記は一覧の描画の一部）・レイヤー描画を状態から描き直すだけで、既存の DOM を差分で直さない。「空なら隠す」案内（選択対象の非表示理由、レイヤーの説明、タッチの案内）は `dom.ts` の `setMessage` で揃える。
 
-モジュールの層は domain（`domain.ts`：純粋な定義と導出、区分語彙）→ content（`content.ts`／`details.ts`／`perspectives.ts`／`notes.ts`／`note-restore.ts`：静的な表と純粋な導出・検証）→ renderer（`dom.ts` の小さなDOMヘルパー、`detail-panel.ts`、`notes-panel.ts`）→ `main.ts`。描画側のキャッシュ（差分要約の文字列キー、強調のタイマー）は状態ではなく、状態から再計算できる。資料のメタデータは `sourceSection` の一箇所で描画し、ページ下部の出典一覧と選択対象の根拠で同じ語を使う。
+モジュールの層は domain（`domain.ts`：純粋な定義と導出、区分語彙）→ content（`content.ts`／`details.ts`／`perspectives.ts`／`notes.ts`／`note-restore.ts`：静的な表と純粋な導出・検証）→ renderer（`dom.ts` の小さなDOMヘルパー、`detail-panel.ts`、`notes-panel.ts`）→ `main.ts`。描画側のキャッシュ（差分要約の文字列キー、強調のタイマー）は状態ではなく、状態から再計算できる。資料のメタデータは `sourceSection` の一箇所で描画し、ページ下部の出典一覧と選択対象の根拠で同じ語を使う。文言は domain／content 側が持ち、renderer は受け取った文字列を置くだけにする（関連リンクの「（〜で表示）」も `relatedLink` が返す）。レイヤー非表示時の案内は「現在の条件」の補足一行だけに置き、レイヤー説明には繰り返さない。
 
 地図要素に付ける印（選択、`data-just-changed`、`data-related-preview`、`data-perspective-focus`）は `markLayers` で付ける。Leaflet はレイヤーを再追加すると要素を作り直すため、選択の印と視点の焦点は `renderLayerVisibility` の末尾で必ず塗り直す（UX-11 でレイヤー切替後に焦点が消える不具合を修正）。
 

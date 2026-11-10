@@ -3,12 +3,13 @@ import { mkdir } from 'node:fs/promises';
 import { scenarios, scenarioExplanation } from '../../src/domain';
 import type { Scenario } from '../../src/domain';
 
+// Kept local (content.ts pulls in JSON that Node cannot import without attributes); `kind` feeds scenarioExplanation.
 const features = [
-  { id: 'malacca', name: 'マラッカ海峡' }, { id: 'normal-route', name: '通常主要航路' },
-  { id: 'singapore', name: 'シンガポール' }, { id: 'penang', name: 'ペナン島' },
-  { id: 'sunda', name: 'スンダ海峡' }, { id: 'lombok', name: 'ロンボク海峡' },
-  { id: 'sunda-route', name: 'スンダ経由候補' }, { id: 'lombok-route', name: 'ロンボク経由候補' },
-];
+  { id: 'malacca', name: 'マラッカ海峡', kind: 'strait' }, { id: 'normal-route', name: '通常主要航路', kind: 'route' },
+  { id: 'singapore', name: 'シンガポール', kind: 'place' }, { id: 'penang', name: 'ペナン島', kind: 'place' },
+  { id: 'sunda', name: 'スンダ海峡', kind: 'strait' }, { id: 'lombok', name: 'ロンボク海峡', kind: 'strait' },
+  { id: 'sunda-route', name: 'スンダ経由候補', kind: 'route' }, { id: 'lombok-route', name: 'ロンボク経由候補', kind: 'route' },
+] as const;
 const unrecorded = '未収録：距離・所要時間・船舶条件・輸送能力・運航量・費用。この教材に対象別の根拠データを収録していません。ゼロや無影響を意味しません。';
 
 for (const scenario of [{ kind: 'normal' }, { kind: 'malacca-closed-assumption' }] satisfies Scenario[]) {
@@ -29,7 +30,7 @@ for (const scenario of [{ kind: 'normal' }, { kind: 'malacca-closed-assumption' 
       await expect(selection.locator('#selected-why')).toContainText('なぜ重要か：');
       await expect(selection.locator('#selected-why .tag')).toHaveText(['malacca', 'sunda', 'lombok'].includes(id) ? '事実' : 'モデル');
       await expect(selection.locator('#selected-related .related-title')).toHaveText('関連する場所');
-      await expect(selection.locator('#selected-scenario')).toContainText(scenarioExplanation(id, scenario));
+      await expect(selection.locator('#selected-scenario')).toContainText(scenarioExplanation(feature, scenario));
       await expect(selection.locator('#selected-scenario .tag')).toHaveText(scenario.kind === 'normal' ? 'モデル' : '仮定');
       await expect(selection.locator('#selected-scenario .tag')).toHaveAttribute('title', scenario.kind === 'normal' ? '説明・推論（モデル上の説明）' : '仮定（シナリオ上の仮定）');
       // Tier two: location, cautions, glossary where the term is used, and one grouped missing-data item.
@@ -90,7 +91,7 @@ test('detail round trips retain selection and synchronize text, legend and keybo
       await expect(closed).toBeFocused(); await expect(closed).toHaveAttribute('aria-pressed', 'true');
       await expect(selection).toHaveAttribute('aria-pressed', 'true');
       await expect(page.getByRole('region', { name: feature.name, exact: true })).toHaveAttribute('aria-live', 'polite');
-      await expect(page.getByRole('region', { name: feature.name, exact: true }).locator('#selected-scenario')).toContainText(scenarioExplanation(id, { kind: 'malacca-closed-assumption' }));
+      await expect(page.getByRole('region', { name: feature.name, exact: true }).locator('#selected-scenario')).toContainText(scenarioExplanation(feature, { kind: 'malacca-closed-assumption' }));
       await expect(page.locator('#selected-scenario .tag')).toHaveText('仮定');
       await expect(panel.getByText(/通行不可は現実の航行規制・出来事を示しません/)).toBeAttached();
       await expect(page.getByText('現在の条件：通行不可（仮定）', { exact: true })).toHaveCount(2);

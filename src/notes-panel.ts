@@ -23,7 +23,6 @@ export function mountNotes({ list: target, form, snapshot, restore, focusWhenEmp
   const warning = target.querySelector<HTMLElement>('#notes-warning');
   const empty = target.querySelector<HTMLElement>('#notes-empty');
   if (!input || !saveStatus || !list || !status || !warning || !empty) throw new Error('Missing notes panel');
-  const paragraph = (text: string, className = '') => textElement('p', text, className);
   function render(result: ReturnType<typeof loadNotes>): void {
     if (!result.ok) { warning!.textContent = result.error; empty!.hidden = true; return; }
     warning!.textContent = result.value.unreadable ? `読み込めない記録が${result.value.unreadable}件あります。` : '';
@@ -32,7 +31,7 @@ export function mountNotes({ list: target, form, snapshot, restore, focusWhenEmp
     for (const note of result.value.notes) {
       const item = document.createElement('li');
       const display = notePresentation(note);
-      const body = paragraph(note.body, 'note-body');
+      const body = textElement('p', note.body, 'note-body');
       const time = document.createElement('time'); time.dateTime = note.createdAt; time.textContent = display.date;
       const button = document.createElement('button'); button.type = 'button'; button.textContent = 'このメモを削除';
       button.dataset.action = 'delete';
@@ -77,7 +76,7 @@ export function mountNotes({ list: target, form, snapshot, restore, focusWhenEmp
         // Keep focus at the action and the live result, including on mobile.
         restoreButton.focus({ preventScroll: true });
       });
-      item.append(body, time, paragraph(display.scenario), paragraph(display.layers), paragraph(display.selection), restoreButton, button);
+      item.append(body, time, textElement('p', display.scenario), textElement('p', display.layers), textElement('p', display.selection), restoreButton, button);
       list!.append(item);
     }
   }
@@ -99,7 +98,8 @@ export function mountNotes({ list: target, form, snapshot, restore, focusWhenEmp
 // The input drawer sits by the selected place. Closing keeps the draft in the field and says so on
 // the opener, so nothing typed is lost; `describe` renders the map state that a save would record.
 export interface NoteDrawer { refresh(): void; focus(): void }
-export function mountNoteDrawer(opener: HTMLButtonElement, form: HTMLFormElement, closer: HTMLButtonElement, context: HTMLElement, describe: () => string): NoteDrawer {
+export interface NoteDrawerMount { opener: HTMLButtonElement; form: HTMLFormElement; closer: HTMLButtonElement; context: HTMLElement; describe: () => string }
+export function mountNoteDrawer({ opener, form, closer, context, describe }: NoteDrawerMount): NoteDrawer {
   const input = form.querySelector('textarea');
   if (!input) throw new Error('Missing note drawer');
   const refresh = () => {

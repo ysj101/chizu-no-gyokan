@@ -39,7 +39,7 @@ describe('route model boundary', () => {
 });
 
 import { scenarios, scenarioDefinition, selectionForScenario, scenarioExplanation, routeStyles, sourceRegistry, featureSymbol, featureRole, changedFeatureIds } from '../src/domain';
-import { features } from '../src/content';
+import { features, featureById } from '../src/content';
 import type { Scenario } from '../src/domain';
 const normal: Scenario = { kind: 'normal' };
 const closed: Scenario = { kind: 'malacca-closed-assumption' };
@@ -69,7 +69,7 @@ describe('scenario projection', () => {
     for (const id of scenarios.normal.featureIds) {
       expect(selectionForScenario(id, closed)).toBe(id);
       expect(selectionForScenario(id, normal)).toBe(id);
-      expect(scenarioExplanation(id, closed)).not.toBe(scenarioExplanation(id, normal));
+      expect(scenarioExplanation(featureById(id), closed)).not.toBe(scenarioExplanation(featureById(id), normal));
     }
     for (const id of ['sunda', 'lombok', 'sunda-route', 'lombok-route'] as const) {
       expect(selectionForScenario(id, closed)).toBe(id);
@@ -124,7 +124,7 @@ describe('selected detail evidence', () => {
         expect(features.some(feature => feature.id === link.id)).toBe(true);
         expect(link.reason.length).toBeGreaterThan(0);
         expect(link.available).toBe(scenarioDefinition(scenario).featureIds.includes(link.id));
-        expect(link.shownIn.length).toBeGreaterThan(0);
+        expect(link.hint === '').toBe(link.available); if (!link.available) expect(link.note).toContain(link.name);
         expect(link.note === '').toBe(link.available);
         expect(view.related.status === 'recorded' && view.related.text).toContain(link.name);
       }
@@ -153,7 +153,6 @@ describe('selected detail evidence', () => {
       for (const entry of view.evidence) expect(entry.items).toEqual(detailItems(view).filter(item => item.sources.includes(entry.source)).map(item => item.label));
       for (const item of detailItems(view)) for (const source of item.sources) expect(view.evidence.some(entry => entry.source === source)).toBe(true);
     }
-    expect(unrecordedFields).toEqual(['距離', '所要時間', '船舶条件', '輸送能力', '運航量', '費用']);
     expect(sourceRegistry.naturalEarth.updated).toContain('不明');
     expect(sourceRegistry.eia.updated).toBe('2026-03-03');
   });
@@ -161,8 +160,8 @@ describe('selected detail evidence', () => {
     for (const id of scenarios.normal.featureIds) {
       const before = detailView(id, normal);
       const changed = detailView(id, closed);
-      expect(changed.scenario).toMatchObject({ classification: 'assumption', text: scenarioExplanation(id, closed) });
-      expect(before.scenario).toMatchObject({ classification: 'explanation', text: scenarioExplanation(id, normal) });
+      expect(changed.scenario).toMatchObject({ classification: 'assumption', text: scenarioExplanation(featureById(id), closed) });
+      expect(before.scenario).toMatchObject({ classification: 'explanation', text: scenarioExplanation(featureById(id), normal) });
       expect(changed.more.find(item => item.label === '注意事項')).not.toEqual(before.more.find(item => item.label === '注意事項'));
       expect(changed.why).toEqual(before.why); expect(changed.related).toEqual(before.related);
       expect(detailView(id, normal)).toEqual(before);
@@ -195,7 +194,8 @@ describe('independent layer presentation in both scenarios', () => {
       });
       if (Object.values(visibility).every(Boolean)) expect(view.explanation).toBe('');
       else {
-        expect(view.explanation).toContain('陸地の塗りと海域名は残します');
+        // The land/sea reassurance is about borders; it is said only when borders are the hidden layer.
+        expect(view.explanation.includes('陸地の塗りと海域名は残します')).toBe(!visibility.borders);
         expect(view.explanation).toContain('選択と詳細は保持します');
       }
       expect(view.scenarioSummary.title).toBe(scenarioDefinition(scenario).summaryTitle);

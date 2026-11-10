@@ -7,6 +7,8 @@ export function textElement<K extends keyof HTMLElementTagNameMap>(tag: K, text:
 export function tagElement(label: string, modifier: string, title = ''): HTMLElement {
   const tag = textElement('span', label, `tag tag-${modifier}`); if (title) tag.title = title; return tag;
 }
+// A message element that disappears when there is nothing to say.
+export function setMessage(target: HTMLElement, text: string): void { target.textContent = text; target.hidden = !text; }
 export function link(text: string, href: string): HTMLAnchorElement {
   const a = textElement('a', text); a.href = href; return a;
 }

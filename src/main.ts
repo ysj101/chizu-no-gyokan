@@ -5,14 +5,14 @@ import { describeMapState } from './notes';
 import { detailView, relatedLink } from './details';
 import { renderDetail, renderPerspectiveContent, renderRelated, sourceSection } from './detail-panel';
 import type { DetailActions, DetailTargets } from './detail-panel';
-import { tagElement, textElement } from './dom';
+import { setMessage, tagElement, textElement } from './dom';
 import { perspectiveIds, perspectives } from './perspectives';
 import type { PerspectiveId } from './perspectives';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './style.css';
 import { featureById, features, labels } from './content';
-import { parseCountries, sourceRegistry, scenarioDefinition, selectionForScenario, routeStyles, layerIds, layerPresentation, featureLayer, hiddenFeatureMessage, hiddenLayerReason, featureSymbol, featureRole, changedFeatureIds, changeLabels } from './domain';
+import { parseCountries, sourceRegistry, scenarioDefinition, selectionForScenario, routeStyles, layerIds, layerPresentation, featureLayer, hiddenFeatureMessage, hiddenLayerReason, featureSymbol, featureRole, changedFeatureIds, changeLabels, kindGlyph } from './domain';
 import type { ExplorationFeature, LoadState, SelectedFeatureId, Scenario, LayerVisibility } from './domain';
 
 function element<T extends HTMLElement>(id: string, constructor: { new(...args: never[]): T }): T {
@@ -39,6 +39,13 @@ let refreshNoteContext: () => void = () => {};
 const mapElement = element('map', HTMLDivElement);
 const statusElement = element('load-status', HTMLParagraphElement);
 const retry = element('retry', HTMLButtonElement);
+const visibleLayersStatus = element('visible-layers', HTMLParagraphElement);
+const scenarioSummary = element('scenario-summary', HTMLDivElement);
+const layerHelp = element('layer-help', HTMLParagraphElement);
+const selectedVisibility = element('selected-visibility', HTMLParagraphElement);
+// One phone breakpoint for layout decisions in script; the stylesheet uses the same width.
+const phoneWidth = '(max-width: 760px)';
+const phone = matchMedia(phoneWidth);
 // Include both candidate straits and complete authored routes even in normal mode.
 const initialBounds: L.LatLngBoundsExpression = [[-13, 91], [18.5, 122]];
 const map = L.map(mapElement, {
@@ -182,9 +189,7 @@ function renderSelection(): void {
 }
 function syncSelectionMarks(): void {
   const feature = selectedFeatureId === null ? undefined : featureById(selectedFeatureId);
-  const message = feature ? hiddenFeatureMessage(feature, layerVisibility) : '';
-  const visibility = element('selected-visibility', HTMLParagraphElement);
-  visibility.textContent = message; visibility.hidden = !message;
+  setMessage(selectedVisibility, feature ? hiddenFeatureMessage(feature, layerVisibility) : '');
   for (const button of document.querySelectorAll<HTMLButtonElement>('[data-feature-id]')) {
     button.setAttribute('aria-pressed', String(button.dataset.featureId === selectedFeatureId));
   }
@@ -199,8 +204,10 @@ function syncSelectionMarks(): void {
 }
 function selectFeature(id: SelectedFeatureId | null, reveal = false): void {
   selectedFeatureId = id;
+  // Narrow path: the status, legend and focus list do not depend on the selection, and rebuilding
+  // the focus list would drop keyboard focus from the button that was just pressed.
   renderSelection(); syncSelectionMarks(); refreshNoteContext();
-  if (reveal && id !== null && matchMedia('(max-width: 760px)').matches) {
+  if (reveal && id !== null && phone.matches) {
     // On phones the map is pinned; #selection's scroll-margin-top keeps the explanation below it.
     element('selection', HTMLElement).scrollIntoView({ block: 'start', behavior: 'instant' });
   }
@@ -210,10 +217,13 @@ function renderFeatureList(): void {
   for (const feature of visibleFeatures()) {
     const button = featureButton(feature, false);
     button.textContent = `${featureSymbol(feature, scenario)} ${feature.name}`;
-    const visibility = textElement('span', '', 'feature-visibility');
+    const layer = featureLayer(feature);
+    const visibility = textElement('span', layerVisibility[layer] ? '' : `（地図上で非表示：${hiddenLayerReason(layer)}）`, 'feature-visibility');
     visibility.id = `feature-visibility-${feature.id}`;
     button.setAttribute('aria-describedby', visibility.id);
     button.append(visibility);
+    // Visibility and the view's focus are part of the list's state, not patched in afterwards.
+    if (perspective !== null && perspectives[perspective].focus.includes(feature.id)) button.append(textElement('span', '（視点の焦点）', 'focus-note'));
     featureList.append(button);
   }
 }
@@ -228,7 +238,7 @@ function renderStatus(presentation = layerPresentation(layerVisibility, scenario
     : ready ? `地図を読み込みました。${scenarioDefinition(scenario).name}の地図を探索できます。`
       : '地理データを読み込めませんでした。取得先やデータの状態を確認して、再試行してください。';
   retry.hidden = loadState !== 'error';
-  element('visible-layers', HTMLParagraphElement).textContent = `表示レイヤー${ready ? '' : '（予定）'}：${presentation.status}${ready ? '' : '（地理データ未表示）'}`;
+  visibleLayersStatus.textContent = `表示レイヤー${ready ? '' : '（予定）'}：${presentation.status}${ready ? '' : '（地理データ未表示）'}`;
   const summary = presentation.scenarioSummary;
   const notes = [...summary.notes, ...(ready ? [] : ['地理データは未表示です。条件設定のみ反映しています。'])];
   // Skip identical updates: the region is live, and re-announcing an unchanged summary is noise.
@@ -240,7 +250,7 @@ function renderStatus(presentation = layerPresentation(layerVisibility, scenario
     const item = textElement('li', '');
     item.append(tagElement(changeLabels[change.kind], `change-${change.kind}`), document.createTextNode(change.text)); list.append(item);
   }
-  element('scenario-summary', HTMLDivElement).replaceChildren(textElement('p', summary.title, 'summary-title'), list, ...notes.map(text => textElement('p', text, 'summary-note')));
+  scenarioSummary.replaceChildren(textElement('p', summary.title, 'summary-title'), list, ...notes.map(text => textElement('p', text, 'summary-note')));
 }
 // Briefly mark the features whose role differs from the previous condition, so the change can be
 // seen without remembering the earlier map. Reduced motion keeps the mark static. This is a
@@ -291,7 +301,7 @@ function renderScenario(): void {
 function renderDerived(presentation = layerPresentation(layerVisibility, scenario)): void {
   syncSelectionMarks(); renderPerspectiveFocus(); renderStatus(presentation); refreshNoteContext();
 }
-// Layer visibility, legend and the list's hidden-layer notes, then the derived views.
+// Layer visibility and legend, then the list (its hidden-layer notes) and the derived views.
 function renderLayerVisibility(): void {
   const presentation = layerPresentation(layerVisibility, scenario);
   for (const id of layerIds) {
@@ -302,8 +312,7 @@ function renderLayerVisibility(): void {
     if (layerVisibility[id]) layerGroups[id].addTo(map);
     else map.removeLayer(layerGroups[id]);
   }
-  const help = element('layer-help', HTMLParagraphElement);
-  help.textContent = presentation.explanation; help.hidden = !presentation.explanation;
+  setMessage(layerHelp, presentation.explanation);
   const closed = scenario.kind !== 'normal';
   for (const [key, id, symbol] of [
     ['borders', 'border-legend', 'border'], ['normal', 'normal-legend', closed ? 'unavailable' : 'normal'],
@@ -311,16 +320,12 @@ function renderLayerVisibility(): void {
   ] as const) {
     const item = element(id, HTMLLIElement);
     const legend = presentation.legends[key];
-    const swatch = textElement('span', symbol === 'strait' ? '◇' : symbol === 'point' ? '●' : '', `key ${symbol}`);
+    const swatch = textElement('span', symbol === 'strait' ? kindGlyph.strait : symbol === 'point' ? kindGlyph.place : '', `key ${symbol}`);
     item.replaceChildren(swatch, document.createTextNode(legend.text));
     item.hidden = legend.hidden;
     item.classList.toggle('layer-off', legend.off);
   }
-  for (const feature of visibleFeatures()) {
-    const layer = featureLayer(feature);
-    const label = featureList.querySelector(`[data-feature-id="${feature.id}"] .feature-visibility`);
-    if (label) label.textContent = layerVisibility[layer] ? '' : `（地図上で非表示：${hiddenLayerReason(layer)}）`;
-  }
+  renderFeatureList();
   renderDerived(presentation);
 }
 for (const id of layerIds) {
@@ -340,31 +345,24 @@ function setScenario(kind: Scenario['kind']): void {
 // depend on the current condition, so they are re-rendered with the scenario and the layers.
 const perspectiveButtons = [null, ...perspectiveIds].map(id => [id, element(`perspective-${id ?? 'none'}`, HTMLButtonElement)] as const);
 const perspectivePanel = element('perspective-view', HTMLElement);
+const perspectiveTargets = {
+  title: element('perspective-title', HTMLHeadingElement), meaning: element('perspective-meaning', HTMLParagraphElement),
+  statements: element('perspective-statements', HTMLUListElement),
+  focus: element('perspective-focus', HTMLElement), focusStatus: element('perspective-focus-status', HTMLParagraphElement),
+};
 function renderPerspectiveText(): void {
   for (const [id, button] of perspectiveButtons) button.setAttribute('aria-pressed', String(id === perspective));
   perspectivePanel.hidden = perspective === null;
-  if (perspective === null) return;
-  renderPerspectiveContent({
-    title: element('perspective-title', HTMLHeadingElement), meaning: element('perspective-meaning', HTMLParagraphElement),
-    statements: element('perspective-statements', HTMLUListElement),
-  }, perspectives[perspective]);
+  if (perspective !== null) renderPerspectiveContent(perspectiveTargets, perspectives[perspective]);
 }
+// The focus list depends on the condition and the map marks on the (recreated) map elements.
 function renderPerspectiveFocus(): void {
-  const focus = new Set(perspective === null ? [] : perspectives[perspective].focus);
-  if (perspective !== null) {
-    renderRelated(element('perspective-focus', HTMLElement), element('perspective-focus-status', HTMLParagraphElement), '注目する対象',
-      [...focus].map(id => relatedLink(id, '', scenario)), detailActions);
-  }
-  markLayers('data-perspective-focus', focus);
-  for (const button of featureList.querySelectorAll<HTMLButtonElement>('[data-feature-id]')) {
-    const note = button.querySelector('.focus-note');
-    const wanted = focus.has(button.dataset.featureId as SelectedFeatureId);
-    if (wanted && !note) button.append(textElement('span', '（視点の焦点）', 'focus-note'));
-    if (!wanted && note) note.remove();
-  }
+  const view = perspective === null ? null : perspectives[perspective];
+  if (view) renderRelated(perspectiveTargets.focus, perspectiveTargets.focusStatus, '注目する対象', view.focus.map(id => relatedLink(id, '', scenario)), detailActions);
+  markLayers('data-perspective-focus', new Set(view?.focus ?? []));
 }
 for (const [id, button] of perspectiveButtons) {
-  button.addEventListener('click', () => { perspective = id; renderPerspectiveText(); renderPerspectiveFocus(); });
+  button.addEventListener('click', () => { perspective = id; renderPerspectiveText(); renderFeatureList(); renderPerspectiveFocus(); });
 }
 
 // ---- First-visit guide
@@ -392,7 +390,7 @@ element('reset', HTMLButtonElement).addEventListener('click', () => map.fitBound
 // ---- Touch mode. The label stays the same; aria-pressed carries the state and the hint says what a finger does now.
 const touchButton = element('touch-mode', HTMLButtonElement);
 const touchHint = element('map-hint', HTMLParagraphElement);
-const coarse = matchMedia('(any-pointer: coarse), (max-width: 760px)');
+const coarse = matchMedia(`(any-pointer: coarse), ${phoneWidth}`);
 const touchAvailable = () => navigator.maxTouchPoints > 0 || coarse.matches;
 isolateMapButton(touchButton);
 const touchHints = {
@@ -404,8 +402,7 @@ function renderTouchMode(): void {
   const dragging = available && touchDrag;
   touchButton.setAttribute('aria-pressed', String(dragging));
   touchButton.hidden = !available;
-  const hint = available ? touchHints[dragging ? 'on' : 'off'] : '';
-  touchHint.textContent = hint; touchHint.hidden = !hint;
+  setMessage(touchHint, available ? touchHints[dragging ? 'on' : 'off'] : '');
   if (available && !dragging) { map.dragging.disable(); mapElement.style.touchAction = 'pan-y'; }
   else { map.dragging.enable(); mapElement.style.touchAction = 'none'; }
 }
@@ -449,6 +446,6 @@ function applyNote(note: DiscoveryNote): Result<{ adjusted: boolean }> {
   return { ok: true, value: { adjusted: result.value.adjusted } };
 }
 const noteForm = element('note-form', HTMLFormElement);
-const drawer = mountNoteDrawer(element('note-open', HTMLButtonElement), noteForm, element('note-close', HTMLButtonElement), element('note-context', HTMLParagraphElement), () => describeMapState(snapshot()));
-refreshNoteContext = drawer.refresh; refreshNoteContext();
+const drawer = mountNoteDrawer({ opener: element('note-open', HTMLButtonElement), form: noteForm, closer: element('note-close', HTMLButtonElement), context: element('note-context', HTMLParagraphElement), describe: () => describeMapState(snapshot()) });
+refreshNoteContext = drawer.refresh;
 mountNotes({ list: element('notes', HTMLElement), form: noteForm, snapshot, restore: applyNote, focusWhenEmpty: drawer.focus });

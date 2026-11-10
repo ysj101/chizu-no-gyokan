@@ -180,7 +180,8 @@ path[data-candidate-dimmed] { opacity: .3; }
      section's region role under display: contents. `svh` keeps the height stable while the URL bar moves. */
   main { display: block; padding: 8px 12px 0; --phone-map-height: clamp(300px, 46svh, 480px); }
   .atlas { display: contents; }
-  #selection-card, #menu { scroll-margin-top: calc(var(--phone-map-height) + 8px); }
+  /* Everything showBelowMap scrolls to lands just under the pinned map, not behind it. */
+  #selection-card, #chain-card, #menu { scroll-margin-top: calc(var(--phone-map-height) + 8px); }
   /* The map stays at the top while the explanation scrolls beneath it: no round trips. */
   #map { position: sticky; top: 0; z-index: 700; height: var(--phone-map-height); border-radius: 0 0 6px 6px; box-shadow: 0 4px 10px -6px rgba(32, 60, 69, .45); }
   #menu { padding: 0 0 22px; border-top: 1px solid #cad7d5; }

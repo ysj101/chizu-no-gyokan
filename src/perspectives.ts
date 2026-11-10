@@ -1,5 +1,4 @@
-import type { Classification } from './details';
-import type { SelectedFeatureId, SourceId } from './domain';
+import type { Classification, SelectedFeatureId, SourceId } from './domain';
 
 // A country's view is a teaching example: a few sourced statements about what the same strait means
 // from that place, plus the map features worth looking at. Facts carry their data period (or fall back
@@ -18,7 +17,7 @@ export interface Perspective {
   statements: readonly PerspectiveStatement[];
   focus: readonly SelectedFeatureId[];
 }
-const fact = (text: string, sources: PerspectiveStatement['sources'], period?: string): PerspectiveStatement => ({ text, classification: 'fact', sources, ...(period ? { period } : {}) });
+const fact = (text: string, sources: PerspectiveStatement['sources'], period?: string): PerspectiveStatement => ({ text, classification: 'fact', sources, period });
 const reading = (text: string): PerspectiveStatement => ({ text, classification: 'explanation', sources: ['author'] });
 export const perspectiveIds: readonly PerspectiveId[] = ['japan', 'singapore', 'china', 'indonesia'];
 export const perspectiveTitle = (view: Perspective): string => `${view.name}から見たマラッカ海峡`;

@@ -1,4 +1,5 @@
 import { deleteNote, loadNotes, notePresentation, saveNote } from './notes';
+import { textElement } from './dom';
 import type { DiscoveryNote, NoteStorage, Result } from './notes';
 
 // The adapter delays localStorage access so a denied getter is handled by the Result boundary.
@@ -22,9 +23,7 @@ export function mountNotes({ list: target, form, snapshot, restore, focusWhenEmp
   const warning = target.querySelector<HTMLElement>('#notes-warning');
   const empty = target.querySelector<HTMLElement>('#notes-empty');
   if (!input || !saveStatus || !list || !status || !warning || !empty) throw new Error('Missing notes panel');
-  const paragraph = (text: string, className = '') => {
-    const p = document.createElement('p'); p.textContent = text; p.className = className; return p;
-  };
+  const paragraph = (text: string, className = '') => textElement('p', text, className);
   function render(result: ReturnType<typeof loadNotes>): void {
     if (!result.ok) { warning!.textContent = result.error; empty!.hidden = true; return; }
     warning!.textContent = result.value.unreadable ? `読み込めない記録が${result.value.unreadable}件あります。` : '';

@@ -14,21 +14,21 @@
         <section class="intro" id="intro" aria-labelledby="intro-question">
           <h2 id="intro-question">もしマラッカ海峡を通れなくなったら？</h2>
           <p>通れないと仮定したときに、地図の航路と海峡がどう変わるかを見てみましょう。</p>
-          <div class="intro-actions">
+          <div class="intro-actions button-row">
             <button id="try-closed" class="primary">通行不可にして変化を見る</button>
             <button id="intro-close">閉じる</button>
           </div>
         </section>
         <button id="intro-reopen" class="text-button" hidden>はじめ方を見る</button>
         <section class="scenario-controls" aria-label="条件実験">
-          <div role="group" aria-label="条件を選ぶ">
+          <div class="button-row" role="group" aria-label="条件を選ぶ">
             <button id="scenario-normal" aria-pressed="true">通常時</button>
             <button id="scenario-closed" aria-pressed="false">通行不可（仮定）</button>
           </div>
-          <div id="scenario-summary" role="status" aria-live="polite"></div>
+          <div id="scenario-summary" class="note" role="status" aria-live="polite"></div>
         </section>
         <section class="layer-controls perspective-controls" aria-label="国ごとの視点">
-          <div role="group" aria-label="国ごとの視点（教材の例）">
+          <div class="button-row" role="group" aria-label="国ごとの視点（教材の例）">
             <span class="layer-caption" aria-hidden="true">視点</span>
             <button id="perspective-none" aria-pressed="true">なし</button>
             <button id="perspective-japan" aria-pressed="false">日本</button>
@@ -37,12 +37,12 @@
             <button id="perspective-indonesia" aria-pressed="false">インドネシア</button>
           </div>
         </section>
-        <div class="map-toolbar" role="group" aria-label="地図操作">
+        <div class="map-toolbar button-row" role="group" aria-label="地図操作">
           <button id="zoom-in">＋ 拡大</button>
           <button id="zoom-out">− 縮小</button>
           <button id="reset">対象地域に戻す</button>
         </div>
-        <div id="candidate-navigation" hidden>
+        <div id="candidate-navigation" class="button-row" hidden>
           <button id="go-sunda">スンダ海峡へ移動</button>
           <button id="go-lombok">ロンボク海峡へ移動</button>
         </div>
@@ -58,7 +58,7 @@
           <li id="place-legend"><span class="key point">●</span><span></span></li>
         </ul>
         <section class="layer-controls" aria-label="表示レイヤー" aria-describedby="layer-help">
-          <div role="group" aria-label="表示レイヤー">
+          <div class="button-row" role="group" aria-label="表示レイヤー">
             <span class="layer-caption" aria-hidden="true">表示レイヤー</span>
             <button id="layer-borders" aria-pressed="true"><span class="mark" aria-hidden="true">☑</span>国境</button>
             <button id="layer-routes" aria-pressed="true"><span class="mark" aria-hidden="true">☑</span>主要航路</button>
@@ -97,7 +97,7 @@
             <p id="note-context"></p>
             <label for="note-body">メモ本文</label>
             <textarea id="note-body" rows="4" aria-describedby="note-save-status"></textarea>
-            <div class="note-actions">
+            <div class="note-actions button-row">
               <button type="submit">メモを保存</button>
               <button type="button" id="note-close">メモ欄を閉じる</button>
             </div>
@@ -107,7 +107,7 @@
         <nav id="feature-list" aria-label="探索する対象"></nav>
         <section id="detail-panel" aria-labelledby="detail-title">
           <h2 id="detail-title">選択対象の詳細</h2>
-          <p id="selected-visibility" role="status" hidden></p>
+          <p id="selected-visibility" class="note" role="status" hidden></p>
           <details id="detail-more"><summary>詳しい情報</summary><div id="detail-fields"></div></details>
           <details id="detail-sources"><summary>選択対象の根拠・日付・権利</summary><div id="detail-evidence"></div></details>
         </section>

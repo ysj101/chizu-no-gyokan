@@ -11,4 +11,6 @@
 - [CG-06 メモからの地図状態復元](note-restore.md): 保存条件・選択・viewportの再訪と探索継続、新しいメモの保存。
 - [UX-09 国ごとの視点](perspectives.md): 日本・シンガポール・中国・インドネシアの例で、同じ海峡の意味を資料に沿って比べる。
 
+品質確認の記録は [docs/qa-log.md](../docs/qa-log.md)、初見ユーザーテストの計画と記録は [docs/user-test-plan.md](../docs/user-test-plan.md) / [docs/user-test-log.md](../docs/user-test-log.md)。
+
 機能の存在と受入の完了を区別する。自動操作・人間探索の結果は実走後の証拠へ残す。

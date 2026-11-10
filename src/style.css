@@ -71,7 +71,9 @@ footer { padding: 12px 28px; border-top: 1px solid #cad7d5; font-size: 12px; }
 .feature-leader { position: absolute; left: 0; top: 0; width: 45px; border-top: 1px solid #146d78; transform-origin: 0 0; transform: rotate(144deg); }
 .callout-penang .feature-leader { width: 53px; transform: rotate(-133deg); }
 .callout-singapore .feature-leader { width: 48px; transform: rotate(42deg); }
-.callout-malacca .feature-name, .callout-penang .feature-name { left: auto; right: 40px; }
+.callout-penang .feature-name { left: auto; right: 40px; }
+/* QA finding (UX-10): the name overlapped the Sumatra/Indonesia labels; keep it above-left of the symbol. */
+.callout-malacca .feature-name { left: auto; right: 30px; top: -26px; }
 .map-feature { position: relative; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; background: transparent; border: none; }
 .feature-symbol { display: block; font-size: 25px; color: #146d78; text-shadow: 0 0 3px white; line-height: 1; }
 .feature-name { pointer-events: none; position: absolute; left: 38px; top: 10px; background: #fafcfaf0; padding: 2px 5px; border-radius: 3px; font-size: 12px; white-space: nowrap; color: #203c45; }
@@ -106,7 +108,7 @@ footer { padding: 12px 28px; border-top: 1px solid #cad7d5; font-size: 12px; }
 .intro-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 button.primary { background: #146d78; border-color: #146d78; color: #fafcfa; font-weight: 600; }
 button.primary:hover { background: #0f5660; }
-.text-button { min-height: 32px; margin-bottom: 8px; padding: 2px 8px; border: none; background: none; font-size: 13px; }
+.text-button { min-height: 36px; margin-bottom: 8px; padding: 2px 8px; border: none; background: none; font-size: 13px; }
 .scenario-controls { margin-bottom: 12px; }
 .perspective-controls { margin: 0 0 12px; }
 #perspective-view { margin-bottom: 16px; padding: 12px 14px; border: 1px solid #cad7d5; border-left: 4px solid #c29a3a; border-radius: 6px; background: #fdf8ee; }

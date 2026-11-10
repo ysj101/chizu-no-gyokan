@@ -53,6 +53,9 @@
           <p id="chain-finding"></p>
           <p id="chain-next" class="next-step"></p>
           <p id="chain-limit" class="note"></p>
+          <p id="discovery-add-title" class="sr-only"></p>
+          <button id="discovery-add" type="button" aria-describedby="discovery-add-title">発見マップに追加</button>
+          <p id="discovery-add-status" role="status" aria-live="polite"></p>
           <details id="chain-more">
             <summary>なぜ？・出典</summary>
             <p id="chain-more-title" class="related-title"></p>
@@ -155,6 +158,14 @@
           <p>運航量・所要時間・船舶条件：<strong>未収録</strong>。0や無影響を意味しません。</p>
         </details>
         <details id="sources"><summary>出典・対象時点・利用条件</summary><div id="source-list"></div></details>
+        <section id="discovery-map" aria-labelledby="discovery-map-title">
+          <h2 id="discovery-map-title">発見マップ</h2>
+          <p class="discovery-intro">「日本から見ると？」で見つけたつながりが、ここに線として増えていきます。このブラウザ内だけに保存します。</p>
+          <div id="discovery-view"></div>
+          <p id="discovery-empty">まだ発見はありません。</p>
+          <ol id="discovery-list" aria-label="見つけたつながり"></ol>
+          <p id="discovery-status" role="status" aria-live="polite"></p>
+        </section>
         <section id="notes" aria-labelledby="notes-title" aria-describedby="notes-privacy">
           <h2 id="notes-title">発見メモ</h2>
           <p id="notes-privacy">このブラウザ内だけに保存。別端末へ自動同期されず、アカウント不要、外部へ送信しない。</p>

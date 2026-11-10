@@ -2,7 +2,7 @@ import type { DetailItem, DetailView, RelatedLink } from './details';
 import { perspectiveTitle } from './perspectives';
 import type { Perspective } from './perspectives';
 import { classificationLabels, classificationTags, sourceRegistry } from './domain';
-import type { Classification, SelectedFeatureId, Source } from './domain';
+import type { Classification, SelectedFeatureId, Source, SourceId } from './domain';
 import { link, tagElement, textElement } from './dom';
 
 const sourceLink = (source: Source): HTMLAnchorElement => link(source.title, source.url);
@@ -72,6 +72,12 @@ export function renderDetail(targets: DetailTargets, view: DetailView, actions: 
   targets.evidence.replaceChildren(...view.evidence.map(({ source, items }) => sourceSection(sourceRegistry[source], 'h3', [`対応する項目：${items.join(' / ')}`])));
 }
 
+// One line naming the sources behind a statement, each a link to the original.
+export function sourceLine(ids: readonly SourceId[]): HTMLElement {
+  const line = textElement('p', '資料：', 'statement-source');
+  ids.forEach((id, index) => { if (index) line.append(' / '); line.append(sourceLink(sourceRegistry[id])); });
+  return line;
+}
 export interface PerspectiveTargets { title: HTMLElement; meaning: HTMLElement; statements: HTMLElement }
 // The country view's text: a tagged meaning line, then sourced statements with their data period
 // (or the source's update date). The focus list is rendered separately because it depends on the condition.
@@ -80,8 +86,7 @@ export function renderPerspectiveContent(targets: PerspectiveTargets, view: Pers
   targets.meaning.replaceChildren(...tagged(view.meaning.classification, view.meaning.text));
   targets.statements.replaceChildren(...view.statements.map(statement => {
     const item = textElement('li', ''); item.append(...tagged(statement.classification, statement.text));
-    const source = textElement('p', '資料：', 'statement-source');
-    statement.sources.forEach((id, index) => { if (index) source.append(' / '); source.append(sourceLink(sourceRegistry[id])); });
+    const source = sourceLine(statement.sources);
     source.append(`（${statement.period ?? `更新 ${sourceRegistry[statement.sources[0]].updated}`}）`); item.append(source);
     return item;
   }));

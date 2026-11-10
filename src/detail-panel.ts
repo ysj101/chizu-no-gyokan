@@ -15,7 +15,7 @@ export function sourceSection(source: Source, headingTag: 'h2' | 'h3', leadLines
   return section;
 }
 // A short tag carries the classification; its full label stays readable as the title.
-function tagged(classification: Classification, text: string): Node[] {
+export function tagged(classification: Classification, text: string): Node[] {
   return [tagElement(classificationTags[classification], classification, classificationLabels[classification]), textElement('span', text)];
 }
 function itemText(item: DetailItem): string {

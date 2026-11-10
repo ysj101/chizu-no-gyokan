@@ -3,7 +3,8 @@ import type { DiscoveryNote, NoteMapState, Result } from './notes';
 import { mountNoteDrawer, mountNotes } from './notes-panel';
 import { describeMapState } from './notes';
 import { detailView, relatedLink } from './details';
-import { renderDetail, renderPerspectiveContent, renderRelated, sourceSection } from './detail-panel';
+import { renderDetail, renderPerspectiveContent, renderRelated, sourceSection, tagged } from './detail-panel';
+import { chainLimit, destination, japanChain, japanDirection } from './relations';
 import type { DetailActions, DetailTargets } from './detail-panel';
 import { setMessage, tagElement, textElement } from './dom';
 import { perspectiveIds, perspectives } from './perspectives';
@@ -34,6 +35,8 @@ let introVisible = true;
 let touchDrag = false;
 // The candidate detour being tried under the assumption; page-local like the country view.
 let candidate: CandidateId | null = null;
+// The "so what?" chain towards Japan is shown on request; page-local, not saved.
+let chainShown = false;
 // The explanation of the selection stays folded until the reader selects something or opens it.
 let cardOpen = false;
 // Re-renders the note drawer's "state to be saved" line; bound once the drawer is mounted below.
@@ -116,8 +119,9 @@ const selectionLayers = new Map<SelectedFeatureId, L.Path | L.Marker>();
 // A route's name tag is a separate marker; it takes the same marks as its line.
 const routeLabels = new Map<SelectedFeatureId, L.Marker>();
 let ship: { mark: HTMLElement; label: HTMLElement } | null = null;
+let chain: { link: L.Polyline; icon: L.Marker; button: HTMLButtonElement } | null = null;
 function clearScenarioLayers(): void {
-  layerGroups.routes.clearLayers(); layerGroups.points.clearLayers(); selectionLayers.clear(); routeLabels.clear(); ship = null;
+  layerGroups.routes.clearLayers(); layerGroups.points.clearLayers(); selectionLayers.clear(); routeLabels.clear(); ship = null; chain = null;
 }
 function clearGeography(): void { mapLayers.clearLayers(); layerGroups.borders.clearLayers(); clearScenarioLayers(); }
 function latLng(coordinate: [number, number]): L.LatLngTuple {
@@ -196,6 +200,20 @@ function shipMarker(): void {
   ship = { mark, label };
   // Above the place names, so its label is never half hidden by one.
   L.marker(latLng(shipCoordinate), { interactive: false, keyboard: false, zIndexOffset: 1000, icon: L.divIcon({ html: mark, className: 'feature-icon ship-icon', iconSize: [0, 0], iconAnchor: [0, 0] }) }).addTo(layerGroups.routes);
+}
+// The off-map direction towards Japan and the question that opens the chain. Both belong to the routes
+// layer: the arrow continues the lines, and the question is about where they lead.
+function chainMarkers(): void {
+  const link = L.polyline(japanDirection.map(latLng), { noClip: true, interactive: false, weight: 2, dashArray: '2 6', className: 'chain-link' }).addTo(layerGroups.routes);
+  const button = textElement('button', '日本から見ると？', 'destination');
+  button.id = 'chain-open'; button.setAttribute('aria-controls', 'chain-card');
+  button.setAttribute('aria-describedby', 'chain-place');
+  button.addEventListener('click', () => setChainShown(!chainShown));
+  isolateMapButton(button);
+  const place = textElement('span', `↗ ${destination.name}`, 'destination-place'); place.id = 'chain-place';
+  const wrap = textElement('div', '', 'destination-wrap'); wrap.append(place, button);
+  const icon = L.marker(latLng(destination.coordinate), { keyboard: false, icon: L.divIcon({ html: wrap, className: 'feature-icon destination-icon', iconSize: [0, 0], iconAnchor: [0, 0] }) }).addTo(layerGroups.routes);
+  chain = { link, icon, button };
 }
 // Set a transient attribute on exactly these features' map elements and clear it elsewhere.
 // Leaflet recreates icon and path elements when a layer is re-added, so marks are repainted by
@@ -370,15 +388,43 @@ function renderScenario(): void {
   element('scenario-closed', HTMLButtonElement).setAttribute('aria-pressed', String(closed));
   experiment.hidden = !closed;
   clearScenarioLayers();
-  if (loadState === 'ready') { for (const feature of visibleFeatures()) marker(feature); shipMarker(); }
+  if (loadState === 'ready') { for (const feature of visibleFeatures()) marker(feature); shipMarker(); chainMarkers(); }
   renderFeatureList(); renderSelection(); renderLayerVisibility();
 }
 // Everything derived from more than one state facet, and everything painted onto map elements
 // (which Leaflet recreates when a layer group is re-added): selection marks, the view's focus marks,
 // the status lines and the note drawer's context line.
 function renderDerived(presentation = layerPresentation(layerVisibility, scenario)): void {
-  syncSelectionMarks(); renderPerspectiveFocus(); renderCandidate(); renderStatus(presentation); refreshNoteContext();
+  syncSelectionMarks(); renderPerspectiveFocus(); renderCandidate(); renderChain(); renderStatus(presentation); refreshNoteContext();
 }
+// The chain card and the marks along the chain follow the condition and the candidate being tried.
+const chainCard = element('chain-card', HTMLElement);
+const chainTargets = {
+  change: element('chain-change', HTMLParagraphElement), finding: element('chain-finding', HTMLParagraphElement),
+  next: element('chain-next', HTMLParagraphElement), limit: element('chain-limit', HTMLParagraphElement),
+};
+renderPerspectiveContent({ title: element('chain-more-title', HTMLElement), meaning: element('chain-meaning', HTMLElement), statements: element('chain-statements', HTMLElement) }, perspectives.japan);
+chainTargets.limit.textContent = chainLimit;
+function renderChain(): void {
+  chainCard.hidden = !chainShown;
+  chain?.button.setAttribute('aria-expanded', String(chainShown));
+  for (const layer of [chain?.link, chain?.icon]) layer?.getElement()?.toggleAttribute('data-chain', chainShown);
+  if (!chainShown) { markLayers('data-chain', new Set(), true); return; }
+  const view = japanChain(scenario, candidate);
+  markLayers('data-chain', new Set(view.features), true);
+  // The change line is live: rewrite the card only when its text is new, so a repaint is not re-announced.
+  if (chainTargets.change.textContent?.endsWith(view.change.text) && chainTargets.next.textContent === view.next) return;
+  chainTargets.change.replaceChildren(...tagged(view.change.classification, view.change.text));
+  chainTargets.finding.replaceChildren(textElement('strong', '発見：'), ...tagged(view.finding.classification, view.finding.text));
+  chainTargets.next.textContent = view.next;
+}
+function setChainShown(shown: boolean): void {
+  chainShown = shown; renderChain();
+  if (shown) showBelowMap(chainCard);
+}
+element('chain-close', HTMLButtonElement).addEventListener('click', () => {
+  setChainShown(false); (chain?.button ?? element('menu-open', HTMLButtonElement)).focus();
+});
 // The candidate being tried: its line, name tag and strait are emphasised and the other candidate recedes,
 // so the two can be compared. The ship's label says what the reader is doing, never that it was rerouted.
 const experiment = element('experiment', HTMLDivElement);
@@ -392,7 +438,7 @@ function renderCandidate(): void {
 // Outside a full render (a selection, a try button): repaint only when the candidate really changes.
 function setCandidate(next: CandidateId | null): void {
   if (next === candidate) return;
-  candidate = next; renderCandidate(); renderStatus();
+  candidate = next; renderCandidate(); renderChain(); renderStatus();
 }
 for (const [id, button] of candidateButtons) {
   // Pressing the chosen candidate again lets go of it; the map then shows both equally.

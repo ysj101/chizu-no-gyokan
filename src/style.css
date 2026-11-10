@@ -117,6 +117,26 @@ summary { min-height: 44px; padding: 8px 0; font-size: 14px; }
 @media (min-width: 761px) { .ship { left: auto; right: -12px; flex-direction: row-reverse; } }
 .ship-glyph { font-size: 22px; line-height: 1; }
 .ship-label { padding: 1px 5px; border: 1px dashed #885229; border-radius: 3px; background: #fafcfaf0; font-size: 11px; color: #203c45; }
+/* The "so what?" chain (GP-03). The question sits at the edge of the map where the arrow leaves it. */
+.destination-wrap { position: absolute; right: -6px; top: -6px; display: grid; justify-items: end; gap: 4px; white-space: nowrap; }
+.destination-place { pointer-events: none; padding: 1px 6px; border-radius: 3px; background: #fafcfaf0; font-size: 11px; color: #6b5317; }
+.destination { min-height: 36px; padding: 2px 10px; font-size: 12px; font-weight: 600; border-color: #a07a22; background: #fff7e2; color: #5a4512; }
+.destination[aria-expanded='true'] { background: #f4e2b0; box-shadow: inset 3px 0 #a07a22; }
+path.chain-link { stroke: #a07a22; opacity: .55; }
+/* Along the chain: strait, then lines, then the arrow light up in turn (static under reduced motion). */
+@keyframes chain-in { from { opacity: .2; } to { opacity: 1; } }
+path[data-chain] { stroke-width: 6; animation: chain-in .4s ease-out .2s both; }
+path.chain-link[data-chain] { stroke-width: 3; opacity: 1; animation-delay: .5s; }
+.feature-icon[data-chain] .feature-symbol { outline: 3px solid #a07a22; outline-offset: 2px; border-radius: 50%; }
+.feature-icon[data-chain] .route-label { border-color: #a07a22; }
+#chain-card { border-left: 4px solid #a07a22; font-size: 13px; }
+#chain-card p { margin: 4px 0; }
+.card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+#chain-title { font: 600 16px/1.4 var(--serif); margin: 0; }
+.chain-next { font-weight: 600; color: #5a4512; }
+#chain-limit { font-size: 12px; color: #48666b; }
+#chain-statements { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+#chain-statements .statement-source { margin: 2px 0 0; font-size: 11px; color: #48666b; }
 /* Trying a candidate: the chosen one is heavier, the other recedes. Weight and opacity, not colour alone. */
 path[data-candidate-chosen] { stroke-width: 6; }
 .feature-icon[data-candidate-chosen] .route-label, .feature-icon[data-candidate-chosen] .feature-name { font-weight: bold; border-color: #844a72; }

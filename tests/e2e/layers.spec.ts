@@ -94,8 +94,11 @@ async function assertState(page: Page, visibility: LayerVisibility, closed: bool
   await expect(page.locator('#map-condition')).toHaveText(`現在の条件：${closed ? '通行不可（仮定）' : '通常時'}`);
   await expect(page.locator('.assumption')).toContainText('現実の航行規制・出来事を示しません');
   await expect(page.locator('#scenario-limits')).toContainText('輸送能力を検証していません');
-  if (ids.some(id => !visibility[id])) await expect(page.locator('#layer-help')).toContainText('陸地の塗りと海域名は残します');
+  if (ids.some(id => !visibility[id])) await expect(page.locator('#layer-help')).toContainText('選択と詳細は保持します');
   else await expect(page.locator('#layer-help')).toBeHidden();
+  // The land/sea reassurance belongs to the borders layer only.
+  if (!visibility.borders) await expect(page.locator('#layer-help')).toContainText('陸地の塗りと海域名は残します');
+  else await expect(page.locator('#layer-help')).not.toContainText('陸地の塗り');
   if (!visibility.routes) await expect(page.locator('#scenario-summary')).toContainText('主要航路レイヤーが非表示');
   if (!visibility.points) await expect(page.locator('#scenario-summary')).toContainText('注目地点レイヤーが非表示');
 }

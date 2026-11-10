@@ -9,8 +9,10 @@ export type DetailItem = Evidence & { label: string } & (
 // Three tiers: `overview`/`why`/`related`/`scenario` stay visible, `more` opens on demand,
 // and `evidence` lists each source once with the items it supports.
 // A related place carries the reason for the link and whether the current condition shows it.
-// When it is not shown, `shownIn` names the condition that does, so the UI can explain instead of switching.
-export interface RelatedLink { id: SelectedFeatureId; name: string; reason: string; available: boolean; shownIn: readonly string[]; note: string }
+// When it is not shown, `hint` and `note` name the condition that does, so the UI can explain instead of switching.
+// `hint` is appended to the reason when the current condition hides the target; `note` is the status
+// message shown when the reader presses it anyway. Both are worded here so the renderer stays dumb.
+export interface RelatedLink { id: SelectedFeatureId; name: string; reason: string; available: boolean; hint: string; note: string }
 export interface DetailView {
   overview: DetailItem;
   why: DetailItem;
@@ -51,10 +53,11 @@ const definitions: Record<SelectedFeatureId, DetailDefinition> = {
 export const unrecordedFields = ['距離', '所要時間', '船舶条件', '輸送能力', '運航量', '費用'] as const;
 // A link to another feature, with the wording shown when the current condition hides it.
 export function relatedLink(targetId: SelectedFeatureId, reason: string, scenario: Scenario): RelatedLink {
-  const name = featureById(targetId).name; const available = featureRole(targetId, scenario) !== undefined; // Names of the conditions that show the target (two scenarios, eight features: no cache needed).
-  const conditions = Object.values(scenarios).filter(definition => (definition.featureIds as readonly SelectedFeatureId[]).includes(targetId)).map(definition => definition.name);
-  return { id: targetId, name, reason, available, shownIn: conditions,
-    note: available ? '' : `${name}は「${conditions.join('・')}」で表示されます。条件を切り替えると選べます。` };
+  const name = featureById(targetId).name; const available = featureRole(targetId, scenario) !== undefined;
+  // Names of the conditions that show the target (two scenarios, eight features: no cache needed).
+  const where = Object.values(scenarios).filter(definition => definition.featureIds.some(id => id === targetId)).map(definition => definition.name).join('・');
+  return { id: targetId, name, reason, available,
+    hint: available ? '' : `（${where}で表示）`, note: available ? '' : `${name}は「${where}」で表示されます。条件を切り替えると選べます。` };
 }
 export function detailView(id: SelectedFeatureId, scenario: Scenario): DetailView {
   const definition = definitions[id];
@@ -63,7 +66,7 @@ export function detailView(id: SelectedFeatureId, scenario: Scenario): DetailVie
   const overview = item('概要', feature.description, feature.classification === 'geographic-fact' ? 'fact' : 'explanation', feature.sources);
   const relatedLinks = definition.related.map(({ id: targetId, reason }) => relatedLink(targetId, reason, scenario));
   const related = item('関連する場所', relatedLinks.map(link => `${link.name}（${link.reason}）`).join('、'));
-  const current = item('現在の条件での意味', scenarioExplanation(id, scenario), closed ? 'assumption' : 'explanation');
+  const current = item('現在の条件での意味', scenarioExplanation(feature, scenario), closed ? 'assumption' : 'explanation');
   const more: DetailItem[] = [
     item('位置（地域）', `${definition.region}位置表現は地図の行間の教材モデル。海岸・国境の参照はNatural Earth v5.1.2です。`, 'explanation', ['author', 'naturalEarth']),
     item('注意事項', `${closed ? '通行不可は現実の航行規制・出来事を示しません。候補の運航可能性や輸送能力は未検証です。' : '通常時は教材の比較基準であり、現実の運航状況を保証しません。'}${feature.limitation}`),

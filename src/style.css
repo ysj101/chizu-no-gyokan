@@ -146,9 +146,10 @@ path[data-just-changed] { stroke-width: 7; animation: just-changed-stroke 1.2s e
 .callout-sunda .feature-leader, .callout-lombok .feature-leader { transform: rotate(48deg); }
 #selected-scenario { font-size: 12px; }
 
-.map-overlay-button { position: absolute; top: 8px; right: 8px; z-index: 600; padding: 4px 10px; font-size: 13px; background: #fafcfaf0; }
-/* Small badges over the map share one chrome; each keeps only its placement. */
-.map-condition, .map-hint { position: absolute; z-index: 600; margin: 0; padding: 3px 8px; background: #fafcfaf0; border: 1px solid #829e9b; border-radius: 3px; color: #203c45; font: 12px/1.6 -apple-system, BlinkMacSystemFont, sans-serif; pointer-events: none; }
+/* Everything laid over the map sits in one layer; each rule below keeps only its placement and look. */
+.map-overlay-button, .map-condition, .map-hint { position: absolute; z-index: 600; }
+.map-overlay-button { top: 8px; right: 8px; padding: 4px 10px; font-size: 13px; background: #fafcfaf0; }
+.map-condition, .map-hint { margin: 0; padding: 3px 8px; background: #fafcfaf0; border: 1px solid #829e9b; border-radius: 3px; color: #203c45; font: 12px/1.6 -apple-system, BlinkMacSystemFont, sans-serif; pointer-events: none; }
 .map-condition { bottom: 8px; left: 8px; max-width: calc(100% - 16px); }
 .map-hint { top: 60px; right: 8px; max-width: min(70%, 320px); font-size: 11px; color: #35535a; }
 

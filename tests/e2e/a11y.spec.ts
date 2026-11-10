@@ -39,8 +39,9 @@ test('Tab visits every control once in document order, with visible focus, and n
   } while (visited.length < 200);
   expect(current, 'the walk never wrapped back to the document').toBe('body');
   // Order follows the page: condition → view → map → layers → explanation → notes.
-  const order = ['scenario-normal', 'perspective-japan', 'map', 'layer-borders', 'note-body', 'メモを保存'].map(key => visited.indexOf(key));
-  expect(order.every(index => index >= 0), `missing control in ${order}`).toBe(true);
+  const keys = ['scenario-normal', 'perspective-japan', 'map', 'layer-borders', 'note-body', 'メモを保存'];
+  expect(visited).toEqual(expect.arrayContaining(keys));
+  const order = keys.map(key => visited.indexOf(key));
   expect(order).toEqual([...order].sort((a, b) => a - b));
   await mkdir('artifacts/map-exploration', { recursive: true });
   await writeFile(`artifacts/map-exploration/a11y-tab-order-${info.project.name}.txt`, visited.join('\n'));

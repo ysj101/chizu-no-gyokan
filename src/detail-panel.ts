@@ -34,9 +34,8 @@ export function renderRelated(target: HTMLElement, status: HTMLElement, label: s
     button.dataset.relatedId = link.id;
     // The visible name is the accessible name; the list buttons keep their distinct 「〜を選択」 names.
     if (!link.available) button.classList.add('unavailable');
-    const hint = link.available ? '' : `（${link.shownIn.join('・')}で表示）`;
     const entry = textElement('li', ''); entry.append(button);
-    if (link.reason || hint) entry.append(textElement('span', `${link.reason}${hint}`, 'reason'));
+    if (link.reason || link.hint) entry.append(textElement('span', `${link.reason}${link.hint}`, 'reason'));
     links.append(entry);
   }
   const linkAt = (event: Event) => byId.get((event.target as HTMLElement).closest('button')?.dataset.relatedId as SelectedFeatureId);

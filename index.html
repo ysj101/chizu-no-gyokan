@@ -31,9 +31,10 @@
         </section>
         <div id="map" role="region" aria-label="マラッカ海峡周辺の地図" aria-describedby="map-help current-condition scenario-summary visible-layers" tabindex="0"><span id="map-condition" class="map-condition" aria-hidden="true">現在の条件：通常時</span><button id="touch-mode" class="map-overlay-button" hidden aria-pressed="false" aria-describedby="map-hint">タッチで地図を動かす</button><p id="map-hint" class="map-hint" hidden></p></div>
         <div class="map-tools">
-          <div id="candidate-navigation" class="button-row" hidden>
-            <button id="go-sunda">スンダ海峡へ移動</button>
-            <button id="go-lombok">ロンボク海峡へ移動</button>
+          <div id="experiment" class="button-row" role="group" aria-label="候補を試す" hidden>
+            <button id="try-sunda" aria-pressed="false">スンダ経由を試す</button>
+            <button id="try-lombok" aria-pressed="false">ロンボク経由を試す</button>
+            <button id="restore-normal">通常時に戻す</button>
           </div>
           <div class="button-row" role="group" aria-label="地図操作">
             <button id="zoom-in">＋ 拡大</button>

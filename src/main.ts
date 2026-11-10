@@ -12,8 +12,8 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './style.css';
 import { featureById, features, labels } from './content';
-import { parseCountries, sourceRegistry, scenarioDefinition, selectionForScenario, routeStyles, layerIds, layerPresentation, featureLayer, hiddenFeatureMessage, hiddenLayerReason, featureSymbol, featureRole, changedFeatureIds, changeLabels, kindGlyph } from './domain';
-import type { ExplorationFeature, LoadState, SelectedFeatureId, Scenario, LayerVisibility } from './domain';
+import { candidateAfterSelection, candidateForScenario, candidateIds, candidateNote, candidates, shipCoordinate, shipLabel, straitAction, parseCountries, sourceRegistry, scenarioDefinition, selectionForScenario, routeStyles, layerIds, layerPresentation, featureLayer, hiddenFeatureMessage, hiddenLayerReason, featureSymbol, featureRole, changedFeatureIds, changeLabels, kindGlyph } from './domain';
+import type { CandidateId, ExplorationFeature, LoadState, SelectedFeatureId, Scenario, LayerVisibility } from './domain';
 
 function element<T extends HTMLElement>(id: string, constructor: { new(...args: never[]): T }): T {
   const value = document.getElementById(id);
@@ -32,6 +32,8 @@ let perspective: PerspectiveId | null = null;
 let introVisible = true;
 // Phones scroll the page over the map until the reader turns map dragging on.
 let touchDrag = false;
+// The candidate detour being tried under the assumption; page-local like the country view.
+let candidate: CandidateId | null = null;
 // The explanation of the selection stays folded until the reader selects something or opens it.
 let cardOpen = false;
 // Re-renders the note drawer's "state to be saved" line; bound once the drawer is mounted below.
@@ -111,8 +113,11 @@ const layerGroups = {
   points: L.layerGroup().addTo(map),
 };
 const selectionLayers = new Map<SelectedFeatureId, L.Path | L.Marker>();
+// A route's name tag is a separate marker; it takes the same marks as its line.
+const routeLabels = new Map<SelectedFeatureId, L.Marker>();
+let ship: { mark: HTMLElement; label: HTMLElement } | null = null;
 function clearScenarioLayers(): void {
-  layerGroups.routes.clearLayers(); layerGroups.points.clearLayers(); selectionLayers.clear();
+  layerGroups.routes.clearLayers(); layerGroups.points.clearLayers(); selectionLayers.clear(); routeLabels.clear(); ship = null;
 }
 function clearGeography(): void { mapLayers.clearLayers(); layerGroups.borders.clearLayers(); clearScenarioLayers(); }
 function latLng(coordinate: [number, number]): L.LatLngTuple {
@@ -152,7 +157,7 @@ function marker(feature: ExplorationFeature): void {
     selectionLayers.set(feature.id, route);
     const routeButton = featureButton(feature, true);
     routeButton.className = 'route-label'; routeButton.textContent = `${featureSymbol(feature, scenario)} ${feature.name}`;
-    L.marker(feature.id === 'sunda-route' ? [-3.5, 108.8] : feature.id === 'lombok-route' ? [-5, 113] : [6.7, 108], { keyboard: false, icon: L.divIcon({ html: routeButton, className: 'feature-icon route-icon', iconSize: [155, 44], iconAnchor: [10, 44] }) }).addTo(layerGroups.routes);
+    routeLabels.set(feature.id, L.marker(feature.id === 'sunda-route' ? [-3.5, 108.8] : feature.id === 'lombok-route' ? [-5, 113] : [6.7, 108], { keyboard: false, icon: L.divIcon({ html: routeButton, className: 'feature-icon route-icon', iconSize: [155, 44], iconAnchor: [10, 44] }) }).addTo(layerGroups.routes));
     return;
   }
   const button = featureButton(feature, true);
@@ -161,20 +166,48 @@ function marker(feature: ExplorationFeature): void {
   // The dot stays at the geographic coordinate; a leader connects the separate 44px target.
   const callout = textElement('div', '', `feature-callout callout-${feature.id}`);
   callout.append(textElement('span', '', 'coordinate-dot'), textElement('span', '', 'feature-leader'), button);
+  if (feature.id === 'malacca') callout.append(straitControl());
   const item = L.marker(latLng(feature.coordinate), {
     keyboard: false,
     icon: L.divIcon({ html: callout, className: 'feature-icon', iconSize: [0, 0], iconAnchor: [0, 0] }),
   }).addTo(layerGroups.points);
   selectionLayers.set(feature.id, item);
 }
+// The strait is operated where it is: one button on the map closes it (as an assumption) or restores it.
+// Leaflet rebuilds the marker with the condition, so focus is handed to the new button; when the points
+// layer hides the strait, it goes to the condition button that is now pressed.
+function focusStraitControl(): void {
+  (document.getElementById('strait-action') ?? element(scenario.kind === 'normal' ? 'scenario-normal' : 'scenario-closed', HTMLButtonElement)).focus();
+}
+function straitControl(): HTMLButtonElement {
+  const action = straitAction(scenario);
+  const button = textElement('button', action.text, 'strait-action');
+  button.id = 'strait-action'; button.setAttribute('aria-label', action.name);
+  button.addEventListener('click', () => { setScenario(action.next); focusStraitControl(); });
+  isolateMapButton(button);
+  return button;
+}
+// The virtual ship: a labelled mark at the start of the authored routes. It is not interactive and
+// belongs to the routes layer, so it leaves the map together with the lines it explains.
+function shipMarker(): void {
+  const mark = textElement('div', '', 'ship'); mark.setAttribute('role', 'img');
+  const label = textElement('span', '', 'ship-label');
+  mark.append(textElement('span', '⛴', 'ship-glyph'), label);
+  ship = { mark, label };
+  // Above the place names, so its label is never half hidden by one.
+  L.marker(latLng(shipCoordinate), { interactive: false, keyboard: false, zIndexOffset: 1000, icon: L.divIcon({ html: mark, className: 'feature-icon ship-icon', iconSize: [0, 0], iconAnchor: [0, 0] }) }).addTo(layerGroups.routes);
+}
 // Set a transient attribute on exactly these features' map elements and clear it elsewhere.
 // Leaflet recreates icon and path elements when a layer is re-added, so marks are repainted by
 // renderLayerVisibility as well as by the handlers that set them.
-function markLayers(attribute: string, ids: ReadonlySet<SelectedFeatureId>): void {
-  for (const [featureId, layer] of selectionLayers) {
-    const target = layer.getElement();
-    if (!target) continue;
-    if (ids.has(featureId)) target.setAttribute(attribute, ''); else target.removeAttribute(attribute);
+// A route's name tag is marked too only where asked (the candidate comparison).
+function markLayers(attribute: string, ids: ReadonlySet<SelectedFeatureId>, withLabels = false): void {
+  for (const layers of withLabels ? [selectionLayers, routeLabels] : [selectionLayers]) {
+    for (const [featureId, layer] of layers) {
+      const target = layer.getElement();
+      if (!target) continue;
+      if (ids.has(featureId)) target.setAttribute(attribute, ''); else target.removeAttribute(attribute);
+    }
   }
 }
 // Bring a selected target into view with the smallest pan; the condition and zoom stay as they are.
@@ -245,8 +278,9 @@ function syncSelectionMarks(): void {
 }
 function selectFeature(id: SelectedFeatureId | null, reveal = false): void {
   selectedFeatureId = id;
-  // Selecting is asking about the place: the explanation opens with it.
-  if (reveal && id !== null) cardOpen = true;
+  // Selecting is asking about the place: the explanation opens with it. Selecting a candidate's line or
+  // strait is also how the reader tries that candidate on the map.
+  if (reveal && id !== null) { cardOpen = true; setCandidate(candidateAfterSelection(id, candidate, scenario)); }
   // Narrow path: the status, legend and focus list do not depend on the selection, and rebuilding
   // the focus list would drop keyboard focus from the button that was just pressed.
   renderSelection(); syncSelectionMarks(); refreshNoteContext();
@@ -282,7 +316,7 @@ function renderStatus(presentation = layerPresentation(layerVisibility, scenario
   statusElement.classList.toggle('sr-only', ready);
   visibleLayersStatus.textContent = `表示レイヤー${ready ? '' : '（予定）'}：${presentation.status}${ready ? '' : '（地理データ未表示）'}`;
   const summary = presentation.scenarioSummary;
-  const notes = [...summary.notes, ...(ready ? [] : ['地理データは未表示です。条件設定のみ反映しています。'])];
+  const notes = [...(candidate ? [candidateNote(candidate)] : []), ...summary.notes, ...(ready ? [] : ['地理データは未表示です。条件設定のみ反映しています。'])];
   // Skip identical updates: the region is live, and re-announcing an unchanged summary is noise.
   // The normal condition has nothing to report on screen; the summary appears with a change or a hidden layer.
   scenarioSummary.classList.toggle('sr-only', scenario.kind === 'normal' && notes.length === 0);
@@ -334,17 +368,42 @@ function renderScenario(): void {
   for (const id of ['current-condition', 'map-condition']) element(id, HTMLElement).textContent = `現在の条件：${definition.name}`;
   element('scenario-normal', HTMLButtonElement).setAttribute('aria-pressed', String(!closed));
   element('scenario-closed', HTMLButtonElement).setAttribute('aria-pressed', String(closed));
-  element('candidate-navigation', HTMLDivElement).hidden = !closed;
+  experiment.hidden = !closed;
   clearScenarioLayers();
-  if (loadState === 'ready') for (const feature of visibleFeatures()) marker(feature);
+  if (loadState === 'ready') { for (const feature of visibleFeatures()) marker(feature); shipMarker(); }
   renderFeatureList(); renderSelection(); renderLayerVisibility();
 }
 // Everything derived from more than one state facet, and everything painted onto map elements
 // (which Leaflet recreates when a layer group is re-added): selection marks, the view's focus marks,
 // the status lines and the note drawer's context line.
 function renderDerived(presentation = layerPresentation(layerVisibility, scenario)): void {
-  syncSelectionMarks(); renderPerspectiveFocus(); renderStatus(presentation); refreshNoteContext();
+  syncSelectionMarks(); renderPerspectiveFocus(); renderCandidate(); renderStatus(presentation); refreshNoteContext();
 }
+// The candidate being tried: its line, name tag and strait are emphasised and the other candidate recedes,
+// so the two can be compared. The ship's label says what the reader is doing, never that it was rerouted.
+const experiment = element('experiment', HTMLDivElement);
+const candidateButtons = candidateIds.map(id => [id, element(`try-${id}`, HTMLButtonElement)] as const);
+function renderCandidate(): void {
+  for (const [id, button] of candidateButtons) button.setAttribute('aria-pressed', String(id === candidate));
+  markLayers('data-candidate-chosen', new Set(candidate ? candidates[candidate].features : []), true);
+  markLayers('data-candidate-dimmed', new Set(candidate ? candidateIds.filter(id => id !== candidate).flatMap(id => candidates[id].features) : []), true);
+  if (ship) { const text = shipLabel(scenario, candidate); ship.label.textContent = text; ship.mark.setAttribute('aria-label', text); }
+}
+// Outside a full render (a selection, a try button): repaint only when the candidate really changes.
+function setCandidate(next: CandidateId | null): void {
+  if (next === candidate) return;
+  candidate = next; renderCandidate(); renderStatus();
+}
+for (const [id, button] of candidateButtons) {
+  // Pressing the chosen candidate again lets go of it; the map then shows both equally.
+  button.addEventListener('click', () => {
+    setCandidate(candidate === id ? null : id);
+    if (candidate) revealOnMap(candidates[candidate].route);
+  });
+}
+element('restore-normal', HTMLButtonElement).addEventListener('click', () => {
+  setScenario('normal'); focusStraitControl();
+});
 // Layer visibility and legend, then the list (its hidden-layer notes) and the derived views.
 function renderLayerVisibility(): void {
   const presentation = layerPresentation(layerVisibility, scenario);
@@ -379,7 +438,7 @@ for (const id of layerIds) {
 }
 // Changing the condition: normalise the selection, let the first-visit guide go, re-render, then mark what changed.
 function setScenario(kind: Scenario['kind']): void {
-  const from = scenario; scenario = { kind };
+  const from = scenario; scenario = { kind }; candidate = candidateForScenario(candidate, scenario);
   if (selectedFeatureId !== null) selectedFeatureId = selectionForScenario(selectedFeatureId, scenario);
   if (kind === 'malacca-closed-assumption') introVisible = false;
   renderIntro(); renderScenario(); highlightChanges(from);
@@ -433,12 +492,6 @@ element('intro-close', HTMLButtonElement).addEventListener('click', () => { intr
 element('intro-reopen', HTMLButtonElement).addEventListener('click', () => { introVisible = true; renderIntro(); element('try-closed', HTMLButtonElement).focus(); });
 element('scenario-normal', HTMLButtonElement).addEventListener('click', () => setScenario('normal'));
 element('scenario-closed', HTMLButtonElement).addEventListener('click', () => setScenario('malacca-closed-assumption'));
-for (const id of ['sunda', 'lombok'] as const) {
-  element(`go-${id}`, HTMLButtonElement).addEventListener('click', () => {
-    const feature = featureById(id);
-    if (feature.kind !== 'route') map.setView(latLng(feature.coordinate), 5, { animate: false });
-  });
-}
 retry.addEventListener('click', () => { void loadGeography(); });
 element('zoom-in', HTMLButtonElement).addEventListener('click', () => map.zoomIn(1, { animate: false }));
 element('zoom-out', HTMLButtonElement).addEventListener('click', () => map.zoomOut(1, { animate: false }));
@@ -501,6 +554,8 @@ function applyNote(note: DiscoveryNote): Result<{ adjusted: boolean }> {
   const state = result.value.state;
   Object.assign(layerVisibility, state.layers);
   selectedFeatureId = state.selectedFeatureId;
+  // The candidate being tried is not saved; a restored selection of a candidate's line or strait tries it again.
+  candidate = candidateAfterSelection(selectedFeatureId, null, { kind: state.scenarioId });
   // A restored condition is also a change the reader may not remember; setScenario marks it the same way.
   setScenario(state.scenarioId);
   map.setView([state.viewport.latitude, state.viewport.longitude], state.viewport.zoom, { animate: false });

@@ -126,6 +126,10 @@ const selectionLayers = new Map<SelectedFeatureId, L.Path | L.Marker>();
 // A route's name tag is a separate marker; it takes the same marks as its line.
 const routeLabels = new Map<SelectedFeatureId, L.Marker>();
 let ship: { mark: HTMLElement; label: HTMLElement } | null = null;
+// The ship's last label. The marker is rebuilt with each condition, so the previous state is kept here
+// to tell whether the new one differs.
+let shipText = '';
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 let chain: { link: L.Polyline; icon: L.Marker; button: HTMLButtonElement } | null = null;
 function clearScenarioLayers(): void {
   layerGroups.routes.clearLayers(); layerGroups.points.clearLayers(); selectionLayers.clear(); routeLabels.clear(); ship = null; chain = null;
@@ -490,7 +494,12 @@ function renderCandidate(): void {
   for (const [id, button] of candidateButtons) button.setAttribute('aria-pressed', String(id === candidate));
   markLayers('data-candidate-chosen', new Set(candidate ? candidates[candidate].features : []), true);
   markLayers('data-candidate-dimmed', new Set(candidate ? candidateIds.filter(id => id !== candidate).flatMap(id => candidates[id].features) : []), true);
-  if (ship) { const text = shipLabel(scenario, candidate); ship.label.textContent = text; ship.mark.setAttribute('aria-label', text); }
+  if (ship) {
+    const text = shipLabel(scenario, candidate);
+    // When the ship's state changes, its label lights up once; nothing moves under reduced motion.
+    if (shipText !== '' && text !== shipText && !reducedMotion.matches) ship.label.animate([{ backgroundColor: '#f4e2b0' }, {}], { duration: 900, easing: 'ease-out' });
+    shipText = text; ship.label.textContent = text; ship.mark.setAttribute('aria-label', text);
+  }
 }
 // Outside a full render (a selection, a try button): repaint only when the candidate really changes.
 function setCandidate(next: CandidateId | null): void {

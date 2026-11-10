@@ -65,8 +65,15 @@ export const sourceRegistry = {
     rightsUrl: '#sources',
   },
 } satisfies Record<string, Source>;
-export type SourceRegistry = typeof sourceRegistry;
-export type SourceId = keyof SourceRegistry;
+export type SourceId = keyof typeof sourceRegistry;
+
+// How a statement is to be read: a geographic fact, a scenario assumption, or the author's model.
+export type Classification = 'fact' | 'assumption' | 'explanation';
+export const classificationLabels: Record<Classification, string> = {
+  fact: '事実（地理的事実）', assumption: '仮定（シナリオ上の仮定）', explanation: '説明・推論（モデル上の説明）',
+};
+// Short tag shown next to each item; the full label stays available as its description.
+export const classificationTags: Record<Classification, string> = { fact: '事実', assumption: '仮定', explanation: 'モデル' };
 export type SelectedFeatureId = 'malacca' | 'normal-route' | 'singapore' | 'penang' | 'sunda' | 'lombok' | 'sunda-route' | 'lombok-route';
 interface FeatureBase {
   id: SelectedFeatureId;
@@ -78,7 +85,7 @@ interface FeatureBase {
 export type ExplorationFeature =
   | (FeatureBase & { classification: 'geographic-fact'; kind: 'strait' | 'place'; coordinate: [number, number] })
   | (FeatureBase & { classification: 'teaching-model'; kind: 'route'; coordinates: [number, number][] });
-export type LoadState = { status: 'loading' } | { status: 'ready' } | { status: 'error' };
+export type LoadState = 'loading' | 'ready' | 'error';
 export type CountryProperties = { code: string; name: string };
 export type CountryCollection = FeatureCollection<Polygon | MultiPolygon, CountryProperties>;
 
@@ -141,9 +148,8 @@ export function parseRoute(value: unknown): [number, number][] {
 export type Scenario = { kind: 'normal' } | { kind: 'malacca-closed-assumption' };
 export type ScenarioId = Scenario['kind'];
 export type FeatureRole = 'normal' | 'unavailable' | 'candidate';
-export type RouteRole = FeatureRole;
 // Each change names what the map now shows, so the reader never has to remember the previous view.
-export type ChangeKind = 'assumption' | 'added' | 'changed' | 'shown' | 'hidden';
+type ChangeKind = 'assumption' | 'added' | 'changed' | 'shown' | 'hidden';
 export const changeLabels: Record<ChangeKind, string> = { assumption: '仮定', added: '追加', changed: '変更', shown: '表示', hidden: '非表示' };
 export interface ScenarioChange { kind: ChangeKind; text: string; features: readonly SelectedFeatureId[] }
 export interface ScenarioDefinition {
@@ -212,13 +218,13 @@ export function scenarioExplanation(id: SelectedFeatureId, scenario: Scenario): 
 // Page-local visibility, independent of the scenario and selected feature.
 export type LayerId = 'borders' | 'routes' | 'points';
 export type LayerVisibility = Record<LayerId, boolean>;
-export const layerNames: Record<LayerId, string> = { borders: '国境', routes: '主要航路', points: '注目地点' };
+const layerNames: Record<LayerId, string> = { borders: '国境', routes: '主要航路', points: '注目地点' };
 export const layerIds: readonly LayerId[] = ['borders', 'routes', 'points'];
 export function featureLayer(feature: ExplorationFeature): 'routes' | 'points' {
   return feature.kind === 'route' ? 'routes' : 'points';
 }
 // One vocabulary for layer state, shared by the status line, legend, notes and hidden-object notes.
-export const layerStateLabel = (visible: boolean): string => visible ? '表示中' : '非表示';
+const layerStateLabel = (visible: boolean): string => visible ? '表示中' : '非表示';
 export const layerStatusLine = (visibility: LayerVisibility): string => layerIds.map(id => `${layerNames[id]}：${layerStateLabel(visibility[id])}`).join(' / ');
 export const hiddenLayerReason = (layer: LayerId): string => `${layerNames[layer]}レイヤーが非表示`;
 export function hiddenFeatureMessage(feature: ExplorationFeature, visibility: LayerVisibility): string {
@@ -227,6 +233,7 @@ export function hiddenFeatureMessage(feature: ExplorationFeature, visibility: La
 }
 export function layerPresentation(visibility: LayerVisibility, scenario: Scenario) {
   const closed = scenario.kind !== 'normal';
+  const definition = scenarioDefinition(scenario);
   const legendText = (id: LayerId, text: string) => `${text}（${layerStateLabel(visibility[id])}）`;
   return {
     status: layerStatusLine(visibility),
@@ -236,8 +243,8 @@ export function layerPresentation(visibility: LayerVisibility, scenario: Scenari
       + (!visibility.routes ? ` ${hiddenLayerReason('routes')}：航路線・候補線・航路ラベルは地図上で非表示です。` : '')
       + (!visibility.points ? ` ${hiddenLayerReason('points')}：代表点・引出線・コールアウトは地図上で非表示です。` : ''),
     scenarioSummary: {
-      title: scenarioDefinition(scenario).summaryTitle,
-      changes: scenarioDefinition(scenario).changes,
+      title: definition.summaryTitle,
+      changes: definition.changes,
       notes: [
         ...(!visibility.routes ? [`${hiddenLayerReason('routes')}のため、条件に対応する航路線は地図上で非表示です。再表示すると現在条件の航路が現れます。`] : []),
         ...(!visibility.points ? [`${hiddenLayerReason('points')}のため、条件に対応する代表点は地図上で非表示です。`] : []),

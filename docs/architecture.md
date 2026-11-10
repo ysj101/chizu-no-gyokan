@@ -1,4 +1,4 @@
-# CG-01 architecture / decision trail
+# architecture / decision trail
 
 2026-11-09。固定spec `250af65d856b3473fac78c2634f48fabeaeaae86` と提供されたIssue1写しを読み、縮小scopeを優先。spec本文は変更しない。通常時の地図→選択→最小説明だけを1人で所有する。MVP全体・§17の完成ではない。
 
@@ -16,7 +16,7 @@
 - `SourceRegistry`: 静的な資料名・URL・参照日・対象時点・使用範囲・利用条件。
 - `ExplorationFeature`: `geographic-fact`（海峡/地点、代表点）と `teaching-model`（通常航路、概略線）の判別可能なunion。出典は座標の運航検証を意味しない。
 - `SelectedFeatureId`: 単一のID。地図とテキスト選択一覧は同じ選択関数を使う。
-- `LoadState`: `loading | ready | error`。取得・JSON解釈・境界検証が成功してからready。errorから再試行でき、選択による再fetchはない。
+- `LoadState`: `'loading' | 'ready' | 'error'` の文字列。取得・JSON解釈・境界検証が成功してからready。errorから再試行でき、選択による再fetchはない。
 
 ## Blockingとデータ判断
 
@@ -43,7 +43,7 @@ Mobile: `[ 地図 ][ 選択要約 ][ 対象一覧 / 資料 ]`
 
 ## CG-05 条件実験
 
-`Scenario`は`normal | malacca-closed-assumption`の判別共用体。`scenarios`静的表が表示対象・各対象の役割（`roles`）・条件名・差分要約（`changes`。各項目は対応する対象IDを持つ）を定義し、`routeStyles`で通常の破線／使用しない比較線の点線／候補の長短破線を対応させる。色以外に×／＋、凡例とテキストで差分を伝える。条件切替自体はURLやstorageへ書き込まない。明示的なメモ保存はCG-04、保存状態の復元はCG-06で接続する。
+`Scenario`は`normal | malacca-closed-assumption`の判別共用体。`scenarios`静的表が表示対象・各対象の役割（`roles`）・条件名・差分要約（`changes`。各項目は対応する対象IDを持つ）を定義し、`routeStyles`で通常の破線／使用しない比較線の点線／候補の長短破線を対応させる。色以外に×／＋の記号、線種、凡例、差分要約（UX-04：「何が変わった？」のタグ付き項目と、切替直後に役割が変わった対象へ付ける約2.5秒の `data-just-changed`）で差分を伝える。条件切替自体はURLやstorageへ書き込まない。明示的なメモ保存はCG-04、保存状態の復元はCG-06で接続する。
 
 Leafletインスタンスと地理背景groupは維持し、切替時はscenario用groupと対象一覧・説明を再描画する。fetchは初回と明示的な再試行だけ。通常時と共通の選択は維持し、通常時に存在しない候補を選んで戻した場合はマラッカ海峡を選択する。pan/zoomは切替で変更しない。初期表示と地域復帰は両候補海峡・候補線全体を含む共通のboundsを使い、移動範囲制限は探索中心の範囲に最小zoom時の画面半幅・半高を投影座標で加え、初期化とresize時に設定する。画面全体を収めるLeafletのmaxBoundsが、広い画面で中心移動を固定しないようにする。探索中に画面外となった候補は「スンダ海峡へ移動」「ロンボク海峡へ移動」で探索できる。読込中・失敗時も条件は選べるが地図対象は描画せず、成功後に選んだ条件を反映する。statusの失敗案内は切替で上書きしない。
 
@@ -58,7 +58,7 @@ geometry検査は通常線と両候補すべてについて配布Natural Earth�
 
 `src/details.ts`の静的表から対象IDとScenarioで詳細項目を導出する。各項目は区分と非空の出典ID配列を持ち、`recorded | unrecorded`の判別共用体で欠損を表す。位置の表現・関連づけは著者モデル、EIA本文の接続と代替海峡の記述は事実として項目単位で区分する。シナリオ意味は最小説明と共通の`scenarioExplanation`を使い、注意事項も条件と同時に再描画する。資料registryに更新日を追加し、不明と資料版番号を区別する。
 
-`src/detail-panel.ts`が既存説明欄にテキストと出典リンクを生成する。詳細regionは見出しで命名し、短い既存live要約を維持。根拠は初回から展開するnative detailsで、開閉要素自体は再生成せず開閉状態とフォーカスを維持する。外部文章はtextContentで扱う。関連は文章のみで、ナビゲーションを作らない。レイアウトとモバイルの選択時スクロールは既存の方式を継続。
+`src/detail-panel.ts`が説明欄を描画する。UX-02 以降は3段階：第1段（常時）区分・名称・概要・なぜ重要か・現在の条件での意味・関連する場所、第2段（`#detail-more`、閉じて開始）位置・注意・用語・扱わないデータ、第3段（`#detail-sources`、閉じて開始）資料ごとの根拠。開閉要素自体は再生成せず開閉状態とフォーカスを維持する。外部文章はtextContentで扱う。関連する場所は UX-06 でボタンになり、`DetailActions.select/preview` を通じて選択・画面外なら最小限の移動・地図上のプレビューを行う（条件は切り替えない）。モバイルの選択時スクロールは固定地図の直下へ送る（UX-08）。
 
 資料原文と採用記述の対応、PC/mobileの検証手順は[feature map](../features/detail-evidence.md)。最新の実走結果はCIとPR本文を参照。ブラウザ実走・画像確認・auditはcoordinator runnerで実行する。人間の自由探索と実スクリーンリーダー確認は未実施で、自動検証で置き換えない。
 
@@ -93,3 +93,13 @@ PC/mobileの実UI検査・画像・キーボード操作は[CG-03 feature map](.
 `notes-panel.ts`はクリックごとに保存領域を読み直し、完全で一意なIDの記録だけを復元コールバックへ渡す。消失・不正・重複・読込拒否なら地図を変更せずlive regionで失敗を伝える。成功時は日時・全保存条件と範囲調整の有無を文字で伝え、フォーカスをボタン自身に保つ。入力中の本文や保存済みメモを変更しない。削除後のフォーカス探索は削除ボタンだけを対象にし、CG-04の規則を維持する。
 
 unitは両シナリオ・全レイヤー組合せ・選択あり／なし、範囲調整、欠落・不正状態の拒否を確認する。PC/mobileの`tests/e2e/restore.spec.ts`は実UIで保存して再読込したメモの連続復元、地図・凡例・aria・説明・詳細の同期、復元後の探索と新規保存、失敗時の不変性、通信、キーボードとモーション削減を確認する。操作と画像保存先は[CG-06 feature map](../features/note-restore.md)を参照。最新の実走結果はCIとPR本文を参照。人間の自由探索と実際のスクリーンリーダー確認は未実施。
+
+## UX-01〜UX-11 画面改善後の構成
+
+状態は `src/main.ts` のモジュール変数に集約する：選択（`selectedFeatureId`）、条件（`scenario`）、レイヤー（`layerVisibility`）、読込（`loadState`）、国ごとの視点（`perspective`、`src/perspectives.ts`）、初回案内の表示（`introVisible`）、タッチ移動（`touchDrag`）。条件と視点と案内は URL や storage に書かない。描画関数は状態→DOM で、副作用（スクロール、フォーカス、一時的な強調）は操作ハンドラ側に置く。条件の変更は `setScenario` の一本（条件ボタン、初回案内の主ボタン、メモの復元）で、選択の正規化と案内の終了もそこで行う（復元で仮定になった場合も案内は閉じる）。複数の状態から導かれる表示（選択の印、視点の焦点、状態行、メモの文脈）は `renderDerived` にまとめ、レイヤー切替と条件切替の両方から呼ぶ。
+
+モジュールの層は domain（`domain.ts`：純粋な定義と導出、区分語彙）→ content（`content.ts`／`details.ts`／`perspectives.ts`／`notes.ts`／`note-restore.ts`：静的な表と純粋な導出・検証）→ renderer（`dom.ts` の小さなDOMヘルパー、`detail-panel.ts`、`notes-panel.ts`）→ `main.ts`。描画側のキャッシュ（差分要約の文字列キー、強調のタイマー）は状態ではなく、状態から再計算できる。資料のメタデータは `sourceSection` の一箇所で描画し、ページ下部の出典一覧と選択対象の根拠で同じ語を使う。
+
+地図要素に付ける印（選択、`data-just-changed`、`data-related-preview`、`data-perspective-focus`）は `markLayers` で付ける。Leaflet はレイヤーを再追加すると要素を作り直すため、選択の印と視点の焦点は `renderLayerVisibility` の末尾で必ず塗り直す（UX-11 でレイヤー切替後に焦点が消える不具合を修正）。
+
+発見メモは入力欄（`mountNoteDrawer`、選択欄の直下）と保存済み一覧（`mountNotes`）に分かれ、保存形式は変えていない。スマートフォンでは地図を上部に固定する（UX-08 の項を参照）。

@@ -105,7 +105,8 @@ describe('scenario projection', () => {
   });
 });
 
-import { detailView, classificationLabels, classificationTags, unrecordedFields } from '../src/details';
+import { detailView, unrecordedFields } from '../src/details';
+import { classificationLabels, classificationTags } from '../src/domain';
 import type { DetailView } from '../src/details';
 const detailItems = (view: DetailView) => [view.overview, view.why, view.related, view.scenario, ...view.more];
 describe('selected detail evidence', () => {

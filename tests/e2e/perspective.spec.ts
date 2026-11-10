@@ -53,6 +53,9 @@ test('switching the country changes the panel and the map focus together; facts 
   await page.screenshot({ path: `artifacts/map-exploration/perspective-${info.project.name}-indonesia-closed.png`, fullPage: false });
   await page.getByRole('button', { name: '通常時', exact: true }).click();
   await expect(focused(page)).toHaveCount(1);
+  // Re-adding a layer recreates its map elements; the focus marks must survive that.
+  await page.locator('#layer-points').click(); await page.locator('#layer-points').click();
+  await expect(focused(page)).toHaveCount(1);
   await pick(page, 'なし').click();
   await expect(panel(page)).toBeHidden(); await expect(focused(page)).toHaveCount(0); await expect(page.locator('#feature-list .focus-note')).toHaveCount(0);
   expect(documents).toBe(1); expect(data).toBe(1);

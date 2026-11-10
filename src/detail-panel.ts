@@ -1,19 +1,18 @@
-import { classificationLabels, classificationTags } from './details';
-import type { Classification, DetailItem, DetailView, RelatedLink } from './details';
+import type { DetailItem, DetailView, RelatedLink } from './details';
 import { perspectiveTitle } from './perspectives';
 import type { Perspective } from './perspectives';
-import { sourceRegistry } from './domain';
-import type { SelectedFeatureId, Source } from './domain';
+import { classificationLabels, classificationTags, sourceRegistry } from './domain';
+import type { Classification, SelectedFeatureId, Source } from './domain';
+import { link, tagElement, textElement } from './dom';
 
-export function textElement(tag: 'p' | 'dt' | 'dd' | 'h3' | 'span' | 'strong' | 'li', text: string, className = ''): HTMLElement {
-  const element = document.createElement(tag); element.textContent = text; if (className) element.className = className; return element;
-}
-// Short tag pill; `modifier` picks the colour, `title` carries the full label when there is one.
-export function tagElement(label: string, modifier: string, title = ''): HTMLElement {
-  const tag = textElement('span', label, `tag tag-${modifier}`); if (title) tag.title = title; return tag;
-}
-function sourceLink(source: Source): HTMLAnchorElement {
-  const a = document.createElement('a'); a.textContent = source.title; a.href = source.url; return a;
+const sourceLink = (source: Source): HTMLAnchorElement => link(source.title, source.url);
+// One rendering of a source's metadata, used by the page-level source list and the per-selection evidence.
+export function sourceSection(source: Source, headingTag: 'h2' | 'h3', leadLines: readonly string[] = []): HTMLElement {
+  const section = document.createElement('section');
+  const heading = textElement(headingTag, ''); heading.append(sourceLink(source)); section.append(heading);
+  for (const line of [...leadLines, `確認日（資料参照）：${source.consulted}`, `更新日：${source.updated}`, `対象時点：${source.period}`, `使用範囲：${source.usage}`, `利用条件・権利：${source.rights}`]) section.append(textElement('p', line));
+  section.append(link('利用条件の原文', source.rightsUrl));
+  return section;
 }
 // A short tag carries the classification; its full label stays readable as the title.
 function tagged(classification: Classification, text: string): Node[] {
@@ -63,16 +62,7 @@ export function renderDetail(targets: DetailTargets, view: DetailView, actions: 
     const value = textElement('dd', ''); value.append(...taggedText(item)); list.append(value);
   }
   targets.more.replaceChildren(list);
-  targets.evidence.replaceChildren();
-  for (const { source: id, items } of view.evidence) {
-    const source = sourceRegistry[id];
-    const section = document.createElement('section');
-    const heading = textElement('h3', ''); heading.append(sourceLink(source)); section.append(heading);
-    section.append(textElement('p', `対応する項目：${items.join(' / ')}`));
-    for (const line of [`確認日（資料参照）：${source.consulted}`, `更新日：${source.updated}`, `対象時点：${source.period}`, `使用範囲：${source.usage}`, `利用条件・権利：${source.rights}`]) section.append(textElement('p', line));
-    const rights = document.createElement('a'); rights.textContent = '利用条件の原文'; rights.href = source.rightsUrl; section.append(rights);
-    targets.evidence.append(section);
-  }
+  targets.evidence.replaceChildren(...view.evidence.map(({ source, items }) => sourceSection(sourceRegistry[source], 'h3', [`対応する項目：${items.join(' / ')}`])));
 }
 
 export interface PerspectiveTargets { title: HTMLElement; meaning: HTMLElement; statements: HTMLElement }

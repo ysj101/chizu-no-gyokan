@@ -1,13 +1,6 @@
 import { featureById } from './content';
 import { featureRole, scenarioExplanation, scenarios } from './domain';
-import type { ExplorationFeature, Scenario, SelectedFeatureId, SourceId } from './domain';
-
-export type Classification = 'fact' | 'assumption' | 'explanation';
-export const classificationLabels: Record<Classification, string> = {
-  fact: '事実（地理的事実）', assumption: '仮定（シナリオ上の仮定）', explanation: '説明・推論（モデル上の説明）',
-};
-// Short tag shown next to each item; the full label stays available as its description.
-export const classificationTags: Record<Classification, string> = { fact: '事実', assumption: '仮定', explanation: 'モデル' };
+import type { Classification, Scenario, SelectedFeatureId, SourceId } from './domain';
 interface Evidence { classification: Classification; sources: readonly [SourceId, ...SourceId[]] }
 export type DetailItem = Evidence & { label: string } & (
   | { status: 'recorded'; text: string }
@@ -26,9 +19,6 @@ export interface DetailView {
   scenario: DetailItem;
   more: readonly DetailItem[];
   evidence: readonly { source: SourceId; items: readonly string[] }[];
-}
-export function featureClassification(feature: ExplorationFeature): Classification {
-  return feature.classification === 'geographic-fact' ? 'fact' : 'explanation';
 }
 const item = (label: string, text: string, classification: Classification = 'explanation', sources: Evidence['sources'] = ['author']): DetailItem =>
   ({ label, status: 'recorded', text, classification, sources });
@@ -59,16 +49,10 @@ const definitions: Record<SelectedFeatureId, DetailDefinition> = {
   'lombok-route': { region: 'インド洋側からロンボク海峡を経て東側へ描いた概略線。', related: [{ id: 'lombok', reason: '経由する海峡' }, { id: 'malacca', reason: '使えないと仮定した海峡' }, { id: 'normal-route', reason: '比較対象の通常航路' }], why: candidateRoute },
 };
 export const unrecordedFields = ['距離', '所要時間', '船舶条件', '輸送能力', '運航量', '費用'] as const;
-// Names of the conditions that show each feature; static, so computed once per id.
-const shownInCache = new Map<SelectedFeatureId, readonly string[]>();
-function shownIn(id: SelectedFeatureId): readonly string[] {
-  let names = shownInCache.get(id);
-  if (!names) shownInCache.set(id, names = Object.values(scenarios).filter(definition => (definition.featureIds as readonly SelectedFeatureId[]).includes(id)).map(definition => definition.name));
-  return names;
-}
 // A link to another feature, with the wording shown when the current condition hides it.
 export function relatedLink(targetId: SelectedFeatureId, reason: string, scenario: Scenario): RelatedLink {
-  const name = featureById(targetId).name; const available = featureRole(targetId, scenario) !== undefined; const conditions = shownIn(targetId);
+  const name = featureById(targetId).name; const available = featureRole(targetId, scenario) !== undefined; // Names of the conditions that show the target (two scenarios, eight features: no cache needed).
+  const conditions = Object.values(scenarios).filter(definition => (definition.featureIds as readonly SelectedFeatureId[]).includes(targetId)).map(definition => definition.name);
   return { id: targetId, name, reason, available, shownIn: conditions,
     note: available ? '' : `${name}は「${conditions.join('・')}」で表示されます。条件を切り替えると選べます。` };
 }
@@ -76,7 +60,7 @@ export function detailView(id: SelectedFeatureId, scenario: Scenario): DetailVie
   const definition = definitions[id];
   const feature = featureById(id);
   const closed = scenario.kind === 'malacca-closed-assumption';
-  const overview = item('概要', feature.description, featureClassification(feature), feature.sources);
+  const overview = item('概要', feature.description, feature.classification === 'geographic-fact' ? 'fact' : 'explanation', feature.sources);
   const relatedLinks = definition.related.map(({ id: targetId, reason }) => relatedLink(targetId, reason, scenario));
   const related = item('関連する場所', relatedLinks.map(link => `${link.name}（${link.reason}）`).join('、'));
   const current = item('現在の条件での意味', scenarioExplanation(id, scenario), closed ? 'assumption' : 'explanation');

@@ -390,7 +390,6 @@ test('scenario round trip synchronizes differences, selected explanations and so
     await expect(page.locator('#selected-description')).toContainText('EIA');
     await expect(page.locator('#detail-fields')).toContainText('未収録');
     await expect(page.locator('#selected-scenario')).toContainText('＋仮定時に追加');
-    await activate(page.getByRole('button', { name: `${name}海峡へ移動`, exact: true }), mobile);
     await activate(page.getByRole('button', { name: `地図上の${name}海峡を選択`, exact: true }), mobile);
     await expect(page.locator('#selected-name')).toHaveText(`${name}海峡`);
     await screenshot(page, `scenario-${id}-selected`, info.project.name);

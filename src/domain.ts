@@ -219,6 +219,42 @@ export function scenarioExplanation(feature: Pick<ExplorationFeature, 'id' | 'ki
   return '仮定時も地理的位置は変わりません。この地点への影響や輸送量は未収録です。';
 }
 
+// The candidate detours the reader can try under the assumption: each is a route and the strait it passes.
+// Trying one only emphasises it on the map; it never claims that a ship was rerouted.
+export type CandidateId = 'sunda' | 'lombok';
+export const candidateIds: readonly CandidateId[] = ['sunda', 'lombok'];
+export const candidates: Record<CandidateId, { name: string; route: SelectedFeatureId; features: readonly SelectedFeatureId[] }> = {
+  sunda: { name: 'スンダ経由', route: 'sunda-route', features: ['sunda-route', 'sunda'] },
+  lombok: { name: 'ロンボク経由', route: 'lombok-route', features: ['lombok-route', 'lombok'] },
+};
+export function candidateOf(id: SelectedFeatureId): CandidateId | undefined {
+  return candidateIds.find(candidate => candidates[candidate].features.includes(id));
+}
+// Candidates exist only under the assumption; any other condition has none to try.
+export function candidateForScenario(candidate: CandidateId | null, scenario: Scenario): CandidateId | null {
+  return scenario.kind === 'malacca-closed-assumption' ? candidate : null;
+}
+// Selecting a candidate's line or strait tries that candidate; any other selection keeps the current one.
+export function candidateAfterSelection(id: SelectedFeatureId | null, current: CandidateId | null, scenario: Scenario): CandidateId | null {
+  return candidateForScenario((id === null ? undefined : candidateOf(id)) ?? current, scenario);
+}
+export function candidateNote(candidate: CandidateId): string {
+  return `${candidates[candidate].name}候補を強調しています。経路の概念を示す教材モデルで、実船の通航可否・所要時間・費用は検証していません。`;
+}
+// The virtual ship is a teaching prop on the authored route, not a tracked vessel. It waits at the
+// start of the routes in every condition: choosing a candidate does not move it.
+export const shipCoordinate: [number, number] = [92.6, 6.88];
+export function shipLabel(scenario: Scenario, candidate: CandidateId | null): string {
+  if (scenario.kind === 'normal') return '仮想船（教材モデル）';
+  return candidate ? `仮想船：${candidates[candidate].name}を検討中（教材モデル）` : '仮想船：この先へ進めない（仮定）';
+}
+// The control on the strait itself: what pressing it does now, and its name for assistive technology.
+export function straitAction(scenario: Scenario): { next: ScenarioId; text: string; name: string } {
+  return scenario.kind === 'normal'
+    ? { next: 'malacca-closed-assumption', text: '通れなくしてみる', name: '通れなくしてみる：マラッカ海峡（仮定）' }
+    : { next: 'normal', text: '元に戻す', name: '元に戻す：マラッカ海峡を通常時へ' };
+}
+
 // Page-local visibility, independent of the scenario and selected feature.
 export type LayerId = 'borders' | 'routes' | 'points';
 export type LayerVisibility = Record<LayerId, boolean>;

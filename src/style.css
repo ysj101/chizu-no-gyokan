@@ -108,6 +108,20 @@ summary { min-height: 44px; padding: 8px 0; font-size: 14px; }
 .selected .feature-name { font-weight: bold; }
 .route-label { padding: 4px 10px; color: #885229; font-size: 12px; white-space: nowrap; background: #fafcfae8; }
 .route-hit { cursor: pointer; }
+/* The control on the strait itself (GP-02). It hangs below the symbol, clear of the name above it. */
+.strait-action { position: absolute; left: -88px; top: 50px; min-height: 36px; padding: 2px 10px; font-size: 12px; font-weight: 600; white-space: nowrap; color: #fafcfa; background: #844a72; border-color: #844a72; }
+.strait-action:hover { background: #6c3a5c; }
+/* The virtual ship: a prop, so it takes no pointer events and its label says it is a model. */
+.ship { position: absolute; left: -12px; top: -14px; display: flex; align-items: center; gap: 4px; white-space: nowrap; pointer-events: none; }
+/* On wide screens open sea lies to the west, so the label goes there and leaves the place names alone. */
+@media (min-width: 761px) { .ship { left: auto; right: -12px; flex-direction: row-reverse; } }
+.ship-glyph { font-size: 22px; line-height: 1; }
+.ship-label { padding: 1px 5px; border: 1px dashed #885229; border-radius: 3px; background: #fafcfaf0; font-size: 11px; color: #203c45; }
+/* Trying a candidate: the chosen one is heavier, the other recedes. Weight and opacity, not colour alone. */
+path[data-candidate-chosen] { stroke-width: 6; }
+.feature-icon[data-candidate-chosen] .route-label, .feature-icon[data-candidate-chosen] .feature-name { font-weight: bold; border-color: #844a72; }
+path[data-candidate-dimmed] { opacity: .3; }
+.feature-icon[data-candidate-dimmed] { opacity: .45; }
 @media (max-width: 760px) {
   /* Sticky ends at its containing block, and `.atlas` ends before `aside`; dropping the section's box
      makes `main` the container so the map stays while the explanation scrolls. Current engines keep the

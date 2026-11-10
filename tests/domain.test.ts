@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import countries from '../public/data/countries.json';
-import { parseCountries, parseRoute } from '../src/domain';
+import { candidateAfterSelection, candidateForScenario, candidateNote, candidateOf, candidates, parseCountries, parseRoute, shipLabel, straitAction } from '../src/domain';
 
 function fixture(): unknown { return structuredClone(countries); }
 describe('geographic JSON trust boundary', () => {
@@ -211,4 +211,32 @@ describe('independent layer presentation in both scenarios', () => {
       expect(visibility).toEqual(original);
     });
   }
+});
+describe('GP-02 direct manipulation vocabulary', () => {
+  const normal = { kind: 'normal' } as const; const closed = { kind: 'malacca-closed-assumption' } as const;
+  it('maps each candidate line and strait to its candidate, and nothing else', () => {
+    expect(candidateOf('sunda')).toBe('sunda'); expect(candidateOf('sunda-route')).toBe('sunda');
+    expect(candidateOf('lombok')).toBe('lombok'); expect(candidateOf('lombok-route')).toBe('lombok');
+    for (const id of ['malacca', 'normal-route', 'singapore', 'penang'] as const) expect(candidateOf(id)).toBeUndefined();
+    expect(candidates.sunda.features).toContain(candidates.sunda.route);
+  });
+  it('keeps a candidate only under the assumption', () => {
+    expect(candidateForScenario('sunda', closed)).toBe('sunda');
+    expect(candidateForScenario('sunda', normal)).toBeNull(); expect(candidateForScenario(null, closed)).toBeNull();
+    expect(candidateAfterSelection('lombok-route', 'sunda', closed)).toBe('lombok'); expect(candidateAfterSelection('singapore', 'sunda', closed)).toBe('sunda');
+    expect(candidateAfterSelection(null, 'sunda', closed)).toBe('sunda'); expect(candidateAfterSelection('sunda', null, normal)).toBeNull();
+  });
+  it('labels the ship as a model and never as rerouted', () => {
+    expect(shipLabel(normal, null)).toBe('仮想船（教材モデル）');
+    expect(shipLabel(closed, null)).toBe('仮想船：この先へ進めない（仮定）');
+    expect(shipLabel(closed, 'lombok')).toBe('仮想船：ロンボク経由を検討中（教材モデル）');
+    for (const label of [shipLabel(closed, 'sunda'), candidateNote('sunda')]) expect(label).not.toMatch(/迂回した|通航できる|通航可能です/);
+    expect(candidateNote('lombok')).toContain('検証していません');
+  });
+  it('names the strait control by what pressing it does', () => {
+    expect(straitAction(normal)).toMatchObject({ next: 'malacca-closed-assumption', text: '通れなくしてみる' });
+    expect(straitAction(closed)).toMatchObject({ next: 'normal', text: '元に戻す' });
+    for (const scenario of [normal, closed]) expect(straitAction(scenario).name).toContain(straitAction(scenario).text);
+    expect(straitAction(normal).name).toContain('仮定');
+  });
 });

@@ -68,7 +68,7 @@ port 4173のHTTPを読み取り、`/`のタイトル文字列と`/data/countries
 詳細は[feature map](../../../features/scenario-switch.md)。次をPCとmobile双方で検証する。証拠名は既存と区別し`scenario-desktop-*` / `scenario-mobile-*`。
 
 1. 初期の位置・倍率のまま仮定へ切り替え、両候補海峡のボタン・名称と候補線全体のbounding boxが地図内に収まることをPC/mobileで確認する。パン・zoom後の「対象地域に戻す」でも同じ範囲を確認する。`マラッカ海峡`を選択し、`getByRole('button', { name: '通行不可（仮定）', exact: true })`で切替。`通常時`ボタンも同画面に残り、aria-pressedが逆転、`#current-condition`と`#scenario-summary`が更新される。
-2. 通常線が点線、候補2本が長短破線、マラッカは×◇、追加海峡は＋◇。凡例・差分要約・選択説明が同じ条件を示す。通常線は「使用しない比較線」である。
+2. 通常線が点線、候補2本が長短破線、マラッカは「（通行不可）」、追加海峡は「（候補）」と名称に付く。凡例・差分要約・選択説明が同じ条件を示す。通常線は「使用しない比較線」である。
 3. 通常航路・既存地点を選択したまま往復し、説明と選択状態の同期を確認。候補を選んで戻した場合はマラッカへ復帰し、候補線・代表点・一覧項目が消える。
 4. 両候補海域への移動ボタンと実地図の海峡ボタンを操作。出典（EIA 2026-03-03/参照2026-11-09）、日本語要約主体、原文、public domain、著者ライセンス未設定、仮定、狭窄部・未検証・未収録を初回から確認する。
 5. Tab/Shift+Tab、Enter/Spaceで往復。フォーカス・aria-pressed・live statusを照合し、reduced motion設定でも確認する。往復後に実ドラッグ・zoom・選択を継続。documentとcountriesのrequestは各1回、URL・storageへ状態を保存しない。

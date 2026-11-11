@@ -24,13 +24,14 @@ test('first view: the map leads, one action stands out, and long text is folded 
   await expect(page.locator('button.primary:visible')).toHaveCount(1);
   await expect(page.getByRole('button', { name: '通行不可にして変化を見る', exact: true })).toBeInViewport();
   // Folded: the explanation, the menu and the normal-condition summary; no paragraph of prose is showing
-  // except the one-line reminder of what is assumed and what is a model.
+  // beside the map. The standing cautions (assumed, a model) sit only in the footer at the page's end.
   await expect(menu(page)).toBeHidden(); await expect(menuButton(page)).toHaveAttribute('aria-expanded', 'false');
   await expect(page.locator('#card-body')).toBeHidden(); await expect(card(page)).toHaveAttribute('aria-expanded', 'false');
-  await expect(card(page)).toHaveText('◇ マラッカ海峡：なぜ重要？');
+  await expect(card(page)).toHaveText('マラッカ海峡：なぜ重要？');
   for (const id of ['selected-description', 'feature-list', 'guide', 'sources', 'notes', 'perspective-view']) await expect(page.locator(`#${id}`)).toBeHidden();
   expect(await page.locator('#scenario-summary').evaluate(el => el.classList.contains('sr-only'))).toBe(true);
-  expect(await page.locator('main p:visible:not(.sr-only)').evaluateAll(items => items.map(item => item.className))).toEqual(mobile ? ['map-hint', 'assumption note'] : ['assumption note']);
+  expect(await page.locator('main p:visible:not(.sr-only)').evaluateAll(items => items.map(item => item.className))).toEqual(mobile ? ['map-hint'] : []);
+  await expect(page.locator('footer.page-notes')).toContainText('演習上の仮定');
   await expect(page.locator('#map-condition')).toHaveText('現在の条件：通常時');
   await mkdir('artifacts/map-exploration', { recursive: true });
   await page.screenshot({ path: `artifacts/map-exploration/first-view-${info.project.name}.png`, fullPage: false });
@@ -47,7 +48,7 @@ test('the explanation opens on demand or with a selection, and closes without lo
   await expect(page.locator('#card-body')).toBeHidden();
   // Selecting on the map opens it with the new target; the map keeps its condition.
   await page.getByRole('button', { name: '地図上のシンガポールを選択', exact: true }).click();
-  await expect(card(page)).toHaveAttribute('aria-expanded', 'true'); await expect(card(page)).toHaveText('● シンガポール：なぜ重要？');
+  await expect(card(page)).toHaveAttribute('aria-expanded', 'true'); await expect(card(page)).toHaveText('シンガポール：なぜ重要？');
   await expect(page.getByRole('heading', { name: 'シンガポール', exact: true })).toBeInViewport();
   await card(page).click();
   await expect(page.getByRole('button', { name: '地図上のシンガポールを選択', exact: true })).toHaveAttribute('aria-pressed', 'true');
@@ -85,7 +86,7 @@ test('the menu holds settings, the list, sources and notes; keyboard opens and c
   await page.screenshot({ path: `artifacts/map-exploration/menu-open-${info.project.name}.png`, fullPage: false });
   // Choosing from the list opens the explanation; Escape closes the menu and returns focus to its button.
   await page.getByRole('button', { name: 'ペナン島を選択', exact: true }).click();
-  await expect(card(page)).toHaveText('● ペナン島：なぜ重要？'); await expect(card(page)).toHaveAttribute('aria-expanded', 'true');
+  await expect(card(page)).toHaveText('ペナン島：なぜ重要？'); await expect(card(page)).toHaveAttribute('aria-expanded', 'true');
   await page.keyboard.press('Escape');
   await expect(menu(page)).toBeHidden(); await expect(menuButton(page)).toBeFocused(); await expect(menuButton(page)).toHaveAttribute('aria-expanded', 'false');
   await menuButton(page).click();

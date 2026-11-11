@@ -40,7 +40,7 @@ describe('route model boundary', () => {
   ])('rejects malformed model $value', ({ value }) => expect(() => parseRoute(value)).toThrow());
 });
 
-import { scenarios, scenarioDefinition, selectionForScenario, scenarioExplanation, routeStyles, sourceRegistry, featureSymbol, featureRole, changedFeatureIds } from '../src/domain';
+import { scenarios, scenarioDefinition, selectionForScenario, scenarioExplanation, routeStyles, sourceRegistry, featureLabel, featureRole, changedFeatureIds } from '../src/domain';
 import { features, featureById } from '../src/content';
 import type { Scenario } from '../src/domain';
 const normal: Scenario = { kind: 'normal' };
@@ -86,7 +86,9 @@ describe('scenario projection', () => {
     expect(scenarios.normal.changes.map(change => change.kind)).toEqual(['shown', 'hidden']);
     expect(scenarios['malacca-closed-assumption'].changes.map(change => change.kind)).toEqual(['assumption', 'changed', 'added']);
     const text = scenarios['malacca-closed-assumption'].changes.map(change => change.text).join('');
-    for (const mark of ['×◇', '＋◇', '点線', '長短破線', '運航の可否は示しません', '現実の規制や出来事ではありません']) expect(text).toContain(mark);
+    for (const mark of ['通れない', '点線', '長短破線']) expect(text).toContain(mark);
+    // Composite symbols and standing cautions stay out of the summary; the cautions sit at the foot of the page.
+    expect(text).not.toMatch(/[×＋◇●┄]|ではありません|示しません/);
     // The prose and the highlighted set describe the same difference.
     const listed = scenarios['malacca-closed-assumption'].changes.flatMap(change => change.features);
     expect([...listed].sort()).toEqual([...changedFeatureIds(normal, closed, features)].sort());
@@ -100,10 +102,10 @@ describe('scenario projection', () => {
     expect([...back].sort()).toEqual([...forward].sort());
     expect(changedFeatureIds(normal, normal, features)).toEqual([]); expect(changedFeatureIds(closed, closed, features)).toEqual([]);
     const byId = (id: string) => features.find(feature => feature.id === id)!;
-    expect(featureSymbol(byId('malacca'), normal)).toBe('◇'); expect(featureSymbol(byId('malacca'), closed)).toBe('×◇');
-    expect(featureSymbol(byId('sunda'), closed)).toBe('＋◇'); expect(featureSymbol(byId('singapore'), closed)).toBe('●');
-    expect(featureSymbol(byId('normal-route'), normal)).toBe('┄'); expect(featureSymbol(byId('normal-route'), closed)).toBe('×┄');
-    expect(featureSymbol(byId('sunda-route'), closed)).toBe('＋┄');
+    expect(featureLabel(byId('malacca'), normal)).toBe('マラッカ海峡'); expect(featureLabel(byId('malacca'), closed)).toBe('マラッカ海峡（通行不可）');
+    expect(featureLabel(byId('sunda'), closed)).toBe('スンダ海峡（候補）'); expect(featureLabel(byId('singapore'), closed)).toBe('シンガポール');
+    expect(featureLabel(byId('normal-route'), normal)).toBe('通常主要航路'); expect(featureLabel(byId('normal-route'), closed)).toBe('通常主要航路（使用しない）');
+    expect(featureLabel(byId('sunda-route'), closed)).toBe('スンダ経由候補');
   });
 });
 
@@ -191,8 +193,7 @@ describe('independent layer presentation in both scenarios', () => {
         borders: { text: `国境・海岸（地理）（${borders}）`, hidden: false, off: !visibility.borders },
         normal: { text: `${scenario.kind === 'normal' ? '通常主要航路（破線・概略モデル）' : '通常主要航路：使用しない比較線（点線・仮定）'}（${routes}）`, hidden: false, off: !visibility.routes },
         candidate: { text: `追加：スンダ・ロンボク経由候補（長短破線・概略モデル）（${routes}）`, hidden: scenario.kind === 'normal', off: !visibility.routes },
-        strait: { text: `海峡の代表点（${points}）`, hidden: false, off: !visibility.points },
-        place: { text: `関連地点の代表点（${points}）`, hidden: false, off: !visibility.points },
+        points: { text: `海峡・地点（代表点）（${points}）`, hidden: false, off: !visibility.points },
       });
       if (Object.values(visibility).every(Boolean)) expect(view.explanation).toBe('');
       else {
@@ -233,7 +234,7 @@ describe('GP-02 direct manipulation vocabulary', () => {
     expect(shipLabel(closed, null)).toBe('仮想船：この先へ進めない（仮定）');
     expect(shipLabel(closed, 'lombok')).toBe('仮想船：ロンボク経由を検討中（教材モデル）');
     for (const label of [shipLabel(closed, 'sunda'), candidateNote('sunda')]) expect(label).not.toMatch(/迂回した|通航できる|通航可能です/);
-    expect(candidateNote('lombok')).toContain('検証していません');
+    expect(candidateNote('lombok')).toBe('ロンボク経由候補を強調しています。');
   });
   it('names the strait control by what pressing it does', () => {
     expect(straitAction(normal)).toMatchObject({ next: 'malacca-closed-assumption', text: '通れなくしてみる' });

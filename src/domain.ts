@@ -175,9 +175,9 @@ export const scenarios = {
     name: '通行不可（仮定）',
     summaryTitle: '通常時との差分：何が変わった？',
     changes: [
-      { kind: 'assumption', text: 'マラッカ海峡を通れない（×◇）。演習上の仮定で、現実の規制や出来事ではありません。', features: ['malacca'] },
+      { kind: 'assumption', text: 'マラッカ海峡を通れない。', features: ['malacca'] },
       { kind: 'changed', text: '通常主要航路は使用しない比較線（点線）として残します。', features: ['normal-route'] },
-      { kind: 'added', text: 'スンダ経由・ロンボク経由の候補線（長短破線）と両海峡の代表点（＋◇）。著者作成の概略モデルで、運航の可否は示しません。', features: ['sunda-route', 'lombok-route', 'sunda', 'lombok'] },
+      { kind: 'added', text: 'スンダ経由・ロンボク経由の候補線（長短破線）と、両海峡の地点。', features: ['sunda-route', 'lombok-route', 'sunda', 'lombok'] },
     ],
     featureIds: ['malacca', 'normal-route', 'singapore', 'penang', 'sunda-route', 'lombok-route', 'sunda', 'lombok'],
     roles: { malacca: 'unavailable', 'normal-route': 'unavailable', 'sunda-route': 'candidate', 'lombok-route': 'candidate', sunda: 'candidate', lombok: 'candidate' },
@@ -194,11 +194,14 @@ export function featureRole(id: SelectedFeatureId, scenario: Scenario): FeatureR
   const definition = scenarioDefinition(scenario);
   return definition.featureIds.includes(id) ? definition.roles[id] ?? 'normal' : undefined;
 }
-const rolePrefix: Record<FeatureRole, string> = { normal: '', unavailable: '×', candidate: '＋' };
-export const kindGlyph: Record<ExplorationFeature['kind'], string> = { route: '┄', strait: '◇', place: '●' };
-// The symbol drawn on the map and in the list; it carries the role without relying on colour.
-export function featureSymbol(feature: ExplorationFeature, scenario: Scenario): string {
-  return `${rolePrefix[featureRole(feature.id, scenario) ?? 'normal']}${kindGlyph[feature.kind]}`;
+// The role is written as a plain word after the name, on the map, in the list and on the card, so it
+// never depends on colour or on a symbol the reader has to learn. Candidate routes already say so by name.
+const roleWords: Record<FeatureRole, { route: string; point: string }> = {
+  normal: { route: '', point: '' }, unavailable: { route: '使用しない', point: '通行不可' }, candidate: { route: '', point: '候補' },
+};
+export function featureLabel(feature: ExplorationFeature, scenario: Scenario): string {
+  const word = roleWords[featureRole(feature.id, scenario) ?? 'normal'][feature.kind === 'route' ? 'route' : 'point'];
+  return word ? `${feature.name}（${word}）` : feature.name;
 }
 // Features whose role differs between two conditions, including appearing or disappearing.
 export function changedFeatureIds(from: Scenario, to: Scenario, features: readonly ExplorationFeature[]): SelectedFeatureId[] {
@@ -213,9 +216,9 @@ export function scenarioExplanation(feature: Pick<ExplorationFeature, 'id' | 'ki
   const role = featureRole(feature.id, scenario);
   if (role === 'unavailable') {
     return feature.kind === 'route' ? '仮定：この通常主要航路は使用しません。点線は通常時との比較のために残しています。'
-      : '仮定：この海峡を使えない条件です。＋追加した両候補との位置関係を比較できます。';
+      : '仮定：この海峡を使えない条件です。追加した両候補との位置関係を比較できます。';
   }
-  if (role === 'candidate') return '＋仮定時に追加：EIAが挙げる代替経路の検討対象です。運航可能性を保証しません。';
+  if (role === 'candidate') return '仮定時に追加：EIAが挙げる代替経路の検討対象です。';
   return '仮定時も地理的位置は変わりません。この地点への影響や輸送量は未収録です。';
 }
 
@@ -239,7 +242,7 @@ export function candidateAfterSelection(id: SelectedFeatureId | null, current: C
   return candidateForScenario((id === null ? undefined : candidateOf(id)) ?? current, scenario);
 }
 export function candidateNote(candidate: CandidateId): string {
-  return `${candidates[candidate].name}候補を強調しています。経路の概念を示す教材モデルで、実船の通航可否・所要時間・費用は検証していません。`;
+  return `${candidates[candidate].name}候補を強調しています。`;
 }
 // The virtual ship is a teaching prop on the authored route, not a tracked vessel. It waits at the
 // start of the routes in every condition: choosing a candidate does not move it.
@@ -293,8 +296,7 @@ export function layerPresentation(visibility: LayerVisibility, scenario: Scenari
       borders: { text: legendText('borders', '国境・海岸（地理）'), hidden: false, off: !visibility.borders },
       normal: { text: legendText('routes', routeStyles[closed ? 'unavailable' : 'normal'].label), hidden: false, off: !visibility.routes },
       candidate: { text: legendText('routes', routeStyles.candidate.label), hidden: !closed, off: !visibility.routes },
-      strait: { text: legendText('points', '海峡の代表点'), hidden: false, off: !visibility.points },
-      place: { text: legendText('points', '関連地点の代表点'), hidden: false, off: !visibility.points },
+      points: { text: legendText('points', '海峡・地点（代表点）'), hidden: false, off: !visibility.points },
     },
   };
 }

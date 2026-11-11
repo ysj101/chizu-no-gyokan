@@ -55,5 +55,5 @@ test('the guide can be skipped: the scenario buttons hide it too, and keyboard r
   await page.keyboard.press('Enter');
   await expect(page.locator('#scenario-closed')).toBeFocused();
   await expect(page.locator('#scenario-closed')).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.locator('.callout-sunda .feature-symbol')).toHaveText('＋◇');
+  await expect(page.locator('.callout-sunda .feature-name')).toHaveText('スンダ海峡（候補）');
 });

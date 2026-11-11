@@ -4,7 +4,7 @@ import { mountNoteDrawer, mountNotes } from './notes-panel';
 import { describeMapState } from './notes';
 import { detailView, relatedLink } from './details';
 import { renderDetail, renderPerspectiveContent, renderRelated, sourceSection, tagged } from './detail-panel';
-import { chainLimit, destination, japanChain, japanDirection, nextBranches } from './relations';
+import { destination, japanChain, japanDirection, nextBranches } from './relations';
 import type { Branch } from './relations';
 import { chainDiscovery } from './discoveries';
 import { mountDiscoveryPanel } from './discovery-panel';
@@ -16,7 +16,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './style.css';
 import { featureById, features, labels } from './content';
-import { candidateAfterSelection, candidateForScenario, candidateIds, candidateNote, candidates, shipCoordinate, shipLabel, straitAction, parseCountries, sourceRegistry, scenarioDefinition, selectionForScenario, routeStyles, layerIds, layerPresentation, featureLayer, hiddenFeatureMessage, hiddenLayerReason, featureSymbol, featureRole, changedFeatureIds, changeLabels, kindGlyph } from './domain';
+import { candidateAfterSelection, candidateForScenario, candidateIds, candidateNote, candidates, shipCoordinate, shipLabel, straitAction, parseCountries, sourceRegistry, scenarioDefinition, selectionForScenario, routeStyles, layerIds, layerPresentation, featureLayer, hiddenFeatureMessage, hiddenLayerReason, featureLabel, featureRole, changedFeatureIds, changeLabels } from './domain';
 import type { CandidateId, ExplorationFeature, LoadState, SelectedFeatureId, Scenario, LayerVisibility } from './domain';
 
 function element<T extends HTMLElement>(id: string, constructor: { new(...args: never[]): T }): T {
@@ -171,13 +171,14 @@ function marker(feature: ExplorationFeature): void {
       .on('click', () => selectFeature(feature.id, true)).addTo(layerGroups.routes);
     selectionLayers.set(feature.id, route);
     const routeButton = featureButton(feature, true);
-    routeButton.className = 'route-label'; routeButton.textContent = `${featureSymbol(feature, scenario)} ${feature.name}`;
+    routeButton.className = 'route-label'; routeButton.textContent = featureLabel(feature, scenario);
     routeLabels.set(feature.id, L.marker(feature.id === 'sunda-route' ? [-3.5, 108.8] : feature.id === 'lombok-route' ? [-5, 113] : [6.7, 108], { keyboard: false, icon: L.divIcon({ html: routeButton, className: 'feature-icon route-icon', iconSize: [155, 44], iconAnchor: [10, 44] }) }).addTo(layerGroups.routes));
     return;
   }
   const button = featureButton(feature, true);
   button.className = 'map-feature';
-  button.append(textElement('span', featureSymbol(feature, scenario), 'feature-symbol'), textElement('span', feature.name, 'feature-name'));
+  button.dataset.role = featureRole(feature.id, scenario) ?? 'normal';
+  button.append(textElement('span', '', 'feature-symbol'), textElement('span', featureLabel(feature, scenario), 'feature-name'));
   // The dot stays at the geographic coordinate; a leader connects the separate 44px target.
   const callout = textElement('div', '', `feature-callout callout-${feature.id}`);
   callout.append(textElement('span', '', 'coordinate-dot'), textElement('span', '', 'feature-leader'), button);
@@ -267,9 +268,9 @@ const cardToggle = element('card-toggle', HTMLButtonElement);
 const cardBody = element('card-body', HTMLDivElement);
 const noSelection = '選択なし';
 function renderCard(): void {
-  // The card names its target with the same symbol the map uses for it, so the two read as one.
+  // The card names its target with the same label the map uses for it, so the two read as one.
   const feature = selectedFeatureId === null ? null : featureById(selectedFeatureId);
-  cardToggle.textContent = feature ? `${featureSymbol(feature, scenario)} ${feature.name}：なぜ重要？` : noSelection;
+  cardToggle.textContent = feature ? `${featureLabel(feature, scenario)}：なぜ重要？` : noSelection;
   cardToggle.setAttribute('aria-expanded', String(cardOpen));
   cardBody.hidden = !cardOpen;
 }
@@ -322,7 +323,7 @@ function renderFeatureList(): void {
   featureList.replaceChildren();
   for (const feature of visibleFeatures()) {
     const button = featureButton(feature, false);
-    button.textContent = `${featureSymbol(feature, scenario)} ${feature.name}`;
+    button.textContent = featureLabel(feature, scenario);
     const layer = featureLayer(feature);
     const visibility = textElement('span', layerVisibility[layer] ? '' : `（地図上で非表示：${hiddenLayerReason(layer)}）`, 'feature-visibility');
     visibility.id = `feature-visibility-${feature.id}`;
@@ -415,10 +416,9 @@ function renderDerived(presentation = layerPresentation(layerVisibility, scenari
 const chainCard = element('chain-card', HTMLElement);
 const chainTargets = {
   change: element('chain-change', HTMLParagraphElement), finding: element('chain-finding', HTMLParagraphElement),
-  next: element('chain-next', HTMLParagraphElement), limit: element('chain-limit', HTMLParagraphElement),
+  next: element('chain-next', HTMLParagraphElement),
 };
 renderPerspectiveContent({ title: element('chain-more-title', HTMLElement), meaning: element('chain-meaning', HTMLElement), statements: element('chain-statements', HTMLElement) }, perspectives.japan);
-chainTargets.limit.textContent = chainLimit;
 const discoveryPanel = mountDiscoveryPanel({
   add: element('discovery-add', HTMLButtonElement), addTitle: element('discovery-add-title', HTMLParagraphElement), addStatus: element('discovery-add-status', HTMLParagraphElement),
   view: element('discovery-view', HTMLDivElement), list: element('discovery-list', HTMLOListElement),
@@ -529,13 +529,13 @@ function renderLayerVisibility(): void {
   }
   setMessage(layerHelp, presentation.explanation);
   const closed = scenario.kind !== 'normal';
-  for (const [key, id, symbol] of [
+  for (const [key, id, keyClass] of [
     ['borders', 'border-legend', 'border'], ['normal', 'normal-legend', closed ? 'unavailable' : 'normal'],
-    ['candidate', 'candidate-legend', 'candidate'], ['strait', 'strait-legend', 'strait'], ['place', 'place-legend', 'point'],
+    ['candidate', 'candidate-legend', 'candidate'], ['points', 'point-legend', 'point'],
   ] as const) {
     const item = element(id, HTMLLIElement);
     const legend = presentation.legends[key];
-    const swatch = textElement('span', symbol === 'strait' ? kindGlyph.strait : symbol === 'point' ? kindGlyph.place : '', `key ${symbol}`);
+    const swatch = textElement('span', '', `key ${keyClass}`);
     item.replaceChildren(swatch, document.createTextNode(legend.text));
     item.hidden = legend.hidden;
     item.classList.toggle('layer-off', legend.off);

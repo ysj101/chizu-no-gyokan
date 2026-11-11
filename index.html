@@ -54,7 +54,6 @@
           <p id="chain-next" class="next-step"></p>
           <div id="branches" class="button-row" role="group" aria-label="寄り道（どれでも、無視しても構いません）"></div>
           <button id="branch-back" type="button" class="text-button" hidden>寄り道の前に戻る</button>
-          <p id="chain-limit" class="note"></p>
           <p id="discovery-add-title" class="sr-only"></p>
           <button id="discovery-add" type="button" aria-describedby="discovery-add-title">発見マップに追加</button>
           <p id="discovery-add-status" role="status" aria-live="polite"></p>
@@ -106,10 +105,8 @@
             <li id="border-legend"><span class="key border"></span><span></span></li>
             <li id="normal-legend"></li>
             <li id="candidate-legend" hidden></li>
-            <li id="strait-legend"><span class="key strait">◇</span><span></span></li>
-            <li id="place-legend"><span class="key point">●</span><span></span></li>
+            <li id="point-legend"></li>
           </ul>
-          <p class="assumption note"><strong>通行不可は演習上の仮定</strong>で、現実の航行規制・出来事を示しません。<strong>破線の航路は著者作成の概略モデル</strong>で、実際の船舶航跡ではありません。</p>
         </div>
       </section>
       <aside id="menu" aria-labelledby="menu-title" hidden>
@@ -148,7 +145,7 @@
         <nav id="feature-list" aria-label="探索する対象"></nav>
         <details class="help">
           <summary>地図の操作方法</summary>
-          <p id="map-help">地図にフォーカスして矢印で移動、＋/−で拡大・縮小。点と引出線につながる記号、航路、またはメニューの一覧から対象を選べます。スマートフォンでは地図が上部に留まり、説明はその下をスクロールします。通常は地図上をなぞるとページがスクロールし、「タッチで地図を動かす」をオンにすると地図をドラッグできます。</p>
+          <p id="map-help">地図にフォーカスして矢印で移動、＋/−で拡大・縮小。点と引出線につながる丸印、航路、またはメニューの一覧から対象を選べます。スマートフォンでは地図が上部に留まり、説明はその下をスクロールします。通常は地図上をなぞるとページがスクロールし、「タッチで地図を動かす」をオンにすると地図をドラッグできます。</p>
         </details>
         <details class="guide" id="guide">
           <summary>この地図の読み方と注意</summary>
@@ -182,6 +179,10 @@
         <p class="attribution">地理と仮定を比較する教材です。 <a href="%BASE_URL%NOTICE.txt">第三者ソフトウェアの権利表示</a></p>
       </aside>
     </main>
+    <footer class="page-notes" aria-label="注意事項">
+      <p>通行不可は演習上の仮定で、現実の航行規制・出来事を示しません。航路は著者作成の概略モデルで、実際の船舶航跡ではありません。</p>
+      <p>距離・所要日数・費用・価格への影響は収録しておらず、示しません。日本方面への矢印は方面を示すだけで、航路ではありません。</p>
+    </footer>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

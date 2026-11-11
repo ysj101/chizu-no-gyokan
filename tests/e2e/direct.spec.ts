@@ -26,7 +26,7 @@ test('on the map alone: close the strait, try each candidate, restore', async ({
   // Assumption: stated on the map, the normal line is the unused comparison, the ship cannot go on.
   await expect(page.locator('#map-condition')).toHaveText('現在の条件：通行不可（仮定）');
   await expect(page.locator('#scenario-closed')).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.locator('.callout-malacca .feature-symbol')).toHaveText('×◇');
+  await expect(page.locator('.callout-malacca .feature-name')).toHaveText('マラッカ海峡（通行不可）');
   await expect(page.locator('path.route-unavailable')).toHaveCount(1); await expect(page.locator('path.route-candidate')).toHaveCount(2);
   await expect(ship(page)).toHaveAttribute('aria-label', '仮想船：この先へ進めない（仮定）');
   await expect(strait(page)).toHaveText('元に戻す'); await expect(strait(page)).toBeFocused();
@@ -44,8 +44,8 @@ test('on the map alone: close the strait, try each candidate, restore', async ({
   await expect(tryButton(page, 'スンダ')).toHaveAttribute('aria-pressed', 'true'); await expect(tryButton(page, 'ロンボク')).toHaveAttribute('aria-pressed', 'false');
   // The ship is not said to have been rerouted, and the model's limits are stated with the choice.
   await expect(ship(page)).toHaveAttribute('aria-label', '仮想船：スンダ経由を検討中（教材モデル）');
-  await expect(page.locator('#scenario-summary')).toContainText('スンダ経由候補を強調しています。経路の概念を示す教材モデルで、実船の通航可否・所要時間・費用は検証していません。');
-  await expect(page.locator('#card-toggle')).toHaveText('＋◇ スンダ海峡：なぜ重要？');
+  await expect(page.locator('#scenario-summary')).toContainText('スンダ経由候補を強調しています。');
+  await expect(page.locator('#card-toggle')).toHaveText('スンダ海峡（候補）：なぜ重要？');
   await mkdir('artifacts/map-exploration', { recursive: true });
   await page.screenshot({ path: `artifacts/map-exploration/direct-${info.project.name}-sunda.png`, fullPage: false });
   // Try the other one, on the map again (its strait this time).

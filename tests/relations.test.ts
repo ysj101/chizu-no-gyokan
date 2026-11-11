@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { chainLimit, destination, japanChain, japanDirection, nextBranches } from '../src/relations';
+import { destination, japanChain, japanDirection, nextBranches } from '../src/relations';
 import { perspectives } from '../src/perspectives';
 import routeData from '../src/route.json';
 import candidateRoutes from '../src/candidate-routes.json';
@@ -14,7 +14,7 @@ describe('GP-03 the chain towards Japan', () => {
     expect(routeData[routeData.length - 1]).toEqual(end);
     for (const route of Object.values(candidateRoutes)) expect(route[route.length - 1]).toEqual(end);
     expect(destination.coordinate).toEqual(japanDirection[japanDirection.length - 1]);
-    expect(destination.name).toContain('地図の外'); expect(chainLimit).toContain('示しません');
+    expect(destination.name).toContain('地図の外');
   });
   it('follows the condition and the candidate along the map', () => {
     expect(japanChain(normal, null).features).toEqual(['malacca', 'normal-route']);

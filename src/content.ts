@@ -7,7 +7,7 @@ export const features: readonly ExplorationFeature[] = [
   { id: 'malacca', name: 'マラッカ海峡', classification: 'geographic-fact', kind: 'strait',
     coordinate: [100.1, 3.5], sources: ['eia', 'naturalEarth', 'author'],
     description: 'マレー半島とスマトラ島の間にある海峡。インド洋と太平洋を結ぶ海上交通の接点です。',
-    limitation: '◇は海峡の代表点です。海峡全域の境界や航行可能な範囲を示しません。' },
+    limitation: '地図上の点は海峡の代表点です。海峡全域の境界や航行可能な範囲を示しません。' },
   { id: 'normal-route', name: '通常主要航路', classification: 'teaching-model', kind: 'route',
     coordinates: parseRoute(routeData), sources: ['author', 'eia', 'naturalEarth'],
     description: 'インド洋側からマラッカ海峡・シンガポール海峡を通り、南シナ海へ向かう位置関係を破線で示す概略モデルです。',
@@ -15,11 +15,11 @@ export const features: readonly ExplorationFeature[] = [
   { id: 'singapore', name: 'シンガポール', classification: 'geographic-fact', kind: 'place',
     coordinate: [103.82, 1.35], sources: ['naturalEarth', 'author'],
     description: 'マレー半島南端の島国。マラッカ海峡から東側の海へ抜ける位置関係を確かめられます。',
-    limitation: '●は国の代表点です。港湾施設や個別の航路位置を示しません。' },
+    limitation: '地図上の点は国の代表点です。港湾施設や個別の航路位置を示しません。' },
   { id: 'penang', name: 'ペナン島', classification: 'geographic-fact', kind: 'place',
     coordinate: [100.25, 5.4], sources: ['naturalEarth', 'author'],
     description: 'マレー半島西岸、マラッカ海峡に面する島です。海峡と沿岸の位置関係を見るための関連地点です。',
-    limitation: '●は島の代表点です。港湾施設や個別の航路位置を示しません。' },
+    limitation: '地図上の点は島の代表点です。港湾施設や個別の航路位置を示しません。' },
   ...(['sunda', 'lombok'] as const).flatMap(id => {
     const name = id === 'sunda' ? 'スンダ' : 'ロンボク';
     return [
@@ -27,7 +27,7 @@ export const features: readonly ExplorationFeature[] = [
         coordinate: id === 'sunda' ? [105.7, -5.9] : [115.85, -8.3],
         sources: ['eia', 'naturalEarth', 'author'],
         description: `EIAがマラッカ海峡の代替経路として挙げる${name}海峡です。代替先も狭窄部である点に注意が必要です。`,
-        limitation: '＋◇は仮定時に追加する代表点。海峡の境界や航行可能範囲ではありません。' },
+        limitation: '仮定時に追加する代表点です。海峡の境界や航行可能範囲ではありません。' },
       { id: `${id}-route`, name: `${name}経由候補`, classification: 'teaching-model', kind: 'route',
         coordinates: parseRoute(candidateRoutes[id]), sources: ['eia', 'author', 'naturalEarth'],
         description: `EIAが挙げる${name}海峡経由の代替経路を、著者作成の長短破線で示す事前定義モデルです。`,

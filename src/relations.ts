@@ -18,7 +18,6 @@ export interface ChainView {
 // From the common end of the authored routes towards Japan, drawn to the edge of the map.
 export const japanDirection: [number, number][] = parseRoute(directionData);
 export const destination = { name: '日本方面（地図の外）', coordinate: japanDirection[japanDirection.length - 1]! };
-export const chainLimit = '距離・所要日数・費用・価格への影響は収録しておらず、示しません。矢印は方面を示すだけで、航路ではありません。';
 const connection: ChainStatement = {
   classification: 'explanation', sources: ['author', 'eia', 'eiaJapan'],
   text: '遠くの海峡の条件は、日本のエネルギー輸入の経路ともつながっている。',

@@ -79,7 +79,7 @@ async function assertState(page: Page, visibility: LayerVisibility, closed: bool
   await expect(page.locator('.route-label')).toHaveCount(visibility.routes ? (closed ? 3 : 1) : 0);
   await expect(page.locator('.feature-callout, .coordinate-dot, .feature-leader, .map-feature')).toHaveCount(visibility.points ? (closed ? 20 : 12) : 0);
   if (visibility.routes) await expect(page.locator('path.normal-route')).toHaveAttribute('stroke-dasharray', closed ? '2 7' : '9 7');
-  for (const [id, layer] of [['border-legend', 'borders'], ['normal-legend', 'routes'], ['strait-legend', 'points'], ['place-legend', 'points']] as const) {
+  for (const [id, layer] of [['border-legend', 'borders'], ['normal-legend', 'routes'], ['point-legend', 'points']] as const) {
     await expect(page.locator(`#${id}`)).toContainText(visibility[layer] ? '表示中' : '非表示');
   }
   if (closed) await expect(page.locator('#candidate-legend')).toBeVisible();
@@ -88,11 +88,11 @@ async function assertState(page: Page, visibility: LayerVisibility, closed: bool
     await expect(page.locator('#candidate-legend')).toContainText(visibility.routes ? '表示中' : '非表示');
     await expect(page.locator('#normal-legend')).toContainText('使用しない比較線（点線');
     await expect(page.locator('#scenario-summary')).toContainText('通常時との差分');
-    await expect(page.locator('#scenario-summary')).toContainText('＋◇');
+    await expect(page.locator('#scenario-summary')).toContainText('両海峡の地点');
   } else await expect(page.locator('#scenario-summary')).toContainText('通常時：');
   await expect(page.locator('#current-condition')).toHaveText(`現在の条件：${closed ? '通行不可（仮定）' : '通常時'}`);
   await expect(page.locator('#map-condition')).toHaveText(`現在の条件：${closed ? '通行不可（仮定）' : '通常時'}`);
-  await expect(page.locator('.assumption')).toContainText('現実の航行規制・出来事を示しません');
+  await expect(page.locator('footer.page-notes')).toContainText('現実の航行規制・出来事を示しません');
   await expect(page.locator('#scenario-limits')).toContainText('輸送能力を検証していません');
   if (ids.some(id => !visibility[id])) await expect(page.locator('#layer-help')).toContainText('選択と詳細は保持します');
   else await expect(page.locator('#layer-help')).toBeHidden();

@@ -25,7 +25,7 @@ test('the chain follows the experiment: normal, assumed, one candidate; the card
   await expect(page.locator('#chain-change')).toHaveText('モデルいま：日本方面へ向かう航路の概略モデルは、マラッカ海峡を通ります。');
   await expect(page.locator('#chain-finding')).toContainText('タンカー輸送に頼っています');
   await expect(page.locator('#chain-next')).toHaveText('次に：海峡を通れなくすると、このつながりはどう変わる？');
-  await expect(page.locator('#chain-limit')).toContainText('示しません');
+  await expect(page.locator('footer.page-notes')).toContainText('方面を示すだけ');
   // Sources are one step away and closed at first.
   await expect(page.locator('#chain-statements')).toBeHidden();
   await page.locator('#chain-more summary').click();

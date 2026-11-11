@@ -25,9 +25,9 @@ test('route states differ in line pattern and words, not colour alone', async ({
   await expect(page.locator('#map [data-just-changed]')).toHaveCount(0, { timeout: 5000 });
   const width = (selector: string) => page.locator(selector).evaluate(el => parseFloat(getComputedStyle(el).strokeWidth));
   expect(await width('path.sunda-route')).toBeGreaterThan(await width('path.lombok-route'));
-  // Each state is also written: symbols on the map, the legend, the ship and the condition label.
-  await expect(page.locator('.callout-malacca .feature-symbol')).toHaveText('×◇');
-  await expect(page.locator('.callout-sunda .feature-symbol')).toHaveText('＋◇');
+  // Each state is also written: labels on the map, the legend, the ship and the condition label.
+  await expect(page.locator('.callout-malacca .feature-name')).toHaveText('マラッカ海峡（通行不可）');
+  await expect(page.locator('.callout-sunda .feature-name')).toHaveText('スンダ海峡（候補）');
   await expect(page.locator('#normal-legend')).toContainText('点線'); await expect(page.locator('#candidate-legend')).toContainText('長短破線');
   await expect(page.locator('#map .ship')).toHaveAttribute('aria-label', '仮想船：スンダ経由を検討中（教材モデル）');
   await expect(page.locator('#map-condition')).toHaveText('現在の条件：通行不可（仮定）');

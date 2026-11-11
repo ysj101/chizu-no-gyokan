@@ -17,12 +17,12 @@ for (const reduced of [false, true]) {
     await page.getByRole('button', { name: '通行不可（仮定）', exact: true }).click();
     await expect(summary(page).locator('.summary-title')).toHaveText('通常時との差分：何が変わった？');
     await expect(summary(page).locator('li .tag')).toHaveText(['仮定', '変更', '追加']);
-    await expect(summary(page)).toContainText('×◇'); await expect(summary(page)).toContainText('点線'); await expect(summary(page)).toContainText('長短破線');
-    await expect(summary(page)).toContainText('運航の可否は示しません');
+    await expect(summary(page)).toContainText('通れない'); await expect(summary(page)).toContainText('点線'); await expect(summary(page)).toContainText('長短破線');
+    await expect(summary(page)).not.toContainText('ではありません');
     // Exactly the features that appear or change their mark: three paths and three strait callouts.
     await expect(changed(page)).toHaveCount(6);
     await expect(page.locator('#map path[data-just-changed]')).toHaveCount(3);
-    await expect(page.locator('#map .feature-icon[data-just-changed] .feature-symbol')).toHaveText(['×◇', '＋◇', '＋◇']);
+    await expect(page.locator('#map .feature-icon[data-just-changed] .feature-name')).toHaveText(['マラッカ海峡（通行不可）', 'スンダ海峡（候補）', 'ロンボク海峡（候補）']);
     const symbol = page.locator('.callout-malacca .feature-symbol');
     expect(await symbol.evaluate(el => getComputedStyle(el).outlineStyle)).toBe('solid');
     expect(await symbol.evaluate(el => getComputedStyle(el).animationName)).toBe(reduced ? 'none' : 'just-changed-pulse');
@@ -33,7 +33,7 @@ for (const reduced of [false, true]) {
     // Returning marks what still exists and changed back (Malacca and the normal route); candidates are gone.
     await page.getByRole('button', { name: '通常時', exact: true }).click();
     await expect(changed(page)).toHaveCount(2);
-    await expect(page.locator('#map .feature-icon[data-just-changed] .feature-symbol')).toHaveText(['◇']);
+    await expect(page.locator('#map .feature-icon[data-just-changed] .feature-name')).toHaveText(['マラッカ海峡']);
     await expect(page.locator('path.route-candidate')).toHaveCount(0);
     await expect(summary(page).locator('li .tag')).toHaveText(['表示', '非表示']);
     await expect(changed(page)).toHaveCount(0, { timeout: 5000 });

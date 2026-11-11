@@ -108,9 +108,9 @@ test('initial atlas, sources, missing data and narrow scope', async ({ page }, i
   await expect(page.getByText('南シナ海', { exact: true })).toBeAttached();
   await expect(page.getByText('マレーシア', { exact: true })).toBeAttached();
   // The first view keeps only the short assumption/model notice; the long guide is collapsed.
-  await expect(page.locator('.assumption')).toBeVisible();
-  await expect(page.locator('.assumption')).toContainText('演習上の仮定');
-  await expect(page.locator('.assumption')).toContainText('著者作成の概略モデル');
+  await expect(page.locator('footer.page-notes')).toBeVisible();
+  await expect(page.locator('footer.page-notes')).toContainText('演習上の仮定');
+  await expect(page.locator('footer.page-notes')).toContainText('著者作成の概略モデル');
   await expect(page.locator('#map-help')).toBeHidden();
   await expect(page.locator('#guide p').first()).toBeHidden();
   await expect(page.locator('#layer-help')).toBeHidden();
@@ -368,11 +368,11 @@ test('scenario round trip synchronizes differences, selected explanations and so
   // No pan or zoom since initial load: both straits and complete lines fit.
   await expectCandidateOverview(page);
   for (const route of await page.locator('path.route-candidate').all()) await expect(route).toHaveAttribute('stroke-dasharray', '14 5 3 5');
-  await expect(page.locator('.callout-malacca .feature-symbol')).toHaveText('×◇');
-  await expect(page.locator('.callout-sunda .feature-symbol')).toHaveText('＋◇');
+  await expect(page.locator('.callout-malacca .feature-name')).toHaveText('マラッカ海峡（通行不可）');
+  await expect(page.locator('.callout-sunda .feature-name')).toHaveText('スンダ海峡（候補）');
   // The list carries the same non-colour mark as the map.
-  await expect(page.locator('#feature-list [data-feature-id="normal-route"]')).toContainText('×┄');
-  await expect(page.locator('.assumption')).toContainText('現実の航行規制・出来事を示しません');
+  await expect(page.locator('#feature-list [data-feature-id="normal-route"]')).toContainText('通常主要航路（使用しない）');
+  await expect(page.locator('footer.page-notes')).toContainText('現実の航行規制・出来事を示しません');
   await expect(page.locator('#scenario-limits')).toContainText('輸送能力を検証していません');
   await expect(page.locator('.scenario-source')).toContainText('2026-03-03');
   await expect(page.locator('.scenario-source')).toContainText('参照日2026-11-09');
@@ -389,7 +389,7 @@ test('scenario round trip synchronizes differences, selected explanations and so
     await activate(page.getByRole('button', { name: `${name}経由候補を選択`, exact: true }), mobile);
     await expect(page.locator('#selected-description')).toContainText('EIA');
     await expect(page.locator('#detail-fields')).toContainText('未収録');
-    await expect(page.locator('#selected-scenario')).toContainText('＋仮定時に追加');
+    await expect(page.locator('#selected-scenario')).toContainText('仮定時に追加');
     await activate(page.getByRole('button', { name: `地図上の${name}海峡を選択`, exact: true }), mobile);
     await expect(page.locator('#selected-name')).toHaveText(`${name}海峡`);
     await screenshot(page, `scenario-${id}-selected`, info.project.name);
